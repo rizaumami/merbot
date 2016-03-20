@@ -1,0 +1,177 @@
+#!/usr/bin/env bash
+
+THIS_DIR=$(cd $(dirname $0); pwd)
+cd $THIS_DIR
+
+update() {
+  git pull
+  git submodule update --init --recursive
+  install_rocks
+}
+
+# Will install luarocks on THIS_DIR/.luarocks
+install_luarocks() {
+  git clone https://github.com/keplerproject/luarocks.git
+  cd luarocks
+  git checkout tags/v2.3.0 # Current stable
+
+  PREFIX="$THIS_DIR/.luarocks"
+
+  ./configure --prefix=$PREFIX --sysconfdir=$PREFIX/luarocks --force-config
+
+  RET=$?
+  if [ $RET -ne 0 ]; then
+    printf '%s\n' 'Error. Exiting.'
+    exit $RET
+  fi
+
+  make build && make install
+  RET=$?
+  if [ $RET -ne 0 ]; then
+    printf '%s\n' 'Error. Exiting.'
+    exit $RET
+  fi
+
+  cd ..
+  rm -rf luarocks
+}
+
+install_rocks() {
+  for i in luasocket oauth redis-lua lua-cjson fakeredis xml feedparser serpent; do
+    ./.luarocks/bin/luarocks install "$i"
+    RET=$?
+    if [ $RET -ne 0 ]; then
+      printf '%s\n' 'Error. Exiting.'
+      exit $RET
+    fi
+  done
+}
+
+merbot_upstart() {
+  printf "%s\n" "
+description "Merbots upstart script."
+
+respawn
+respawn limit 15 5
+
+start on runlevel [2345]
+stop on shutdown
+
+setuid $(whoami)
+exec /bin/sh $(pwd)/merbot
+" | sudo tee /etc/init/merbot.conf > /dev/null
+
+  [[ -f /etc/init/merbot.conf ]] && printf "%s\n" '
+
+  Upstart script installed to /etc/init/merbot.conf.
+  Now you can start merbot with:
+
+    sudo start merbot
+
+  Or stop merbot with:
+
+    sudo stop merbot
+
+'
+}
+
+merbot_systemd() {
+  SVCDIR="$HOME/.config/systemd/user"
+
+  [[ -d $SVCDIR ]] || mkdir -p $SVCDIR
+
+  printf "%s\n" "
+[Unit]
+Description=Merbot systemd service for $(whoami)
+
+[Service]
+ExecStart=$(pwd)/merbot
+
+[Install]
+WantedBy=default.target
+" > $SVCDIR/merbot.service
+
+  systemctl --user enable merbot.service
+
+  [[ -f $SVCDIR/merbot.service ]] && printf "%s\n" "
+
+  Systemd unit installed to:
+  $HOME/.config/systemd/user/merbot.service
+  And has been enabled.
+
+  To start merbot:
+    systemctl --user start merbot
+
+  To stop merbot:
+    systemctl --user stop merbot
+
+  To shows merbot status:
+    systemctl --user status merbot
+
+  To disable merbot service:
+    systemctl --user disable merbot.service
+
+"
+}
+
+tgcli_config() {
+  mkdir -p $THIS_DIR/.telegram-cli
+  printf '%s\n' "
+default_profile = \"default\";
+
+default = {
+  config_directory = \"$THIS_DIR/.telegram-cli\";
+  auth_file = \"$THIS_DIR/.telegram-cli/auth\";
+  test = false;
+  msg_num = true;
+  log_level = 2;
+};
+" > $THIS_DIR/data/tg-cli.config
+}
+
+install() {
+  git pull
+  git submodule update --init --recursive
+  patch -i 'patches/merbot.patch' -p 0 --batch --forward
+  patch -i 'tg_queries.c_937.patch' -p 0 --batch --forward
+  RET=$?;
+
+  cd tg
+  if [ $RET -ne 0 ]; then
+    autoconf -i
+  fi
+  ./configure && make
+
+  RET=$?
+  if [ $RET -ne 0 ]; then
+    printf '%s\n' 'Error. Exiting.'
+    exit $RET
+  fi
+  cd ..
+  install_luarocks
+  install_rocks
+  tgcli_config
+}
+
+if [[ "$1" = "install" ]]; then
+  install
+elif [[ "$1" = "update" ]]; then
+  update
+elif [[ "$1" = "upstart" ]]; then
+  merbot_upstart
+elif [[ "$1" = "systemd" ]]; then
+  merbot_systemd
+else
+  if [[ ! -f ./tg/telegram.h ]]; then
+    printf '%s\n' "tg not found" "Run $0 install"
+    exit 1
+  fi
+
+  if [[ ! -f ./tg/bin/telegram-cli ]]; then
+    printf '%s\n' "tg binary not found" "Run $0 install"
+    exit 1
+  fi
+
+  ./tg/bin/telegram-cli -k ./tg/tg-server-pub -s ./bot/bot.lua -l 1 -E -c ./data/tg-cli.config -p default $@
+
+fi

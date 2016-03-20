@@ -1,0 +1,10 @@
+--- tg/tgl/queries.c	2016-03-20 22:06:43.004171098 +0700
++++ /tmp/queries.c	2016-03-20 22:18:10.243710274 +0700
+@@ -2802,7 +2815,7 @@
+     out_int (CODE_channel_role_empty);
+     break;
+   }
+-  tglq_send_query (TLS, TLS->DC_working, packet_ptr - packet_buffer, packet_buffer, &channels_set_about_methods, 0, callback, callback_extra);
++  tglq_send_query (TLS, TLS->DC_working, packet_ptr - packet_buffer, packet_buffer, &send_msgs_methods, 0, callback, callback_extra);
+ }
+ /* }}} */
