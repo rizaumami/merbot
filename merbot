@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 THIS_DIR=$(cd $(dirname $0); pwd)
 cd $THIS_DIR
@@ -37,7 +37,11 @@ install_luarocks() {
 }
 
 install_rocks() {
-  for i in luasocket oauth redis-lua lua-cjson fakeredis xml feedparser serpent; do
+  ./.luarocks/bin/luarocks install lbase64 20120807-3
+  RET=$?; if [ $RET -ne 0 ];
+    then echo "Error. Exiting."; exit $RET;
+  fi
+  for i in luasec luasocket oauth redis-lua lua-cjson fakeredis xml feedparser serpent; do
     ./.luarocks/bin/luarocks install "$i"
     RET=$?
     if [ $RET -ne 0 ]; then
@@ -133,7 +137,6 @@ install() {
   git pull
   git submodule update --init --recursive
   patch -i 'patches/merbot.patch' -p 0 --batch --forward
-  patch -i 'tg_queries.c_937.patch' -p 0 --batch --forward
   RET=$?;
 
   cd tg
