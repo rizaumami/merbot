@@ -5,25 +5,27 @@
 
 **Merbot** is a dedicated Telegram group administration bot based on [telegram-bot](https://github.com/yagop/telegram-bot) by [Yago Pérez](https://telegram.me/yago_perez).
 
-1. [**Administration**](https://github.com/rizaumami/merbot/wiki/Plugins#administration)  
+1. [**Administration**](https://github.com/rizaumami/merbot/wiki/Administration)  
 Kick, ban, invite and more functions to administrating the group.
-2. [**Google**](https://github.com/rizaumami/merbot/wiki/Plugins#google)  
+2. [**Google**](https://github.com/rizaumami/merbot/wiki/Google)  
 Google search.
-3. [**Help**](https://github.com/rizaumami/merbot/wiki/Plugins#help)  
+3. [**Help**](https://github.com/rizaumami/merbot/wiki/Help)  
 Help plugin. Get info from other plugins.
-4. [**Id**](https://github.com/rizaumami/merbot/wiki/Plugins#id)  
+4. [**Id**](https://github.com/rizaumami/merbot/wiki/Id)  
 Know your ID or the ID of a chat members.
-5. [**Logger**](https://github.com/rizaumami/merbot/wiki/Plugins#logger)  
+5. [**Logger**](https://github.com/rizaumami/merbot/wiki/Logger)  
 Logging group text messages.
-6. [**Pattern**](https://github.com/rizaumami/merbot/wiki/Plugins#pattern)  
+6. [**Pattern**](https://github.com/rizaumami/merbot/wiki/Pattern)  
 Replace words in a message.
-7. [**Plugins**](https://github.com/rizaumami/merbot/wiki/Plugins#plugins)  
+7. [**Plugins**](https://github.com/rizaumami/merbot/wiki/Plugins)  
 Plugin to manage other plugins. Enable, disable or reload.
-8. [**Reddit**](https://github.com/rizaumami/merbot/wiki/Plugins#reddit)  
+8. [**Reddit**](https://github.com/rizaumami/merbot/wiki/Reddit)  
 Subreddit or frontpage of reddit.com.
-9. [**Stats**](https://github.com/rizaumami/merbot/wiki/Plugins#stats)  
+9. [**RSS**](https://github.com/rizaumami/merbot/wiki/RSS)  
+Manage User/Chat RSS subscriptions.
+10. [**Stats**](https://github.com/rizaumami/merbot/wiki/Stats)  
 Update users stats.
-10. [**Sudo**](https://github.com/rizaumami/merbot/wiki/Plugins#sudo)  
+11. [**Sudo**](https://github.com/rizaumami/merbot/wiki/Sudo)  
 Various uncategorized functions.
 
 Consult [wiki](https://github.com/rizaumami/merbot/wiki/Plugins) to know how to use those plugins.
