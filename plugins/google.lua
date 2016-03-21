@@ -2,7 +2,7 @@ do
 
   local function run(msg, matches)
     -- comment this line if you want this plugin to works in private message.
-    if not is_chat_msg(msg) and not is_admin(msg, msg.from.peer_id) then return nil end
+    if not is_chat_msg(msg) and not is_admin(msg.from.peer_id) then return nil end
 
     local url        = 'https://ajax.googleapis.com/ajax/services/search/web?v=1.0'
     local parameters = '&q='..(URL.escape(matches[2]) or '')

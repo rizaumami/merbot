@@ -129,11 +129,11 @@ do
 
   local function run(msg, matches)
 
-    if not is_chat_msg(msg) and not is_admin(msg, msg.from.peer_id) then return nil end
+    if not is_chat_msg(msg) and not is_admin(msg.from.peer_id) then return nil end
 
     if is_sudo(msg.from.peer_id) then
       requester = 'sudo'
-    elseif is_admin(msg, msg.from.peer_id) then
+    elseif is_admin(msg.from.peer_id) then
       requester = 'admin'
     elseif is_mod(msg, msg.to.peer_id, msg.from.peer_id) then
       requester = 'owner'
