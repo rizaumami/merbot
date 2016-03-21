@@ -34,7 +34,7 @@ do
     elseif next(_config.administrators) == nil then
       reply_msg(msg.id, 'There are currently no listed administrators.', ok_cb, true)
     else
-      local message = 'Administrators for '..group..':\n\n'
+      local message = 'List of administrators:\n\n'
       for k,v in pairs(_config.administrators) do
         message = message..'- '..v..' - '..k..'\n'
       end
