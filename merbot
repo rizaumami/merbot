@@ -52,8 +52,8 @@ install_rocks() {
 }
 
 merbot_upstart() {
-  printf "%s\n" "
-description "Merbots upstart script."
+  printf '%s\n' "
+description 'Merbots upstart script.'
 
 respawn
 respawn limit 15 5
@@ -65,57 +65,15 @@ setuid $(whoami)
 exec /bin/sh $(pwd)/merbot
 " | sudo tee /etc/init/merbot.conf > /dev/null
 
-  [[ -f /etc/init/merbot.conf ]] && printf "%s\n" '
+  [[ -f /etc/init/merbot.conf ]] && printf '%s\n' '
 
   Upstart script installed to /etc/init/merbot.conf.
-  Now you can start merbot with:
-
-    sudo start merbot
-
-  Or stop merbot with:
-
-    sudo stop merbot
+  Now you can:
+  Start merbot with     : sudo start merbot
+  See merbot status with: sudo status merbot
+  Stop merbot with      : sudo stop merbot
 
 '
-}
-
-merbot_systemd() {
-  SVCDIR="$HOME/.config/systemd/user"
-
-  [[ -d $SVCDIR ]] || mkdir -p $SVCDIR
-
-  printf "%s\n" "
-[Unit]
-Description=Merbot systemd service for $(whoami)
-
-[Service]
-ExecStart=$(pwd)/merbot
-
-[Install]
-WantedBy=default.target
-" > $SVCDIR/merbot.service
-
-  systemctl --user enable merbot.service
-
-  [[ -f $SVCDIR/merbot.service ]] && printf "%s\n" "
-
-  Systemd unit installed to:
-  $HOME/.config/systemd/user/merbot.service
-  And has been enabled.
-
-  To start merbot:
-    systemctl --user start merbot
-
-  To stop merbot:
-    systemctl --user stop merbot
-
-  To shows merbot status:
-    systemctl --user status merbot
-
-  To disable merbot service:
-    systemctl --user disable merbot.service
-
-"
 }
 
 tgcli_config() {
@@ -162,8 +120,6 @@ elif [[ "$1" = "update" ]]; then
   update
 elif [[ "$1" = "upstart" ]]; then
   merbot_upstart
-elif [[ "$1" = "systemd" ]]; then
-  merbot_systemd
 else
   if [[ ! -f ./tg/telegram.h ]]; then
     printf '%s\n' "tg not found" "Run $0 install"
