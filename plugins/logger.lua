@@ -9,9 +9,9 @@ if the log file size is big.
 
 do
 
-  local function pre_process(msg)
-    if is_chat_msg(msg) then
-      local gid = tonumber(msg.to.peer_id)
+  function run(msg, matches)
+    local gid = tonumber(msg.to.peer_id)
+    if _config.administration[gid] and is_chat_msg(msg)then
       local data = load_data(_config.administration[gid])
       local message = serpent.dump(msg, {comment=false})
       local message = message:match('do local _=(.*);return _;end')
@@ -20,14 +20,7 @@ do
       logfile:write(message..'\n')
       logfile:close()
     end
-    return msg
-  end
-
---------------------------------------------------------------------------------
-
-  function run(msg, matches)
-    if is_mod(msg.from.peer_id, gid) then
-      local gid = tonumber(msg.to.peer_id)
+    if is_mod(msg, gid, msg.from.peer_id) then
       if matches[1] == 'get' then
         send_document('chat#id'..gid, './data/'..gid..'/'..gid..'.log', ok_cb, false)
       elseif matches[1] == 'pm' then
@@ -51,8 +44,7 @@ do
     patterns = {
       '^!log (.+)$'
     },
-    run = run,
-    pre_process = pre_process
+    run = run
   }
 
 end
