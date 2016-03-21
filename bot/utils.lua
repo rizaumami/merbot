@@ -631,7 +631,7 @@ function send_api_msg(msg, receiver, text, disable_web_page_preview, markdown)
     url_api = url_api..'&parse_mode=HTML'
   end
   local dat, res = https.request(url_api)
-  if res ~= 200 then
+  if res == 400 then
     reply_msg(msg.id, '@'.._config.bot_api.uname..' failed to send you the requested information.\nPlease message it privately first.', ok_cb, true)
   end
 end
