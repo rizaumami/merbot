@@ -108,7 +108,7 @@ do
            ..'<b>-</b> <code>!help [plugin name]</code> for more info.\n'
            ..'<b>-</b> <code>!help [plugin number]</code> for more info.\n'
            ..'<b>-</b> <code>!help all</code> to show all info.'
-    send_api_msg(get_receiver_api(msg), text, true, 'html')
+    send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
   end
 
 
@@ -157,7 +157,7 @@ do
       if not text then
         text = telegram_help(msg)
       end
-      send_api_msg(get_receiver_api(msg), text, true, 'html')
+      send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
     end
 
   end

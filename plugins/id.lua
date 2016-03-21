@@ -25,9 +25,9 @@ do
                  ..'<code>Last name :</code>'..(result.last_name or '')..'\n'
                  ..'<code>User name :</code>'..user_name..'\n'
                  ..'<code>ID        :'..result.peer_id..'</code>'
-      send_api_msg(get_receiver_api(extra), text, true, 'html')
+      send_api_msg(msg, get_receiver_api(extra), text, true, 'html')
     else
-      send_api_msg(get_receiver_api(extra), '<b>Failed</b> to resolve '
+      send_api_msg(msg, get_receiver_api(extra), '<b>Failed</b> to resolve '
           ..extra.text:gsub('!id ', '')..' IDs.\n'
           ..'Check if the username is correct.', true, 'html')
     end
@@ -54,7 +54,7 @@ do
       end
     end
     if next(founds) == nil then -- Empty table
-      send_api_msg(get_receiver_api(extra), user..' <b>not found on this chat</b>', true, 'html')
+      send_api_msg(msg, get_receiver_api(extra), user..' <b>not found on this chat</b>', true, 'html')
     else
       local text = ''
       for k,user in pairs(founds) do
@@ -69,7 +69,7 @@ do
              ..'<code>User name :</code>'..user_name..'\n'
              ..'<code>ID        :'..user.peer_id..'</code>\n\n'
       end
-      send_api_msg(get_receiver_api(extra), text, true, 'html')
+      send_api_msg(msg, get_receiver_api(extra), text, true, 'html')
     end
   end
 
@@ -84,7 +84,7 @@ do
                ..'<code>Last name :</code>'..(result.from.last_name or '')..'\n'
                ..'<code>User name :</code>'..user_name..'\n'
                ..'<code>ID        :'..result.from.peer_id..'</code>'
-    send_api_msg(get_receiver_api(extra), text, true, 'html')
+    send_api_msg(msg, get_receiver_api(extra), text, true, 'html')
   end
 
   local function returnids(extra, success, result)
@@ -112,7 +112,7 @@ do
       text = text..i..'. '..v.peer_id..' -'..user_name..' '..(v.first_name or '')..(v.last_name or '')..'\n'
     end
     if match == 'pm' then
-      send_api_msg(extra.from.peer_id, list:gsub('_', '[_]'), true, 'md')
+      send_api_msg(msg, extra.from.peer_id, list:gsub('_', '[_]'), true, 'md')
     elseif match == 'txt' or match == 'pmtxt' then
       local textfile = '/tmp/chat_info_'..extra.to.peer_id..'_'..os.date("%y%m%d.%H%M%S")..'.txt'
       local file = io.open(textfile, 'w')
@@ -125,7 +125,7 @@ do
         send_document('user#id'..extra.from.peer_id, textfile, rmtmp_cb, {file_path=textfile})
       end
     else
-      send_api_msg(get_receiver_api(extra), list:gsub('_', '[_]'), true, 'md')
+      send_api_msg(msg, get_receiver_api(extra), list:gsub('_', '[_]'), true, 'md')
     end
   end
 
@@ -169,9 +169,9 @@ do
                  ..'<code>User name :</code>'..user_name..'\n'
                  ..'<code>ID        :'..msg.from.peer_id..'</code>'
       if not is_chat_msg(msg) then
-        send_api_msg(get_receiver_api(msg), text, true, 'html')
+        send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
       else
-        send_api_msg(get_receiver_api(msg), text..'\n\nYou are in group <b>'..msg.to.title..'</b> [<code>'..msg.to.peer_id..'</code>]', true, 'html')
+        send_api_msg(msg, get_receiver_api(msg), text..'\n\nYou are in group <b>'..msg.to.title..'</b> [<code>'..msg.to.peer_id..'</code>]', true, 'html')
       end
     end
 

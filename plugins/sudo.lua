@@ -30,7 +30,7 @@ do
 
     if matches[1] == 'bin' then
       local stdout = io.popen(matches[2]):read('*all')
-      send_api_msg(get_receiver_api(msg), '<code>'..stdout..'</code>', true, 'html')
+      send_api_msg(msg, get_receiver_api(msg), '<code>'..stdout..'</code>', true, 'html')
     end
 
     if matches[1] == 'token' then

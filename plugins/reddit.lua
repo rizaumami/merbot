@@ -50,7 +50,7 @@ do
         subreddit = subreddit..'<b>'..i..'. </b>'..'<a href="redd.it/'..v.data.id..'">'..title..'</a>'..long_url
       end
     end
-    send_api_msg(get_receiver_api(msg), subreddit, true, 'html')
+    send_api_msg(msg, get_receiver_api(msg), subreddit, true, 'html')
   end
 
 --------------------------------------------------------------------------------

@@ -685,7 +685,7 @@ do
             elseif settings.welcome == 'private' then
               receiver_api = 'user#id'..user_id
             end
-            send_api_msg(receiver_api, welcomes..about..rules..'\n', true, 'html')
+            send_api_msg(msg, receiver_api, welcomes..about..rules..'\n', true, 'html')
           end
         end
         -- if group photo is deleted
@@ -1329,7 +1329,7 @@ do
                 ..'*-* Spam protection = `'..settings.anti_spam..'`\n'
                 ..'*-* Sticker policy = `'..settings.sticker..'`\n'
                 ..'*-* Welcome message = `'..settings.welcome..'`\n'
-          send_api_msg(get_receiver_api(msg), text, true, 'md')
+          send_api_msg(msg, get_receiver_api(msg), text, true, 'md')
         end
 
         if matches[1] == 'invite' then
@@ -1446,13 +1446,13 @@ do
 
       if matches[1] == 'link' or matches[1] == 'getlink' or matches[1] == 'link get' then
         if data.link == '' then
-          send_api_msg(get_receiver_api(msg), 'No link has been set for this group.\nTry <code>!link set</code> to generate.', true, 'html')
+          send_api_msg(msg, get_receiver_api(msg), 'No link has been set for this group.\nTry <code>!link set</code> to generate.', true, 'html')
         elseif data.link == 'revoked' then
           reply_msg(msg.id, 'Invite link for this group has been revoked', ok_cb, true)
         else
           local about = data.description or ''
           local link = data.link
-          send_api_msg(get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about..link, true, 'html')
+          send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about..link, true, 'html')
         end
       end
 
@@ -1460,7 +1460,7 @@ do
         if not data.description then
           reply_msg(msg.id, 'No description available', ok_cb, true)
         else
-          send_api_msg(get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..data.description, true, 'html')
+          send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..data.description, true, 'html')
         end
       end
 

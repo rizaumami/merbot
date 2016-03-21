@@ -34,7 +34,7 @@ do
                       ..'<a href="'..(result.unescapedUrl or result.url)..'">'
                       ..unescape_html(result.titleNoFormatting)..'</a>\n'
     end
-    send_api_msg(receiver, stringresults, true, 'html')
+    send_api_msg(msg, receiver, stringresults, true, 'html')
   end
 
 --------------------------------------------------------------------------------
