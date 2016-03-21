@@ -1343,7 +1343,7 @@ do
                 ..'*-* Spam protection = `'..data.antispam..'`\n'
                 ..'*-* Sticker policy = `'..data.sticker..'`\n'
                 ..'*-* Welcome message = `'..data.welcome.to..'`\n'
-          send_api_msg(msg, msg, get_receiver_api(msg), text, true, 'md')
+          send_api_msg(msg, get_receiver_api(msg), text, true, 'md')
         end
 
         if matches[1] == 'invite' then
