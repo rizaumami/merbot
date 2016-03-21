@@ -1,6 +1,6 @@
 do
 
-  local tge = "./tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De '"
+  local tgexec = "./tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De "
   local NUM_MSG_MAX = 4  -- Max number of messages per TIME_CHECK seconds
   local TIME_CHECK = 4
   local new_group_table = {}
@@ -181,7 +181,6 @@ do
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
-    vardump(data)
     if data.moderators ~= nil and data.moderators[uid] then
       reply_msg(extra.msg.id, uid..' is already a moderator.', ok_cb, true)
     else
@@ -290,22 +289,30 @@ do
       t_name = new_group_table[msg.action.title].uname
     end
     gpdata = {
+        antispam = 'ban',
         founded = os.time(),
         founder = '',
-        grouptype = msg.to.peer_type,
         link = '',
+        lock = {
+          bot = 'no',
+          member = 'no',
+          name = 'yes',
+          photo = 'yes',
+        },
         members = {},
         moderators = {},
+        name = msg.to.title,
         owners = {[user_id] = t_name or l_name},
-        settings = {
-          anti_spam = 'ban',
-          lock_bots = 'no',
-          lock_member = 'no',
-          lock_name = 'yes',
-          lock_photo = 'no',
+        set = {
           name = msg.to.title,
-          sticker = 'ok',
-          welcome = 'group',
+          photo = 'data/'..chat_id..'/'..chat_id..'.jpg',
+        },
+        sticker = 'ok',
+        type = msg.to.peer_type,
+        username = msg.to.username or '',
+        welcome = {
+          msg = '',
+          to = 'group',
         },
     }
     save_data(gpdata, 'data/'..chat_id..'/'..chat_id..'.lua')
@@ -440,9 +447,6 @@ do
 
   -- [global|un]ban|kick by username
   local function resolve_username_cb(extra, success, result)
-    vardump(extra)
-    vardump(success)
-    vardump(result)
     if result ~= false then
       local msg = extra.msg
       local uid = result.peer_id
@@ -512,10 +516,10 @@ do
   -- trigger anti spam and anti flood
   local function trigger_anti_spam(extra, chat_id, user_id)
     local data = load_data(_config.administration[chat_id])
-    if data.settings.anti_spam == 'kick' then
+    if data.antispam == 'kick' then
       kick_user(extra.msg, chat_id, user_id)
       reply_msg(extr.msg.id, extra.usr..' is '..splooder)
-    elseif data.settings.anti_spam == 'ban' then
+    elseif data.antispam == 'ban' then
       ban_user({msg=extra.msg, usr=extra.usr}, chat_id, user_id)
       reply_msg(extr.msg.id, extra.usr..' is '..splooder..'. Banned')
     end
@@ -558,9 +562,9 @@ do
       else
         chat_set_photo(get_receiver(msg), filepath..'.jpg', ok_cb, false)
       end
-      data.settings.set_photo = filepath..'.jpg'
+      data.set.photo = filepath..'.jpg'
       save_data(data, filepath..'.lua')
-      data.settings.lock_photo = 'yes'
+      data.lock.photo = 'yes'
       save_data(data, filepath..'.lua')
       reply_msg(msg.id, 'Photo saved!', ok_cb, false)
     else
@@ -576,15 +580,14 @@ do
       chat_info(get_receiver(extra.msg), action_by_id, extra)
     end
   end
-  
+
   local function load_group_photo(msg, chat_id)
-    local tge = "./tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De "
     local dl_dir = '.telegram-cli/downloads'
-    os.execute('mv '..dl_dir..' '..dl_dir..'-bak')
+    os.execute('mv '..dl_dir..' '..dl_dir..'-bak && mkdir '..dl_dir)
     if msg.to.peer_type == 'channel' then
-      os.execute(tge.."\'load_channel_photo channel#id"..chat_id.."\'")
+      os.execute(tgexec.."\'load_channel_photo channel#id"..chat_id.."\'")
     else
-      os.execute(tge.."\'load_chat_photo chat#id"..chat_id.."\'")
+      os.execute(tgexec.."\'load_chat_photo chat#id"..chat_id.."\'")
     end
     local g_photo = scandir(dl_dir)
     os.rename(dl_dir..'/'..g_photo[3], 'data/'..chat_id..'/'..chat_id..'.jpg')
@@ -637,82 +640,91 @@ do
     if msg.action then
       if _config.administration[chat_id] then
         local data = load_data(_config.administration[chat_id])
-        local settings = data.settings
         -- service message
         if msg.action.type == 'chat_add_user' or msg.action.type == 'chat_add_user_link' then
           if msg.action.link_issuer then
             user_id = user_id
             new_member = (msg.from.first_name or '')..' '..(msg.from.last_name or '')
-            username = '@'..msg.from.username..' AKA ' or ''
+            uname = '@'..msg.from.username or ''
           else
             user_id = msg.action.user.peer_id
             new_member = (msg.action.user.first_name or '')..' '..(msg.action.user.last_name or '')
-            username = '@'..msg.action.user.username..' AKA ' or ''
+            uname = '@'..msg.action.user.username or ''
           end
+          local username = uname..' AKA ' or ''
           if is_globally_banned(user_id) or is_banned(chat_id, user_id) then
             kick_user(msg, chat_id, user_id)
           end
           if user_id ~= 0 and not is_mod(msg, chat_id, user_id) then
-            if settings.lock_member == 'yes' then
+            if data.lock.member == 'yes' then
               kick_user(msg, chat_id, user_id)
             end
             -- is it an API bot?
-            if msg.flags == 8450 and settings.lock_bots == 'yes' then
+            if msg.flags == 8450 and data.lock.bot == 'yes' then
               kick_user(msg, chat_id, user_id)
             end
           end
           -- welcome message
-          if settings.welcome ~= 'no' then
+          if data.welcome.to ~= 'no' then
             -- do not greet (globally) banned users.
             if is_globally_banned(user_id) or is_banned(chat_id, user_id) then
               return nil
             end
             -- do not greet when group members are locked
-            if settings.lock_member == 'yes' then
+            if data.lock.member == 'yes' then
               return nil
             end
             local about = ''
             local rules = ''
             if data.description then
-              about = '\nDescription :\n'..data.description..'\n'
+              about = '\n<b>Description</b>:\n'..data.description..'\n'
             end
             if data.rules then
-              rules = '\nRules :\n'..datarules..'\n'
+              rules = '\n<b>Rules</b>:\n'..data.rules..'\n'
             end
-            local welcomes = 'Welcome '..username..'<b>'..new_member..'</b> <code>['..user_id..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
-            if settings.welcome == 'group' then
+            local welcomes = data.welcome.msg..'\n' or 'Welcome '..username..'<b>'..new_member..'</b> <code>['..user_id..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
+            if data.welcome.to == 'group' then
               receiver_api = get_receiver_api(msg)
-            elseif settings.welcome == 'private' then
+            elseif data.welcome.to == 'private' then
               receiver_api = 'user#id'..user_id
             end
             send_api_msg(msg, receiver_api, welcomes..about..rules..'\n', true, 'html')
           end
+          -- add user to members table
+          data.members[user_id] = uname or new_member
+          save_data(data, 'data/'..chat_id..'/'..chat_id..'.lua')
         end
         -- if group photo is deleted
         if msg.action.type == 'chat_delete_photo' then
-          if settings.lock_photo == 'yes' then
-            chat_set_photo (receiver, settings.set_photo, ok_cb, false)
-          elseif settings.lock_photo == 'no' then
+          if data.lock.photo == 'yes' then
+            chat_set_photo (receiver, data.set.photo, ok_cb, false)
+          elseif data.lock.photo == 'no' then
             return nil
           end
         end
         -- if group photo is changed
         if msg.action.type == 'chat_change_photo' and user_id ~= 0 then
-          if settings.lock_photo == 'yes' then
-            chat_set_photo (receiver, settings.set_photo, ok_cb, false)
-          elseif settings.lock_photo == 'no' then
+          if data.lock.photo == 'yes' then
+            chat_set_photo (receiver, data.set.photo, ok_cb, false)
+          elseif data.lock.photo == 'no' then
             return nil
           end
         end
         -- if group name is renamed
         if msg.action.type == 'chat_rename' then
-          if settings.lock_name == 'yes' then
-            if settings.set_name ~= tostring(msg.to.print_name) then
-              rename_chat(receiver, settings.set_name, ok_cb, false)
+          if data.lock.name == 'yes' then
+            if data.set.name ~= tostring(msg.to.print_name) then
+              rename_chat(receiver, data.set.name, ok_cb, false)
             end
           end
-          if settings.lock_name == 'no' then
+          if data.lock.name == 'no' then
             return nil
+          end
+          -- if user leave, remove from members table
+          if msg.action.type == 'chat_del_user' then
+            data.members[user_id] = nil
+            save_data(data, 'data/'..gid..'/'..gid..'.lua')
+            --return 'Bye '..new_member..'!'
           end
         end
       end
@@ -726,7 +738,6 @@ do
           end
         end
       end
-      --[[
       --TODO See mkgroup or mksupergroup functions
       -- create group config when the group is just created
       if msg.action.type == 'chat_created' then
@@ -751,7 +762,6 @@ do
           new_group_table[group] = nil
         end
       end
-      --]]
     end
 
     -- anti spam
@@ -822,12 +832,11 @@ do
 
     if msg.media and _config.administration[chat_id] then
       local data = load_data(_config.administration[chat_id])
-      local settings = data.settings
       if not msg.text then
         msg.text = '['..msg.media.type..']'
       end
       if is_mod(msg, chat_id, user_id) and msg.media.type == 'photo' then
-        if settings.set_photo == 'waiting' then
+        if data.set.photo == 'waiting' then
           load_photo(msg.id, set_group_photo, {msg=msg, data=data})
         end
       end
@@ -835,7 +844,7 @@ do
       if msg.media.caption == 'sticker.webp' then
         local sticker_hash = 'mer_sticker:'..chat_id..':'..user_id
         local is_sticker_offender = redis:get(sticker_hash)
-        if settings.sticker == 'warn' then
+        if data.sticker == 'warn' then
           if is_sticker_offender then
             kick_user(msg, chat_id, user_id)
             redis:del(sticker_hash)
@@ -845,7 +854,7 @@ do
             reply_msg(msg.id, 'DO NOT send sticker into this group!\nThis is a WARNING, next time you will be kicked!', ok_cb, true)
           end
         end
-        if settings.sticker == 'kick' then
+        if data.sticker == 'kick' then
           kick_user(msg, chat_id, user_id)
           reply_msg(msg.id, 'DO NOT send sticker into this group!', ok_cb, true)
         end
@@ -870,7 +879,7 @@ do
         if matches[1] == 'visudo' then
           if matches[2] == 'add' then
             local uid = tonumber(matches[3])
-            _config.sudo_users[uid] = 
+            _config.sudo_users[uid] =
             save_config()
             reply_msg(msg.id, uid..' added to sudo users list.', ok_cb, true)
           end
@@ -1092,31 +1101,30 @@ do
 
       if not _config.administration[chat_id] then return end
 
-      local data = load_data(tostring(_config.administration[chat_id]))
-      local settings = data.settings
+      local data = load_data(_config.administration[chat_id])
 
       if is_owner(msg, chat_id, user_id) then
         if matches[1] == 'antispam' then
           if matches[2] == 'kick' then
-            if settings.anti_spam ~= 'kick' then
-              settings.anti_spam = 'kick'
-              save_data(data, 'data/'..chat_id..'/'..chat_id..'.lua')
+            if data.antispam ~= 'kick' then
+              data.antispam = 'kick'
+              save_data(data, chat_db)
             end
               reply_msg(msg.id, 'Anti spam protection already enabled.\nOffender will be kicked.', ok_cb, true)
             end
           if matches[2] == 'ban' then
-            if settings.anti_spam ~= 'ban' then
-              settings.anti_spam = 'ban'
-              save_data(data, 'data/'..chat_id..'/'..chat_id..'.lua')
+            if data.antispam ~= 'ban' then
+              data.antispam = 'ban'
+              save_data(data, chat_db)
             end
               reply_msg(msg.id, 'Anti spam protection already enabled.\nOffender will be banned.', ok_cb, true)
             end
           if matches[2] == 'disable' then
-            if settings.anti_spam == 'no' then
+            if data.antispam == 'no' then
               reply_msg(msg.id, 'Anti spam protection is not enabled.', ok_cb, true)
             else
-              settings.anti_spam = 'no'
-              save_data(data, 'data/'..chat_id..'/'..chat_id..'.lua')
+              data.antispam = 'no'
+              save_data(data, chat_db)
               reply_msg(msg.id, 'Anti spam protection has been disabled.', ok_cb, true)
             end
           end
@@ -1156,41 +1164,41 @@ do
         end
 
         if matches[1] == 'setname' then
-          settings.name = matches[2]
+          data.name = matches[2]
           save_data(data, chat_db)
           if msg.to.peer_type == 'channel' then
-            rename_channel(receiver, settings.name, ok_cb, true)
+            rename_channel(receiver, data.name, ok_cb, true)
           else
-            rename_chat(receiver, settings.name, ok_cb, true)
+            rename_chat(receiver, data.name, ok_cb, true)
           end
         end
 
         if matches[1] == 'setphoto' then
-          settings.set_photo = 'waiting'
+          data.set.photo = 'waiting'
           save_data(data, chat_db)
           reply_msg(msg.id, 'Please send me new group photo now', ok_cb, true)
         end
 
         if matches[1] == 'sticker' then
           if matches[2] == 'warn' then
-            if settings.sticker ~= 'warn' then
-              settings.sticker = 'warn'
+            if data.sticker ~= 'warn' then
+              data.sticker = 'warn'
               save_data(data, chat_db)
             end
             reply_msg(msg.id, 'Stickers already prohibited.\nSender will be warned first, then kicked for second violation.', ok_cb, true)
           end
           if matches[2] == 'kick' then
-            if settings.sticker ~= 'kick' then
-              settings.sticker = 'kick'
+            if data.sticker ~= 'kick' then
+              data.sticker = 'kick'
               save_data(data, chat_db)
             end
             reply_msg(msg.id, 'Stickers already prohibited.\nSender will be kicked!', ok_cb, true)
           end
           if matches[2] == 'ok' then
-            if settings.sticker == 'ok' then
+            if data.sticker == 'ok' then
               reply_msg(msg.id, 'Sticker restriction is not enabled.', ok_cb, true)
             else
-              settings.sticker = 'ok'
+              data.sticker = 'ok'
               save_data(data, chat_db)
               for k,sticker_hash in pairs(redis:keys('mer_sticker:'..chat_id..':*')) do
                 redis:del(sticker_hash)
@@ -1200,22 +1208,28 @@ do
           end
         end
 
+        if matches[1] == 'setwelcome' and matches[2] then
+          data.welcome.msg = matches[2]
+          save_data(data, chat_db)
+          reply_msg(msg.id, 'Set group welcome message to:\n'..matches[2], ok_cb, true)
+        end
+
         if matches[1] == 'welcome' then
-          if matches[2] == 'group' and settings.welcome ~= 'group' then
-            settings.welcome = 'group'
+          if matches[2] == 'group' and data.welcome.to ~= 'group' then
+            data.welcome.to = 'group'
             save_data(data, chat_db)
             reply_msg(msg.id, 'Welcome service already enabled.\nWelcome message will shown in group.', ok_cb, true)
           end
-          if matches[2] == 'pm' and settings.welcome ~= 'private' then
-            settings.welcome = 'private'
+          if matches[2] == 'pm' and data.welcome.to ~= 'private' then
+            data.welcome.to = 'private'
             save_data(data, chat_db)
             reply_msg(msg.id, 'Welcome service already enabled.\nWelcome message will send as private message to new member.', ok_cb, true)
           end
           if matches[2] == 'disable' then
-            if settings.welcome == 'no' then
+            if data.welcome.to == 'no' then
               reply_msg(msg.id, 'Welcome service is not enabled.', ok_cb, true)
             else
-              settings.welcome = 'no'
+              data.welcome.to = 'no'
               save_data(data, chat_db)
               reply_msg(msg.id, 'Welcome service has been disabled.', ok_cb, true)
             end
@@ -1238,39 +1252,39 @@ do
           -- lock {bot|name|member|photo|sticker}
           if matches[2] == 'lock' then
             if matches[3] == 'bot' then
-              if settings.lock_bots == 'yes' then
+              if data.lock.bot == 'yes' then
                 reply_msg(msg.id, 'Group is already locked from bots.', ok_cb, true)
               else
-                settings.lock_bots = 'yes'
+                data.lock.bot = 'yes'
                 save_data(data, chat_db)
                 reply_msg(msg.id, 'Group is locked from bots.', ok_cb, true)
               end
             end
             if matches[3] == 'name' then
-              if settings.lock_name == 'yes' then
+              if data.lock.name == 'yes' then
                 reply_msg(msg.id, 'Group name is already locked', ok_cb, true)
               else
-                settings.lock_name = 'yes'
+                data.lock.name = 'yes'
                 save_data(data, chat_db)
-                settings.set_name = msg.to.title
+                data.set.name = msg.to.title
                 save_data(data, chat_db)
                 reply_msg(msg.id, 'Group name has been locked', ok_cb, true)
               end
             end
             if matches[3] == 'member' then
-              if settings.lock_member == 'yes' then
+              if data.lock.member == 'yes' then
                 reply_msg(msg.id, 'Group members are already locked', ok_cb, true)
               else
-                settings.lock_member = 'yes'
+                data.lock.member = 'yes'
                 save_data(data, chat_db)
               end
               reply_msg(msg.id, 'Group members has been locked', ok_cb, true)
             end
             if matches[3] == 'photo' then
-              if settings.lock_photo == 'yes' then
+              if data.lock.photo == 'yes' then
                 reply_msg(msg.id, 'Group photo is already locked', ok_cb, true)
               else
-                settings.set_photo = 'waiting'
+                data.set.photo = 'waiting'
                 save_data(data, chat_db)
               end
               reply_msg(msg.id, 'Please send me the group photo now', ok_cb, true)
@@ -1279,37 +1293,37 @@ do
           -- unlock {bot|name|member|photo|sticker}
           if matches[2] == 'unlock' then
             if matches[3] == 'bot' then
-              if settings.lock_bots == 'no' then
+              if data.lock.bot == 'no' then
                 reply_msg(msg.id, 'Bots are allowed to enter group.', ok_cb, true)
               else
-                settings.lock_bots = 'no'
+                data.lock.bot = 'no'
                 save_data(data, chat_db)
                 reply_msg(msg.id, 'Group is open for bots.', ok_cb, true)
               end
             end
             if matches[3] == 'name' then
-              if settings.lock_name == 'no' then
+              if data.lock.name == 'no' then
                 reply_msg(msg.id, 'Group name is already unlocked', ok_cb, true)
               else
-                settings.lock_name = 'no'
+                data.lock.name = 'no'
                 save_data(data, chat_db)
                 reply_msg(msg.id, 'Group name has been unlocked', ok_cb, true)
               end
             end
             if matches[3] == 'member' then
-              if settings.lock_member == 'no' then
+              if data.lock.member == 'no' then
                 reply_msg(msg.id, 'Group members are not locked', ok_cb, true)
               else
-                settings.lock_member = 'no'
+                data.lock.member = 'no'
                 save_data(data, chat_db)
                 reply_msg(msg.id, 'Group members has been unlocked', ok_cb, true)
               end
             end
             if matches[3] == 'photo' then
-              if settings.lock_photo == 'no' then
+              if data.lock.photo == 'no' then
                 reply_msg(msg.id, 'Group photo is not locked', ok_cb, true)
               else
-                settings.lock_photo = 'no'
+                data.lock.photo = 'no'
                 save_data(data, chat_db)
                 reply_msg(msg.id, 'Group photo has been unlocked', ok_cb, true)
               end
@@ -1322,14 +1336,14 @@ do
         -- view group settings
         if matches[1] == 'group' and matches[2] == 'settings' then
           local text = 'Settings for *'..msg.to.title..'*\n'
-                ..'*-* Lock group from bot = `'..settings.lock_bots..'`\n'
-                ..'*-* Lock group name = `'..settings.lock_name..'`\n'
-                ..'*-* Lock group photo = `'..settings.lock_photo..'`\n'
-                ..'*-* Lock group member = `'..settings.lock_member..'`\n'
-                ..'*-* Spam protection = `'..settings.anti_spam..'`\n'
-                ..'*-* Sticker policy = `'..settings.sticker..'`\n'
-                ..'*-* Welcome message = `'..settings.welcome..'`\n'
-          send_api_msg(msg, get_receiver_api(msg), text, true, 'md')
+                ..'*-* Lock group from bot = `'..data.lock.bot..'`\n'
+                ..'*-* Lock group name = `'..data.lock.name..'`\n'
+                ..'*-* Lock group photo = `'..data.lock.photo..'`\n'
+                ..'*-* Lock group member = `'..data.lock.member..'`\n'
+                ..'*-* Spam protection = `'..data.antispam..'`\n'
+                ..'*-* Sticker policy = `'..data.sticker..'`\n'
+                ..'*-* Welcome message = `'..data.welcome.to..'`\n'
+          send_api_msg(msg, msg, get_receiver_api(msg), text, true, 'md')
         end
 
         if matches[1] == 'invite' then
@@ -1474,6 +1488,24 @@ do
         end
       end
 
+      if matches[1] == 'grouplist' or matches[1] == 'groups' or matches[1] == 'glist' then
+        local gplist = ''
+        for k,v in pairs(_config.administration) do
+          local gpdata = load_data(v)
+          if gpdata.link then
+            gplist = gplist..'• ['..gpdata.name..']('..gpdata.link..')'
+          else
+            gplist = gplist..'• '..gpdata.name..'\n'
+          end
+        end
+        if gplist == '' then
+          gplist = 'There are currently no listed groups.'
+        else
+          gplist = '*Groups:*\n' .. gplist
+        end
+        send_api_msg(msg, get_receiver_api(msg), gplist, true, 'md')
+      end
+
     else -- if private message
 
       local usr = '@'..msg.from.username or msg.from.first_name
@@ -1608,6 +1640,7 @@ do
       '^!(link revoke)$',
       '^!(mkgroup) (.*)$',
       '^!(mksupergroup) (.*)$',
+      '^!(grouplist)$', '^!(gplist)$', '^!(glist)$',
       '^!(modlist)$',
       '^!(ownerlist)$', '^!(ownerlist) (%d+)$',
       '^!(rules)$',
@@ -1617,6 +1650,7 @@ do
       '^!(setrules) (.*)$',
       '^!(sticker) (%a+)$',
       '^!(welcome) (%a+)$',
+      '^!(setwelcome) (.*)$',
       '^!(whitelist) (%a+)$',
       '^!(whitelist) (chat) (%d+)$',
       '^!(unwhitelist) (chat) (%d+)$',
@@ -1799,6 +1833,8 @@ do
         'Sticker restriction, sender will be kick.',
         '<code>!sticker ok</code>',
         'Disable sticker restriction.',
+        '<code>!setwelcome [rules]</code>',
+        'Set group welcome message.',
         '<code>!welcome group</code>',
         'Welcome message will shows in group.',
         '<code>!welcome pm</code>',
