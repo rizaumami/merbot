@@ -11,8 +11,7 @@ do
 
   function run(msg, matches)
     local gid = tonumber(msg.to.peer_id)
-    if _config.administration[gid] and is_chat_msg(msg)then
-      local data = load_data(_config.administration[gid])
+    if _config.administration[gid] and is_chat_msg(msg) then
       local message = serpent.dump(msg, {comment=false})
       local message = message:match('do local _=(.*);return _;end')
       local message = message:gsub('phone="%d+"', '')
@@ -48,4 +47,3 @@ do
   }
 
 end
-
