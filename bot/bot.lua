@@ -197,7 +197,7 @@ function load_config()
   return config
 end
 
--- Create a basic config.json file and saves it.
+-- Create a basic config.lua file and saves it.
 function create_config()
   -- A simple config with basic plugins and ourselves as privileged user
   config = {
@@ -211,9 +211,10 @@ function create_config()
       'google',
       'help',
       'id',
-      'logger',
+      'pattern',
       'plugins',
       'reddit',
+      'rss',
       'sudo' },
     sudo_users = {
       [our_id] = '0'
