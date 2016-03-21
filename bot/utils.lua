@@ -619,7 +619,7 @@ end
 -- Text formatting is server side. And (until now) only for API bots.
 -- So, here is a simple workaround; send message through Telegram official API.
 -- You need to provide your API bots TOKEN in config.lua.
-function send_api_msg(receiver, text, disable_web_page_preview, markdown)
+function send_api_msg(msg, receiver, text, disable_web_page_preview, markdown)
   local url_api = 'https://api.telegram.org/bot'.._config.bot_api.key
       ..'/sendMessage?chat_id='..receiver..'&text='..URL.escape(text)
   if disable_web_page_preview == true then
@@ -632,7 +632,6 @@ function send_api_msg(receiver, text, disable_web_page_preview, markdown)
   end
   local dat, res = https.request(url_api)
   if res ~= 200 then
-    return res
+    reply_msg(msg.id, '@'.._config.bot_api.uname..' failed to send you the requested information.\nPlease message it privately first.', ok_cb, true)
   end
-  return tab
 end
