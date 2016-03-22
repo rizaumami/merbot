@@ -1,5 +1,6 @@
 do
 
+  local bot_repo = 'https://git.io/v4Oi0'
   local tgexec = "./tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De "
   local NUM_MSG_MAX = 4  -- Max number of messages per TIME_CHECK seconds
   local TIME_CHECK = 4
@@ -1508,6 +1509,11 @@ do
           gplist = '*Groups:*\n' .. gplist
         end
         send_api_msg(msg, get_receiver_api(msg), gplist, true, 'md')
+      end     
+      
+      -- print merbot version
+      if matches[1] == "version" then
+        reply_msg(msg.id, 'Merbot\n'..VERSION..'\nGitHub: '..bot_repo..'\nLicense: GNU GPL v2', ok_cb, true)
       end
 
     else -- if private message

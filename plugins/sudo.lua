@@ -68,10 +68,6 @@ do
         join = import_channel_link(hash, ok_cb, false)
       end
     end
-
-    if matches[1] == "version" then
-      reply_msg(msg.id, 'Merbot\n'..VERSION..'\nGitHub: https://git.io/v4Oi0\nLicense: GNU GPL v2', ok_cb, true)
-    end
   end
 
   --------------------------------------------------------------------------------
