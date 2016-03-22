@@ -682,7 +682,11 @@ do
             if data.rules then
               rules = '\n<b>Rules</b>:\n'..data.rules..'\n'
             end
-            local welcomes = data.welcome.msg..'\n' or 'Welcome '..username..'<b>'..new_member..'</b> <code>['..user_id..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
+            if data.welcome.msg ~= '' then
+              welcomes = data.welcome.msg..'\n'
+            else
+              'Welcome '..username..'<b>'..new_member..'</b> <code>['..user_id..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
+            end
             if data.welcome.to == 'group' then
               receiver_api = get_receiver_api(msg)
             elseif data.welcome.to == 'private' then
@@ -1493,7 +1497,7 @@ do
         for k,v in pairs(_config.administration) do
           local gpdata = load_data(v)
           if gpdata.link then
-            gplist = gplist..'• ['..gpdata.name..']('..gpdata.link..')'
+            gplist = gplist..'• ['..gpdata.name..']('..gpdata.link..')\n'
           else
             gplist = gplist..'• '..gpdata.name..'\n'
           end
@@ -1640,7 +1644,7 @@ do
       '^!(link revoke)$',
       '^!(mkgroup) (.*)$',
       '^!(mksupergroup) (.*)$',
-      '^!(grouplist)$', '^!(gplist)$', '^!(glist)$',
+      '^!(grouplist)$', '^!(groups)$', '^!(glist)$',
       '^!(modlist)$',
       '^!(ownerlist)$', '^!(ownerlist) (%d+)$',
       '^!(rules)$',
