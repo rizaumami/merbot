@@ -686,7 +686,7 @@ do
             if data.welcome.msg ~= '' then
               welcomes = data.welcome.msg..'\n'
             else
-              'Welcome '..username..'<b>'..new_member..'</b> <code>['..user_id..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
+              welcomes = 'Welcome '..username..'<b>'..new_member..'</b> <code>['..user_id..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
             end
             if data.welcome.to == 'group' then
               receiver_api = get_receiver_api(msg)
@@ -1509,8 +1509,8 @@ do
           gplist = '*Groups:*\n' .. gplist
         end
         send_api_msg(msg, get_receiver_api(msg), gplist, true, 'md')
-      end     
-      
+      end
+
       -- print merbot version
       if matches[1] == "version" then
         reply_msg(msg.id, 'Merbot\n'..VERSION..'\nGitHub: '..bot_repo..'\nLicense: GNU GPL v2', ok_cb, true)
