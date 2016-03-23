@@ -1,6 +1,6 @@
 do
 
-  local bot_repo = 'https://git.io/v4Oi0'
+  local bot_repo = '<a href="https://git.io/v4Oi0'
   local tgexec = "./tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De "
   local NUM_MSG_MAX = 4  -- Max number of messages per TIME_CHECK seconds
   local TIME_CHECK = 4
@@ -319,75 +319,6 @@ do
     save_data(gpdata, 'data/'..chat_id..'/'..chat_id..'.lua')
   end
 
-  -- [pro|de]mote|admin[prom|dem]|[global|un]ban|kick by user id
-  local function action_by_id(extra, success, result)
-    if success == 1 then
-      if extra.msg.to.peer_type == 'channel' then
-        members_list = result
-      else
-        members_list = result.members
-      end
-      local msg = extra.msg
-      local chat_id = msg.to.peer_id
-      local cmd = extra.matches[1]
-      local is_group_member = false
-      for k,v in pairs(members_list) do
-        if extra.matches[3] == tostring(v.peer_id) then
-          usr_in_lst = '@'..v.username or v.first_name
-          is_group_member = true
-          if cmd == 'promote' or cmd == 'mod' then
-            promote({msg=msg, usr=usr_in_lst}, chat_id, v.peer_id)
-          end
-          if cmd == 'demote' or cmd == 'demod' then
-            demote({msg=msg, usr=usr_in_lst}, chat_id, v.peer_id)
-          end
-          if cmd == 'kick' then
-            kick_user(msg, chat_id, v.peer_id)
-          end
-          if cmd == 'whitelist' then
-            whitelisting({msg=msg, usr=usr_in_lst}, chat_id, v.peer_id)
-          end
-          if cmd == 'unwhitelist' then
-            unwhitelisting({msg=msg, usr=usr_in_lst}, chat_id, v.peer_id)
-          end
-        end
-      end
-      if cmd == 'visudo' or cmd == 'sudo' then
-        visudo({msg=msg, usr=usr_in_lst}, extra.matches[3])
-      end
-      if cmd == 'desudo' then
-        desudo({msg=msg, usr=usr_in_lst}, extra.matches[3])
-      end
-      if cmd == 'adminprom' or cmd == 'admin' then
-        promote_admin({msg=msg, usr=usr_in_lst}, extra.matches[3])
-      end
-      if cmd == 'admindem' or cmd == 'deadmin' then
-        demote_admin({msg=msg, usr=usr_in_lst}, extra.matches[3])
-      end
-      if cmd == 'setowner' or cmd == 'gov' then
-        promote_owner({msg=msg, usr=usr_in_lst}, chat_id, extra.matches[3])
-      end
-      if cmd == 'remowner' or cmd == 'degov' then
-        demote_owner({msg=msg, usr=usr_in_lst}, chat_id, extra.matches[3])
-      end
-      if cmd == 'ban' then
-        ban_user({msg=msg, usr=usr_in_lst}, chat_id, extra.matches[3])
-      end
-      if cmd == 'superban' or cmd == 'gban' or cmd == 'hammer' then
-        global_ban_user({msg=msg, usr=usr_in_lst}, extra.matches[3])
-      end
-      if cmd == 'unban' then
-        unban_user({msg=msg, usr=usr_in_lst}, chat_id, extra.matches[3])
-      end
-      if cmd == 'superunban' or cmd == 'gunban' or cmd == 'unhammer' then
-        global_unban_user({msg=msg, usr=usr_in_lst}, extra.matches[3])
-      end
-      if not is_group_member then
-        reply_msg(msg.id, extra.matches[3]..' is not member of this group.', ok_cb, true)
-      end
-    end
-  end
-
   -- [pro|de]mote|admin[prom|dem]|[global|un]ban|kick|[un]whitelist by reply
   local function action_by_reply(extra, success, result)
     local gid = tonumber(extra.to.peer_id)
@@ -574,14 +505,6 @@ do
     end
   end
 
-  local function group_info_by_id(extra, chat_id, user_id)
-    if extra.msg.to.peer_type == 'channel' then
-      channel_get_users(get_receiver(extra.msg), action_by_id, extra)
-    else
-      chat_info(get_receiver(extra.msg), action_by_id, extra)
-    end
-  end
-
   local function load_group_photo(msg, chat_id)
     local dl_dir = '.telegram-cli/downloads'
     os.execute('mv '..dl_dir..' '..dl_dir..'-bak && mkdir '..dl_dir)
@@ -644,35 +567,39 @@ do
         -- service message
         if msg.action.type == 'chat_add_user' or msg.action.type == 'chat_add_user_link' then
           if msg.action.link_issuer then
-            uid = uid
+            userid = uid
             new_member = (msg.from.first_name or '')..' '..(msg.from.last_name or '')
             uname = '@'..msg.from.username or ''
           else
-            uid = msg.action.user.peer_id
+            userid = msg.action.user.peer_id
             new_member = (msg.action.user.first_name or '')..' '..(msg.action.user.last_name or '')
             uname = '@'..msg.action.user.username or ''
           end
           local username = uname..' AKA ' or ''
-          if is_globally_banned(uid) or is_banned(gid, uid) then
-            kick_user(msg, gid, uid)
+          if is_globally_banned(userid) or is_banned(gid, userid) then
+            kick_user(msg, gid, userid)
           end
-          if uid ~= 0 and not is_mod(msg, gid, uid) then
+          if uid > 0 and not is_mod(msg, gid, uid) then
             if data.lock.member == 'yes' then
-              kick_user(msg, gid, uid)
+              kick_user(msg, gid, userid)
             end
             -- is it an API bot?
-            if msg.flags == 8450 and data.lock.bot == 'yes' then
-              kick_user(msg, gid, uid)
+            if uname:match('bot$') then
+              kick_user(msg, gid, userid)
             end
           end
           -- welcome message
-          if data.welcome.to ~= 'no' then
+          if data.welcome.to == 'group' or data.welcome.to == 'pm' then
             -- do not greet (globally) banned users.
-            if is_globally_banned(uid) or is_banned(gid, uid) then
+            if is_globally_banned(userid) or is_banned(gid, userid) then
               return nil
             end
             -- do not greet when group members are locked
             if data.lock.member == 'yes' then
+              return nil
+            end
+            -- do not greet api bot
+            if uname:match('bot$') then
               return nil
             end
             local about = ''
@@ -686,12 +613,12 @@ do
             if data.welcome.msg ~= '' then
               welcomes = data.welcome.msg..'\n'
             else
-              welcomes = 'Welcome '..username..'<b>'..new_member..'</b> <code>['..uid..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
+              welcomes = 'Welcome '..username..'<b>'..new_member..'</b> <code>['..userid..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
             end
             if data.welcome.to == 'group' then
               receiver_api = get_receiver_api(msg)
             elseif data.welcome.to == 'private' then
-              receiver_api = 'user#id'..uid
+              receiver_api = 'user#id'..userid
             end
             send_api_msg(msg, receiver_api, welcomes..about..rules..'\n', true, 'html')
           end
@@ -949,7 +876,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            visudo({msg=msg, usr=matches[3]}, matches[3])
           end
         end
 
@@ -959,7 +886,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            desudo({msg=msg, usr=matches[3]}, matches[3])
           end
         end
 
@@ -973,7 +900,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            promote_admin({msg=msg, usr=matches[3]}, matches[3])
           end
         end
 
@@ -983,7 +910,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            demote_admin({msg=msg, usr=matches[3]}, matches[3])
           end
         end
       end
@@ -1015,7 +942,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            promote_owner({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
 
@@ -1025,7 +952,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            demote_owner({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
 
@@ -1067,7 +994,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            global_ban_user({msg=msg, usr=matches[3]}, matches[3])
           end
         end
 
@@ -1077,7 +1004,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            global_unban_user({msg=msg, usr=matches[3]}, matches[3])
           end
         end
 
@@ -1147,7 +1074,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3] and matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            whitelisting({msg=msg, usr=matches[3]}, matches[3])
           end
         end
 
@@ -1157,7 +1084,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            unwhitelisting({msg=msg, usr=matches[3]}, matches[3])
           end
         end
 
@@ -1380,7 +1307,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            kick_user(msg, gid, matches[3])
           end
         end
         if matches[1] == 'ban' then
@@ -1389,7 +1316,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3] and matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            ban_user({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
 
@@ -1420,7 +1347,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            unban_user({msg=msg, matches=matches[3]}, gid, matches[3])
           end
         end
 
@@ -1430,7 +1357,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            promote({msg=msg, matches=matches[3]}, gid, matches[3])
           end
         end
         if matches[1] == 'demote' or matches[1] == 'demod' then
@@ -1439,7 +1366,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
+            demote({msg=msg, matches=matches[3]}, gid, matches[3])
           end
         end
         if matches[1] == 'modlist' then
@@ -1709,282 +1636,44 @@ do
     },
     usage = {
       sudo = {
-        '<code>!autoleave enable</code>',
-        'Enable autoleave. Bot will exit from unmanaged groups.',
-        '<code>!autoleave disable</code>',
-        'Disable autoleave.',
-        '<code>!leave</code>',
-        'Exit from this group.',
-        '<code>!leaveall</code>',
-        'Exit from all unmanaged groups.',
-        '<code>!visudo</code>',
-        '<code>!sudo</code>',
-        'If typed when replying, promote replied user as sudoer.',
-        '<code>!visudo [user_id]</code>',
-        '<code>!sudo [user_id]</code>',
-        'Promote user_id as sudoer.',
-        '<code>!visudo @[username]</code>',
-        '<code>!sudo @[username]</code>',
-        'Promote username as sudoer.',
-        '<code>!desudo</code>',
-        'If typed when replying, demote replied user from sudoer.',
-        '<code>!desudo [user_id]</code>',
-        'Demote user_id from sudoer.',
-        '<code>!desudo @[username]</code>',
-        'Demote username from sudoer.',
-        '<code>!adminprom</code>',
-        '<code>!admin</code>',
-        'If typed when replying, promote replied user as admin.',
-        '<code>!adminprom [user_id]</code>',
-        '<code>!admin [user_id]</code>',
-        'Promote user_id as admin.',
-        '<code>!adminprom @[user_id] [chat_id]</code>',
-        '<code>!admin @[user_id] [chat_id]</code>',
-        'Promote @[user_id] as [chat_id] admin.',        
-        '<code>!adminprom @[username]</code>',
-        '<code>!admin @[username]</code>',
-        'Promote username as admin.',
-        '<code>!adminprom @[username] [chat_id]</code>',
-        '<code>!admin @[username] [chat_id]</code>',
-        'Promote @[username] as [chat_id] admin.',
-        '<code>!admindem</code>',
-        '<code>!deadmin</code>',
-        'If typed when replying, demote replied user from admin.',
-        '<code>!admindem [user_id]</code>',
-        '<code>!deadmin [user_id]</code>',
-        'Demote user_id from admin.',
-        '<code>!admindem @[username]</code>',
-        '<code>!deadmin @[username]</code>',
-        'Demote username from admin.',        
-        '<code>!admindem @[username] [chat_id]</code>',
-        '<code>!deadmin @[username] [chat_id]</code>',
-        'Demote @[username] from [chat_id] admin.',
-        '<code>!admindem [user_id] [chat_id]</code>',
-        '<code>!deadmin [user_id] [chat_id]</code>',
-        'Demote user_id from chat_id admin.',        
-        '<code>!sudolist</code>',
-        'List of sudoers',
+        '<a href="https://telegram.me/thefinemanual/6">Autoleave</a>',
+        '<a href="https://telegram.me/thefinemanual/7">Sudo</a>',
+        '<a href="https://telegram.me/thefinemanual/10">Administrator</a>',
       },
       admin = {
-        '<code>!mkgroup [group_name]</code>',
-        'Make/create a new group.',
-        '<code>!mksupergroup [group_name]</code>',
-        'Make/create a new supergroup.',
-        '<code>!invite [user_id] [chat_id]</code>',
-        'Invite <code>user_id</code> to <code>chat_id</code>.',
-        '<code>!invite [@username] [chat_id]</code>',
-        'Invite <code>username</code> to <code>chat_id</code>.',
-        '<code>!invite [print_name] [chat_id]</code>',
-        'Invite <code>print_name</code> to <code>chat_id</code>.',        
-        '<code>!superban</code>',
-        '<code>!hammer</code>',
-        '<code>!gban</code>',
-        'If type in reply, will ban user globally.',
-        '<code>!superban [user_id]/@[username]</code>',
-        '<code>!hammer [user_id]/@[username]</code>',
-        '<code>!gban [user_id]/@[username]</code>',
-        'Kick user_id/username from all chat and kicks it if joins again',
-        '<code>!superunban</code>',
-        '<code>!unhammer</code>',
-        '<code>!gunban</code>',
-        'If type in reply, will unban user globally.',
-        '<code>!superunban [user_id]/@[username]</code>',
-        '<code>!unhammer [user_id]/@[username]</code>',
-        '<code>!gunban [user_id]/@[username]</code>',
-        'Unban user_id/username globally.',
-        '<code>!addgroup</code>',
-        '<code>!gadd</code>',
-        'Add group to administration list.',
-        '<code>!channel enable</code>',
-        'enable current channel',
-        '<code>!channel disable</code>',
-        'disable current channel',
-        '<code>!remgroup</code>',
-        '<code>!grem</code>',
-        '<code>!gremove</code>',
-        'Remove group from administration list.',
-        '<code>!remgroup [chat_id]</code>',
-        '<code>!grem [chat_id]</code>',
-        '<code>!gremove [chat_id]</code>',
-        'Remove [chat_id] from administration list.',
-        '<code>!whitelist [enable]/[disable]</code>',
-        'Enable or disable whitelist mode',
-        '<code>!whitelist</code>',
-        'If type in reply, allow user to use the bot when whitelist mode is enabled',
-        '<code>!unwhitelist</code>',
-        'If type in reply, remove user from whitelist',
-        '<code>!whitelist chat</code>',
-        'Allow everybody on current chat to use the bot when whitelist mode is enabled',
-        '<code>!unwhitelist chat</code>',
-        'Remove chat from whitelist',
-        '<code>!whitelist [user_id]/@[username]</code>',
-        'Allow user to use the bot when whitelist mode is enabled',
-        '<code>!unwhitelist [user_id]/@[username]</code>',
-        'Remove user from whitelist',
-        '<code>!adminlist</code>',
-        'List of administrators',
-        '<code>!setowner</code>',
-        '<code>!gov</code>',
-        'Set owner for this chat',
-        '<code>!setowner @[username] [chat_id]</code>',
-        '<code>!gov @[username] [chat_id]</code>',
-        'Promote @[username] as chat_id owner',
-        '<code>!setowner [user_id] [chat_id]</code>',
-        '<code>!gov [user_id] [chat_id]</code>',
-        'Promote user_id as chat_id owner',        
-        '<code>!remowner</code>',
-        '<code>!degov</code>',
-        'Remove owner for this chat',
-        '<code>!remowner @[username] [chat_id]</code>',
-        '<code>!degov @[username] [chat_id]</code>',
-        'Remove @[username] from chat_id owner',
-        '<code>!remowner [user_id] [chat_id]</code>',
-        '<code>!degov [user_id] [chat_id]</code>',
-        'Remove user_id from chat_id owner',
-        '<code>!ownerlist</code>',
-        'List of owners',
-        '<code>!ownerlist [chat_id]</code>',
-        'List of chat_id owners',
+        '<a href="https://telegram.me/thefinemanual/11">Create Group</a>',
+        '<a href="https://telegram.me/thefinemanual/12">Invitation</a>',
+        '<a href="https://telegram.me/thefinemanual/13">Global Ban</a>',
+        '<a href="https://telegram.me/thefinemanual/14">Add and Remove Group</a>',
+        '<a href="https://telegram.me/thefinemanual/15">Channel</a>',
+        '<a href="https://telegram.me/thefinemanual/16">Whitelist</a>',
+        '<a href="https://telegram.me/thefinemanual/17">Administrator List</a>',
+        '<a href="https://telegram.me/thefinemanual/18">Group Owner</a>',
       },
       owner = {
-        '<code>!group lock bot</code>',
-        'Disallow API bots.',
-        '<code>!group unlock bot</code>',
-        'Allow API bots.',
-        '<code>!group lock member</code>',
-        'Lock group member.',
-        '<code>!group unlock member</code>',
-        'Unlock group member.',
-        '<code>!group lock name</code>',
-        'Lock group name.',
-        '<code>!group unlock name</code>',
-        'Unlock group name.',
-        '<code>!group lock photo</code>',
-        'Lock group photo.',
-        '<code>!group unlock photo</code>',
-        'Unlock group photo.',
-        '<code>!group settings</code>',
-        'Show group settings.',
-        '<code>!link set</code>',
-        'Generate/revoke invite link.',
-        '<code>!setabout [description]</code>',
-        'Set group description.',
-        '<code>!setname [new_name]</code>',
-        'Set group name.',
-        '<code>!setphoto</code>',
-        'Set group photo.',
-        '<code>!setrules [rules]</code>',
-        'Set group rules.',
-        '<code>!sticker warn</code>',
-        'Sticker restriction, sender will be warned for the first violation.',
-        '<code>!sticker kick</code>',
-        'Sticker restriction, sender will be kick.',
-        '<code>!sticker ok</code>',
-        'Disable sticker restriction.',
-        '<code>!setwelcome [rules]</code>',
-        'Set group welcome message.',
-        '<code>!welcome group</code>',
-        'Welcome message will shows in group.',
-        '<code>!welcome pm</code>',
-        'Welcome message will send to new member via PM.',
-        '<code>!welcome disable</code>',
-        'Disable welcome message.',
-        '<code>!promote</code>',
-        '<code>!mod</code>',
-        'If typed when replying, promote replied user as moderator',
-        '<code>!promote [user_id]</code>',
-        '<code>!mod [user_id]</code>',
-        'Promote user_id as moderator',
-        '<code>!promote @[username]</code>',
-        '<code>!mod @[username]</code>',
-        'Promote username as moderator',
-        '<code>!promote [user_id] [chat_id]</code>',
-        '<code>!mod [user_id] [chat_id]</code>',
-        'Promote user_id as chat_id moderator',
-        '<code>!promote @[username] [chat_id]</code>',
-        '<code>!mod @[username] [chat_id]</code>',
-        'Promote username as chat_id moderator',
-        '<code>!demote</code>',
-        '<code>!demod</code>',
-        'If typed when replying, demote replied user from moderator',
-        '<code>!demote [user_id]</code>',
-        '<code>!demod [user_id]</code>',
-        'Demote user_id from moderator',
-        '<code>!demote @[username]</code>',
-        '<code>!demod @[username]</code>',
-        'Demote username from moderator',
-        '<code>!demote [user_id] [chat_id]</code>',
-        '<code>!demod [user_id] [chat_id]</code>',
-        'Demote user_id from chat_id moderator',
-        '<code>!demote @[username] [chat_id]</code>',
-        '<code>!demod @[username] [chat_id]</code>',
-        'Demote username from chat_id moderator',
-        '<code>!antispam kick</code>',
-        'Enable flood and spam protection. Offender will be kicked.',
-        '<code>!antispam ban</code>',
-        'Enable flood and spam protection. Offender will be banned.',
-        '<code>!antispam disable</code>',
-        'Disable flood and spam protection',
-        '<code>!whitelist</code>',
-        'If type in reply, allow user to use the bot when whitelist mode is enabled',
-        '<code>!unwhitelist</code>',
-        'If type in reply, remove user from whitelist',        
-        '<code>!whitelist [user_id]</code>',
-        'Allow user_id to use the bot when whitelist mode is enabled',
-        '<code>!whitelist @[username]</code>',
-        'Allow @[username] to use the bot when whitelist mode is enabled',        
-        '<code>!whitelist [user_id] [chat_id]</code>',
-        'Allow user_id to use the bot in chat_id when whitelist mode is enabled',
-        '<code>!whitelist @[username] [chat_id]</code>',
-        'Allow @[username] to use the bot in chat_id when whitelist mode is enabled',        
-        '<code>!unwhitelist [user_id]</code>',
-        'Remove user_id from whitelist',
-        '<code>!unwhitelist @[username]</code>',
-        'Remove @[username] from whitelist',        
-        '<code>!unwhitelist [user_id] [chat_id]</code>',
-        'Remove user_id from chat_id whitelist',
-        '<code>!unwhitelist @[username] [chat_id]</code>',
-        'Remove @[username] from chat_id whitelist',
+        '<a href="https://telegram.me/thefinemanual/20">Group Settings</a>',
+        '<a href="https://telegram.me/thefinemanual/21">Whitelist</a>',
+        '<a href="https://telegram.me/thefinemanual/22">Anti Spam</a>',
+        '<a href="https://telegram.me/thefinemanual/23">Group Promotion</a>',
+        '<a href="https://telegram.me/thefinemanual/24">Invitation</a>',
+        '<a href="https://telegram.me/thefinemanual/25">Kick</a>',
+        '<a href="https://telegram.me/thefinemanual/26">Ban</a>',
+        '<a href="https://telegram.me/thefinemanual/27">Moderators List</a>',
       },
       moderator = {
-        '<code>!invite</code>',
-        'If type by replying, bot will then inviting the replied user.',
-        '<code>!invite [user_id]</code>',
-        'Invite by their <code>user_id</code>.',
-        '<code>!invite [@username]</code>',
-        'Invite by their <code>@username</code>.',
-        '<code>!invite [print_name]</code>',
-        'Invite by their <code>print_name</code>.',
-        '<code>!ban </code>',
-        'If type in reply, will ban user from chat group.',
-        '<code>!ban [user_id]/@[username] </code>',
-        'Kick user from chat and kicks it if joins chat again',
-        '<code>!banlist </code>',
-        'List users banned from chat group.',
-        '<code>!unban</code>',
-        'If type in reply, will unban user from chat group.',
-        '<code>!unban [user_id]/@[username]</code>',
-        'Unban user',
-        '<code>!kick</code>',
-        'If type in reply, will kick user from chat group.',
-        '<code>!kick [user_id]</code>',
-        '<code>!kick @[username]</code>',
-        'Kick user from chat group',
-        '<code>!kick @[username] [chat_id]</code>',
-        'Kick @[username] from [chat_id] group',
-        '<code>!kick @[user_id] [chat_id]</code>',
-        'Kick [user_id] from [chat_id] group',
-        '<code>!modlist</code>',
-        'List of moderators',
+        '<a href="https://telegram.me/thefinemanual/24">Invitation</a>',
+        '<a href="https://telegram.me/thefinemanual/26">Ban</a>',
+        '<a href="https://telegram.me/thefinemanual/25">Kick</a>',
+        '<a href="https://telegram.me/thefinemanual/27">Moderators List</a>'
       },
       user = {
-        '<code>!about</code>',
+        '<code> !about</code>',
         'Read group description',
-        '<code>!rules</code>',
+        '<code> !rules</code>',
         'Read group rules',
-        '<code>!link get</code>',
+        '<code> !link get</code>',
         'Print invite link',
-        '<code>!kickme</code>',
+        '<code> !kickme</code>',
         'Kick yourself out of this group.'
       },
     },
