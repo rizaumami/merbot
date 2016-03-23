@@ -38,7 +38,6 @@ function on_binlog_replay_end()
   -- load plugins
   plugins = {}
   load_plugins()
-  fill_bot_api_info()
 end
 
 function msg_valid(msg)
@@ -179,6 +178,24 @@ function save_config()
   print ('saved config into ./data/config.lua')
 end
 
+function fill_bot_api_info()
+  if next(_config.bot_api) == nil or _config.bot_api.key == '' then
+    print('\nSome functions and plugins using bot API as sender.\n'
+        ..'Please provide bots API token and username to ensure it\'s works as intended.\n'
+        ..'You can ENTER to skip and then fill the required info into data/config.lua.\n')
+    io.write('Please input your bot API key (token): ')
+    local bot_api_key=io.read()
+
+    io.write('\nPlease input your bot API @username: ')
+    local bot_api_uname=io.read()
+    local bot_api_uname = bot_api_uname:gsub('@', '')
+    _config.bot_api = {key = bot_api_key, uname = bot_api_uname}
+    save_config()
+    print('\nYour bots API token is: '..bot_api_key..'\n'
+        ..'Your bots API @username is : @'..bot_api_uname)
+  end
+end
+
 -- Returns the config from config.lua file.
 -- If file doesn't exist, create it.
 function load_config()
@@ -187,6 +204,7 @@ function load_config()
   if not f then
     print ('Created new config file: data/config.lua')
     create_config()
+    fill_bot_api_info()
   else
     f:close()
   end
@@ -195,6 +213,25 @@ function load_config()
     print('Allowed user: '..user)
   end
   return config
+end
+
+function on_our_id (id)
+  our_id = id
+end
+
+function on_user_update (user, what)
+  --vardump (user)
+end
+
+function on_chat_update (chat, what)
+  --vardump(chat)
+end
+
+function on_secret_chat_update (schat, what)
+  --vardump(schat)
+end
+
+function on_get_difference_end ()
 end
 
 -- Create a basic config.lua file and saves it.
@@ -222,43 +259,6 @@ function create_config()
   }
   serialize_to_file(config, './data/config.lua')
   print ('saved config into ./data/config.lua')
-end
-
-function fill_bot_api_info()
-  if next(_config.bot_api) == nil or _config.bot_api.key == '' then
-    print('\nSome functions and plugins using bot API as sender.\n'
-        ..'Please provide bots API token and username to ensure it\'s works as intended.\n'
-        ..'You can ENTER to skip and then fill the required info into data/config.lua.\n')
-    io.write('Please input your bot API key (token): ')
-    local bot_api_key=io.read()
-
-    io.write('\nPlease input your bot API @username: ')
-    local bot_api_uname=io.read()
-    local bot_api_uname = bot_api_uname:gsub('@', '')
-    _config.bot_api = {key = bot_api_key, uname = bot_api_uname}
-    save_config()
-    print('\nYour bots API token is: '..bot_api_key..'\n'
-        ..'Your bots API @username is : @'..bot_api_uname)
-  end
-end
-
-function on_our_id (id)
-  our_id = id
-end
-
-function on_user_update (user, what)
-  --vardump (user)
-end
-
-function on_chat_update (chat, what)
-  --vardump(chat)
-end
-
-function on_secret_chat_update (schat, what)
-  --vardump(schat)
-end
-
-function on_get_difference_end ()
 end
 
 -- Enable plugins in config.json
@@ -293,24 +293,6 @@ function save_data(data, file)
   local serialized = serpent.block(data, {comment = false, name = '_'})
   file:write(serialized)
   file:close()
-end
-
-function load_json(filename)
-  local f = io.open(filename)
-  if not f then
-    return {}
-  end
-  local s = f:read('*all')
-  f:close()
-  local data = json:decode(s)
-  return data
-end
-
-function save_json(filename, data)
-  local s = json:encode(data)
-  local f = io.open(filename, 'w')
-  f:write(s)
-  f:close()
 end
 
 -- Call and postpone execution for cron plugins
