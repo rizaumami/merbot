@@ -336,19 +336,19 @@ do
           usr_in_lst = '@'..v.username or v.first_name
           is_group_member = true
           if cmd == 'promote' or cmd == 'mod' then
-            promote({msg=msg, usr=usr}, chat_id, v.peer_id)
+            promote({msg=msg, usr=usr_in_lst}, chat_id, v.peer_id)
           end
           if cmd == 'demote' or cmd == 'demod' then
-            demote({msg=msg, usr=usr}, chat_id, v.peer_id)
+            demote({msg=msg, usr=usr_in_lst}, chat_id, v.peer_id)
           end
           if cmd == 'kick' then
             kick_user(msg, chat_id, v.peer_id)
           end
           if cmd == 'whitelist' then
-            whitelisting({msg=msg, usr=usr}, chat_id, v.peer_id)
+            whitelisting({msg=msg, usr=usr_in_lst}, chat_id, v.peer_id)
           end
           if cmd == 'unwhitelist' then
-            unwhitelisting({msg=msg, usr=usr}, chat_id, v.peer_id)
+            unwhitelisting({msg=msg, usr=usr_in_lst}, chat_id, v.peer_id)
           end
         end
       end
@@ -495,7 +495,7 @@ do
         demote_owner({msg=msg, usr=usr}, gid, uid)
       end
       if cmd == 'promote' or cmd == 'mod' then
-        promote({msg=msg, usr=usr}, chat_id, uid)
+        promote({msg=msg, usr=usr}, gid, uid)
       end
       if cmd == 'demote' or cmd == 'demod' then
         demote({msg=msg, usr=usr}, gid, uid)
@@ -634,41 +634,41 @@ do
 
   local function pre_process(msg)
 
-    local user_id = msg.from.peer_id
-    local chat_id = msg.to.peer_id
+    local uid = msg.from.peer_id
+    local gid = msg.to.peer_id
     local receiver = get_receiver(msg)
 
     if msg.action then
-      if _config.administration[chat_id] then
-        local data = load_data(_config.administration[chat_id])
+      if _config.administration[gid] then
+        local data = load_data(_config.administration[gid])
         -- service message
         if msg.action.type == 'chat_add_user' or msg.action.type == 'chat_add_user_link' then
           if msg.action.link_issuer then
-            user_id = user_id
+            uid = uid
             new_member = (msg.from.first_name or '')..' '..(msg.from.last_name or '')
             uname = '@'..msg.from.username or ''
           else
-            user_id = msg.action.user.peer_id
+            uid = msg.action.user.peer_id
             new_member = (msg.action.user.first_name or '')..' '..(msg.action.user.last_name or '')
             uname = '@'..msg.action.user.username or ''
           end
           local username = uname..' AKA ' or ''
-          if is_globally_banned(user_id) or is_banned(chat_id, user_id) then
-            kick_user(msg, chat_id, user_id)
+          if is_globally_banned(uid) or is_banned(gid, uid) then
+            kick_user(msg, gid, uid)
           end
-          if user_id ~= 0 and not is_mod(msg, chat_id, user_id) then
+          if uid ~= 0 and not is_mod(msg, gid, uid) then
             if data.lock.member == 'yes' then
-              kick_user(msg, chat_id, user_id)
+              kick_user(msg, gid, uid)
             end
             -- is it an API bot?
             if msg.flags == 8450 and data.lock.bot == 'yes' then
-              kick_user(msg, chat_id, user_id)
+              kick_user(msg, gid, uid)
             end
           end
           -- welcome message
           if data.welcome.to ~= 'no' then
             -- do not greet (globally) banned users.
-            if is_globally_banned(user_id) or is_banned(chat_id, user_id) then
+            if is_globally_banned(uid) or is_banned(gid, uid) then
               return nil
             end
             -- do not greet when group members are locked
@@ -686,12 +686,12 @@ do
             if data.welcome.msg ~= '' then
               welcomes = data.welcome.msg..'\n'
             else
-              welcomes = 'Welcome '..username..'<b>'..new_member..'</b> <code>['..user_id..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
+              welcomes = 'Welcome '..username..'<b>'..new_member..'</b> <code>['..uid..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
             end
             if data.welcome.to == 'group' then
               receiver_api = get_receiver_api(msg)
             elseif data.welcome.to == 'private' then
-              receiver_api = 'user#id'..user_id
+              receiver_api = 'user#id'..uid
             end
             send_api_msg(msg, receiver_api, welcomes..about..rules..'\n', true, 'html')
           end
@@ -711,7 +711,7 @@ do
           end
         end
         -- if group photo is changed
-        if msg.action.type == 'chat_change_photo' and user_id ~= 0 then
+        if msg.action.type == 'chat_change_photo' and uid ~= 0 then
           if data.lock.photo == 'yes' then
             chat_set_photo (receiver, data.set.photo, ok_cb, false)
           elseif data.lock.photo == 'no' then
@@ -740,8 +740,8 @@ do
         end
       end
       -- autoleave
-      if msg.action.type == 'chat_add_user' and not is_sudo(user_id) then
-        if _config.autoleave == true and not _config.administration[chat_id] then
+      if msg.action.type == 'chat_add_user' and not is_sudo(uid) then
+        if _config.autoleave == true and not _config.administration[gid] then
           if msg.to.peer_type == 'channel' then
             channel_leave(receiver, ok_cb, false)
           else
@@ -756,9 +756,9 @@ do
         local uid = new_group_table[group].uid
         local g_type = new_group_table[group].gtype
         local r_name = new_group_table[group].uname
-        add_group(msg, chat_id, uid)
+        add_group(msg, gid, uid)
         if g_type then
-          chat_upgrade('chat#id'..chat_id, ok_cb, false)
+          chat_upgrade('chat#id'..gid, ok_cb, false)
         else
           new_group_table[group] = nil
         end
@@ -776,7 +776,7 @@ do
     end
 
     -- anti spam
-    if msg.from.peer_type == 'user' and msg.text and not is_mod(msg, chat_id, user_id) then
+    if msg.from.peer_type == 'user' and msg.text and not is_mod(msg, gid, uid) then
       local _nl, ctrl_chars = msg.text:gsub('%c', '')
       -- if string length more than 2048 or control characters is more than 50
       if string.len(msg.text) > 2048 or ctrl_chars > 50 then
@@ -785,55 +785,55 @@ do
         -- if non characters is bigger than characters
         if non_chars > chars then
           local username = '@'..msg.from.username or msg.from.first_name
-          trigger_anti_spam({msg=msg, stype='spamming', usr=username}, chat_id, user_id)
+          trigger_anti_spam({msg=msg, stype='spamming', usr=username}, gid, uid)
         end
       end
     end
 
     -- anti flood
-    local post_count = 'floodc:'..user_id..':'..chat_id
+    local post_count = 'floodc:'..uid..':'..gid
     redis:incr(post_count)
-    if msg.from.peer_type == 'user' and not is_mod(msg, chat_id, user_id) then
-      local post_count = 'user:'..user_id..':floodc'
+    if msg.from.peer_type == 'user' and not is_mod(msg, gid, uid) then
+      local post_count = 'user:'..uid..':floodc'
       local msgs = tonumber(redis:get(post_count) or 0)
       if msgs > NUM_MSG_MAX then
         local username = '@'..msg.from.username or msg.from.first_name
-        trigger_anti_spam({msg=msg, stype='flooding', usr=username}, chat_id, user_id)
+        trigger_anti_spam({msg=msg, stype='flooding', usr=username}, gid, uid)
       end
       redis:setex(post_count, TIME_CHECK, msgs+1)
     end
 
     -- banned user talking
     if is_chat_msg(msg) then
-      if is_globally_banned(user_id) then
+      if is_globally_banned(uid) then
         print('>>> SuperBanned user talking!')
-        kick_user(msg, chat_id, user_id)
+        kick_user(msg, gid, uid)
         msg.text = ''
-      elseif is_banned(chat_id, user_id) then
+      elseif is_banned(gid, uid) then
         print('>>> Banned user talking!')
-        kick_user(msg, chat_id, user_id)
+        kick_user(msg, gid, uid)
         msg.text = ''
       end
     end
 
     -- whitelist
     -- Allow all sudo users even if whitelist is allowed
-    if redis:get('whitelist:enabled') and not is_sudo(user_id) then
+    if redis:get('whitelist:enabled') and not is_sudo(uid) then
       print('>>> Whitelist enabled and not sudo')
       -- Check if user or chat is whitelisted
-      local allowed = redis:sismember('whitelist', user_id) or false
+      local allowed = redis:sismember('whitelist', uid) or false
       if not allowed then
-        print('>>> User '..user_id..' not whitelisted')
+        print('>>> User '..uid..' not whitelisted')
         if is_chat_msg(msg) then
-          allowed = redis:sismember('whitelist', chat_id) or false
+          allowed = redis:sismember('whitelist', gid) or false
           if not allowed then
-            print('>>> Chat '..chat_id..' not whitelisted')
+            print('>>> Chat '..gid..' not whitelisted')
           else
-            print('>>> Chat '..chat_id..' whitelisted :)')
+            print('>>> Chat '..gid..' whitelisted :)')
           end
         end
       else
-        print('>>> User '..user_id..' allowed :)')
+        print('>>> User '..uid..' allowed :)')
       end
 
       if not allowed then
@@ -841,23 +841,23 @@ do
       end
     end
 
-    if msg.media and _config.administration[chat_id] then
-      local data = load_data(_config.administration[chat_id])
+    if msg.media and _config.administration[gid] then
+      local data = load_data(_config.administration[gid])
       if not msg.text then
         msg.text = '['..msg.media.type..']'
       end
-      if is_mod(msg, chat_id, user_id) and msg.media.type == 'photo' then
+      if is_mod(msg, gid, uid) and msg.media.type == 'photo' then
         if data.set.photo == 'waiting' then
           load_photo(msg.id, set_group_photo, {msg=msg, data=data})
         end
       end
       -- if sticker is sent
       if msg.media.caption == 'sticker.webp' then
-        local sticker_hash = 'mer_sticker:'..chat_id..':'..user_id
+        local sticker_hash = 'mer_sticker:'..gid..':'..uid
         local is_sticker_offender = redis:get(sticker_hash)
         if data.sticker == 'warn' then
           if is_sticker_offender then
-            kick_user(msg, chat_id, user_id)
+            kick_user(msg, gid, uid)
             redis:del(sticker_hash)
           end
           if not is_sticker_offender then
@@ -866,7 +866,7 @@ do
           end
         end
         if data.sticker == 'kick' then
-          kick_user(msg, chat_id, user_id)
+          kick_user(msg, gid, uid)
           reply_msg(msg.id, 'DO NOT send sticker into this group!', ok_cb, true)
         end
       end
@@ -879,13 +879,13 @@ do
 
   local function run(msg, matches)
 
-    local chat_id = msg.to.peer_id
-    local user_id = msg.from.peer_id
-    local chat_db = 'data/'..chat_id..'/'..chat_id..'.lua'
+    local gid = msg.to.peer_id
+    local uid = msg.from.peer_id
+    local chat_db = 'data/'..gid..'/'..gid..'.lua'
     local receiver = get_receiver(msg)
 
     if is_chat_msg(msg) then
-      if is_sudo(user_id) then
+      if is_sudo(uid) then
         -- add a user to sudoer
         if matches[1] == 'visudo' then
           if matches[2] == 'add' then
@@ -912,7 +912,7 @@ do
         end
         -- add a group to be moderated
         if matches[1] == 'addgroup' or matches[1] == 'gadd' then
-          add_group(msg, chat_id, user_id)
+          add_group(msg, gid, uid)
           resolve_username(_config.bot_api.uname, resolve_username_cb, {msg=msg, matches=matches})
         end
 
@@ -940,7 +940,7 @@ do
 
         -- remove group from administration
         if matches[1] == 'remgroup' or matches[1] == 'grem' or matches[1] == 'gremove' then
-          remove_group(msg, chat_id)
+          remove_group(msg, gid)
         end
 
         if matches[1] == 'visudo' or matches[1] == 'sudo' then
@@ -949,7 +949,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
@@ -959,7 +959,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
@@ -973,7 +973,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
@@ -983,12 +983,12 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
       end
 
-      if is_admin(user_id) then
+      if is_admin(uid) then
         --[[
         TODO Not yet tested, because unfortunatelly, Telegram restrict how
         much you can create create a group in a period of time.
@@ -997,14 +997,14 @@ do
         --]]
 --        if matches[1] == 'mksupergroup' and matches[2] then
 --          local uname = '@'..msg.from.username or msg.from.first_name
---          new_group_table[matches[2]] = {uid = tostring(user_id), title = matches[2], uname = uname, gtype = 'supergroup'}
+--          new_group_table[matches[2]] = {uid = tostring(uid), title = matches[2], uname = uname, gtype = 'supergroup'}
 --          create_group_chat(msg.from.print_name, matches[2], ok_cb, false)
 --          reply_msg(msg.id, 'Supergroup '..matches[2]..' has been created.', ok_cb, true)
 --        end
 --
 --        if matches[1] == 'mkgroup' and matches[2] then
 --          local uname = '@'..msg.from.username or msg.from.first_name
---          new_group_table[user_id] = {uid = user_id, title = matches[2], uname = uname}
+--          new_group_table[uid] = {uid = uid, title = matches[2], uname = uname}
 --          create_group_chat(msg.from.print_name, matches[2], ok_cb, false)
 --          reply_msg(msg.id, 'Group '..matches[2]..' has been created.', ok_cb, true)
 --        end
@@ -1015,7 +1015,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
@@ -1025,16 +1025,16 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
         if matches[1] == 'adminlist' then
-          get_adminlist(msg, chat_id)
+          get_adminlist(msg, gid)
         end
 
         if matches[1] == 'ownerlist' then
-          get_ownerlist(msg, chat_id)
+          get_ownerlist(msg, gid)
         end
 
         if matches[1] == 'channel' then
@@ -1067,7 +1067,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
@@ -1077,7 +1077,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
@@ -1095,8 +1095,8 @@ do
             redis:del(hash)
             return "Whitelist cleared."
           elseif matches[2] == 'chat' then
-            redis:sadd('whitelist', chat_id)
-            reply_msg(msg.id, 'Chat '..chat_id..' whitelisted', ok_cb, true)
+            redis:sadd('whitelist', gid)
+            reply_msg(msg.id, 'Chat '..gid..' whitelisted', ok_cb, true)
           end
         end
 
@@ -1104,17 +1104,17 @@ do
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
           elseif matches[2] == 'chat' then
-            redis:srem('whitelist', chat_id)
-            reply_msg(msg.id, 'Chat '..chat_id..' removed from whitelist', ok_cb, true)
+            redis:srem('whitelist', gid)
+            reply_msg(msg.id, 'Chat '..gid..' removed from whitelist', ok_cb, true)
           end
         end
       end
 
-      if not _config.administration[chat_id] then return end
+      if not _config.administration[gid] then return end
 
-      local data = load_data(_config.administration[chat_id])
+      local data = load_data(_config.administration[gid])
 
-      if is_owner(msg, chat_id, user_id) then
+      if is_owner(msg, gid, uid) then
         if matches[1] == 'antispam' then
           if matches[2] == 'kick' then
             if data.antispam ~= 'kick' then
@@ -1147,7 +1147,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3] and matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
@@ -1157,19 +1157,19 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
         if matches[1] == 'setlink' or matches[1] == 'link set' then
-          set_group_link({msg=msg, gid=chat_id}, chat_db)
+          set_group_link({msg=msg, gid=gid}, chat_db)
         end
 
         if matches[1] == 'link revoke' then
           if data.link == '' then
             reply_msg(msg.id, 'This group don\'t have invite link', ok_cb, true)
           else
-            set_group_link({msg=msg, gid=chat_id}, chat_db, 'revoke')
+            set_group_link({msg=msg, gid=gid}, chat_db, 'revoke')
             reply_msg(msg.id, 'Invite link has been revoked', ok_cb, true)
           end
         end
@@ -1211,7 +1211,7 @@ do
             else
               data.sticker = 'ok'
               save_data(data, chat_db)
-              for k,sticker_hash in pairs(redis:keys('mer_sticker:'..chat_id..':*')) do
+              for k,sticker_hash in pairs(redis:keys('mer_sticker:'..gid..':*')) do
                 redis:del(sticker_hash)
               end
               reply_msg(msg.id, 'Sticker restriction has been disabled.\nPrevious infringements record has been cleared.', ok_cb, true)
@@ -1343,7 +1343,7 @@ do
         end
       end
 
-      if is_mod(msg, chat_id, user_id) then
+      if is_mod(msg, gid, uid) then
         -- view group settings
         if matches[1] == 'group' and matches[2] == 'settings' then
           local text = 'Settings for *'..msg.to.title..'*\n'
@@ -1363,7 +1363,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('%d+$') then
-            invite_user(msg, chat_id, matches[3])
+            invite_user(msg, gid, matches[3])
           else
             -- Invite user by their print name. Unreliable.
             if msg.to.peer_type == 'channel' then
@@ -1380,7 +1380,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
         if matches[1] == 'ban' then
@@ -1389,12 +1389,12 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3] and matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
         if matches[1] == 'banlist' then
-          local hash =  'banned:'..chat_id
+          local hash =  'banned:'..gid
           local list = redis:smembers(hash)
           local text = "Ban list!\n\n"
           for k,v in pairs(list) do
@@ -1420,7 +1420,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
 
@@ -1430,7 +1430,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
         if matches[1] == 'demote' or matches[1] == 'demod' then
@@ -1439,11 +1439,11 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            group_info_by_id({msg=msg, matches=matches}, chat_id, matches[3])
+            group_info_by_id({msg=msg, matches=matches}, gid, matches[3])
           end
         end
         if matches[1] == 'modlist' then
-          if not _config.administration[chat_id] then
+          if not _config.administration[gid] then
             reply_msg(msg.id, 'I do not administrate this group.', ok_cb, true)
             return
           end
@@ -1465,7 +1465,7 @@ do
         if msg.to.peer_type == 'channel' then
           reply_msg(msg.id, 'Leave this group manually or you will be unable to rejoin.', ok_cb, true)
         else
-          kick_user(msg, chat_id, user_id)
+          kick_user(msg, gid, uid)
         end
       end
 
@@ -1526,10 +1526,10 @@ do
 
       local usr = '@'..msg.from.username or msg.from.first_name
 
-      if is_sudo(user_id) then
+      if is_sudo(uid) then
         --TODO update_members_list an set_group_link not working in private message
 --        if matches[1] == 'addgroup' or matches[1] == 'gadd' then
---          add_group(msg, matches[2], user_id)
+--          add_group(msg, matches[2], uid)
 --        end
 
         if matches[1] == 'remgroup' or matches[1] == 'grem' or matches[1] == 'gremove' then
@@ -1553,7 +1553,7 @@ do
         end
       end
 
-      if is_admin(user_id) then
+      if is_admin(uid) then
         if matches[1] == 'setowner' or matches[1] == 'gov' then
           if matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
@@ -1671,40 +1671,40 @@ do
       '^!(whitelist) (chat) (%d+)$',
       '^!(unwhitelist) (chat) (%d+)$',
       '^!(superbanlist)$', '^!(gbanlist)$', '^!(hammerlist)$',
-      '^!(whitelist)$', '^!(whitelist) (@)(%a+)$', '^!(whitelist)(%s)(%d+)$',
-      '^!(unwhitelist)$', '^!(unwhitelist) (%a+)$', '^!(unwhitelist) (@)(%a+)$', '^!(unwhitelist)(%s)(%d+)$',
+      '^!(whitelist)$', '^!(whitelist) (@)(%g+)$', '^!(whitelist)(%s)(%d+)$',
+      '^!(unwhitelist)$', '^!(unwhitelist) (%a+)$', '^!(unwhitelist) (@)(%g+)$', '^!(unwhitelist)(%s)(%d+)$',
       '^!(addgroup)$', '^!(gadd)$', '^!(addgroup) (%d+)$', '^!(gadd) (%d+)$',
-      '^!(visudo)$', '^!(visudo) (@)(%a+)$', '^!(visudo)(%s)(%d+)$', '^!(visudo) (@)(%a+) (%d+)$', '^!(visudo)(%s)(%d+) (%d+)$',
-      '^!(sudo)$', '^!(sudo) (@)(%a+)$', '^!(sudo)(%s)(%d+)$', '^!(sudo) (@)(%a+) (%d+)$', '^!(sudo)(%s)(%d+) (%d+)$',
-      '^!(desudo)$', '^!(desudo) (@)(%a+)$', '^!(desudo)(%s)(%d+)$', '^!(desudo) (@)(%a+) (%d+)$', '^!(desudo)(%s)(%d+) (%d+)$',
-      '^!(admin)$', '^!(admin) (@)(%a+)$', '^!(admin)(%s)(%d+)$', '^!(admin) (@)(%a+) (%d+)$', '^!(admin)(%s)(%d+) (%d+)$',
-      '^!(adminprom)$', '^!(adminprom) (@)(%a+)$', '^!(adminprom)(%s)(%d+)$', '^!(adminprom) (@)(%a+) (%d+)$', '^!(adminprom)(%s)(%d+) (%d+)$',
-      '^!(ban)$', '^!(ban) (@)(%a+)$', '^!(ban)(%s)(%d+)$', '^!(ban) (%w+)(%s)(%d+)$',
-      '^!(deadmin)$', '^!(deadmin) (@)(%a+)$', '^!(deadmin)(%s)(%d+)$', '^!(deadmin) (@)(%a+) (%d+)$', '^!(deadmin)(%s)(%d+) (%d+)$',
-      '^!(admindem)$', '^!(admindem) (@)(%a+)$', '^!(admindem)(%s)(%d+)$', '^!(admindem) (@)(%a+) (%d+)$', '^!(admindem)(%s)(%d+) (%d+)$',
-      '^!(demote)$', '^!(demote) (@)(%a+)$', '^!(demote)(%s)(%d+)$',
-      '^!(demod)$', '^!(demod) (@)(%a+)$', '^!(demod)(%s)(%d+)$',
+      '^!(visudo)$', '^!(visudo) (@)(%g+)$', '^!(visudo)(%s)(%d+)$', '^!(visudo) (@)(%a+) (%d+)$', '^!(visudo)(%s)(%d+) (%d+)$',
+      '^!(sudo)$', '^!(sudo) (@)(%g+)$', '^!(sudo)(%s)(%d+)$', '^!(sudo) (@)(%a+) (%d+)$', '^!(sudo)(%s)(%d+) (%d+)$',
+      '^!(desudo)$', '^!(desudo) (@)(%g+)$', '^!(desudo)(%s)(%d+)$', '^!(desudo) (@)(%a+) (%d+)$', '^!(desudo)(%s)(%d+) (%d+)$',
+      '^!(admin)$', '^!(admin) (@)(%g+)$', '^!(admin)(%s)(%d+)$', '^!(admin) (@)(%a+) (%d+)$', '^!(admin)(%s)(%d+) (%d+)$',
+      '^!(adminprom)$', '^!(adminprom) (@)(%g+)$', '^!(adminprom)(%s)(%d+)$', '^!(adminprom) (@)(%a+) (%d+)$', '^!(adminprom)(%s)(%d+) (%d+)$',
+      '^!(ban)$', '^!(ban) (@)(%g+)$', '^!(ban)(%s)(%d+)$', '^!(ban) (%w+)(%s)(%d+)$',
+      '^!(deadmin)$', '^!(deadmin) (@)(%g+)$', '^!(deadmin)(%s)(%d+)$', '^!(deadmin) (@)(%a+) (%d+)$', '^!(deadmin)(%s)(%d+) (%d+)$',
+      '^!(admindem)$', '^!(admindem) (@)(%g+)$', '^!(admindem)(%s)(%d+)$', '^!(admindem) (@)(%a+) (%d+)$', '^!(admindem)(%s)(%d+) (%d+)$',
+      '^!(demote)$', '^!(demote) (@)(%g+)$', '^!(demote)(%s)(%d+)$',
+      '^!(demod)$', '^!(demod) (@)(%g+)$', '^!(demod)(%s)(%d+)$',
       '^!(grem)$', '^!(grem) (%d+)$', '^!(gremove)$', '^!(gremove) (%d+)$', '^!(remgroup)$', '^!(remgroup) (%d+)$',
       '^!(group) (lock) (%a+)$', '^!(gp) (lock) (%a+)$',
       '^!(group) (settings)$', '^!(gp) (settings)$',
       '^!(group) (unlock) (%a+)$', '^!(gp) (unlock) (%a+)$',
-      '^!(invite)$', '^!(invite) (@)(%a+)$', '^!(invite)(%s)(%g+)$',
-      '^!(kick)$', '^!(kick) (@)(%a+)$', '^!(kick)(%s)(%d+)$', '^!(kick) (%d+) (%d+)$', '^!(kick) (@)(%a+) (%d+)$', '^!(kick)(%s)(%d+) (%d+)$',
+      '^!(invite)$', '^!(invite) (@)(%g+)$', '^!(invite)(%s)(%g+)$',
+      '^!(kick)$', '^!(kick) (@)(%g+)$', '^!(kick)(%s)(%d+)$', '^!(kick) (%d+) (%d+)$', '^!(kick) (@)(%a+) (%d+)$', '^!(kick)(%s)(%d+) (%d+)$',
       '^!(link)$', '^!(link get)$', '^!(getlink)$',
       '^!(link set)$', '^!(setlink)$',
-      '^!(setowner)$', '^!(setowner) (@)(%a+)$', '^!(setowner)(%s)(%d+)$', '^!(setowner) (@)(%a+) (%d+)$', '^!(setowner)(%s)(%d+) (%d+)$',
-      '^!(gov)$', '^!(gov) (@)(%a+)$', '^!(gov)(%s)(%d+)$', '^!(gov) (@)(%a+) (%d+)$', '^!(gov)(%s)(%d+) (%d+)$',
-      '^!(degov)$', '^!(degov) (@)(%a+)$', '^!(degov)(%s)(%d+)$', '^!(degov) (@)(%a+) (%d+)$', '^!(degov)(%s)(%d+) (%d+)$',
-      '^!(remowner)$', '^!(remowner) (@)(%a+)$', '^!(remowner)(%s)(%d+)$', '^!(remowner) (@)(%a+) (%d+)$', '^!(remowner)(%s)(%d+) (%d+)$',
-      '^!(mod)$', '^!(mod) (@)(%a+)$', '^!(mod)(%s)(%d+)$', '^!(mod) (@)(%a+) (%d+)$', '^!(mod)(%s)(%d+) (%d+)$',
-      '^!(promote)$', '^!(promote) (@)(%a+)$', '^!(promote)(%s)(%d+)$', '^!(promote) (@)(%a+) (%d+)$', '^!(promote)(%s)(%d+) (%d+)$',
-      '^!(superban)$', '^!(superban) (@)(%a+)$', '^!(superban)(%s)(%d+)$', '^!(superban) (@)(%a+) (%d+)$', '^!(superban)(%s)(%d+) (%d+)$',
-      '^!(hammer)$', '^!(hammer) (@)(%a+)$', '^!(hammer)(%s)(%d+)$', '^!(hammer) (@)(%a+) (%d+)$', '^!(hammer)(%s)(%d+) (%d+)$',
-      '^!(gban)$', '^!(gban) (@)(%a+)$', '^!(gban)(%s)(%d+)$', '^!(gban)(%s)(%d+) (%d+)$', '^!(gban) (@)(%a+) (%d+)$',
-      '^!(superunban)$', '^!(superunban) (@)(%a+)$', '^!(superunban)(%s)(%d+)$', '^!(superunban) (@)(%a+) (%d+)$', '^!(superunban)(%s)(%d+) (%d+)$',
-      '^!(unhammer)$', '^!(unhammer) (@)(%a+)$', '^!(unhammer)(%s)(%d+)$', '^!(unhammer) (@)(%a+) (%d+)$', '^!(unhammer)(%s)(%d+) (%d+)$',
-      '^!(gunban)$', '^!(gunban) (@)(%a+)$', '^!(gunban)(%s)(%d+)$', '^!(gunban) (@)(%a+) (%d+)$', '^!(gunban)(%s)(%d+) (%d+)$',
-      '^!(unban)$', '^!(unban) (@)(%a+)$', '^!(unban)(%s)(%d+)$', '^!(unban) (%w+) (%d+)$',
+      '^!(setowner)$', '^!(setowner) (@)(%g+)$', '^!(setowner)(%s)(%d+)$', '^!(setowner) (@)(%a+) (%d+)$', '^!(setowner)(%s)(%d+) (%d+)$',
+      '^!(gov)$', '^!(gov) (@)(%g+)$', '^!(gov)(%s)(%d+)$', '^!(gov) (@)(%a+) (%d+)$', '^!(gov)(%s)(%d+) (%d+)$',
+      '^!(degov)$', '^!(degov) (@)(%g+)$', '^!(degov)(%s)(%d+)$', '^!(degov) (@)(%a+) (%d+)$', '^!(degov)(%s)(%d+) (%d+)$',
+      '^!(remowner)$', '^!(remowner) (@)(%g+)$', '^!(remowner)(%s)(%d+)$', '^!(remowner) (@)(%a+) (%d+)$', '^!(remowner)(%s)(%d+) (%d+)$',
+      '^!(mod)$', '^!(mod) (@)(%g+)$', '^!(mod)(%s)(%d+)$', '^!(mod) (@)(%a+) (%d+)$', '^!(mod)(%s)(%d+) (%d+)$',
+      '^!(promote)$', '^!(promote) (@)(%g+)$', '^!(promote)(%s)(%d+)$', '^!(promote) (@)(%a+) (%d+)$', '^!(promote)(%s)(%d+) (%d+)$',
+      '^!(superban)$', '^!(superban) (@)(%g+)$', '^!(superban)(%s)(%d+)$', '^!(superban) (@)(%a+) (%d+)$', '^!(superban)(%s)(%d+) (%d+)$',
+      '^!(hammer)$', '^!(hammer) (@)(%g+)$', '^!(hammer)(%s)(%d+)$', '^!(hammer) (@)(%a+) (%d+)$', '^!(hammer)(%s)(%d+) (%d+)$',
+      '^!(gban)$', '^!(gban) (@)(%g+)$', '^!(gban)(%s)(%d+)$', '^!(gban)(%s)(%d+) (%d+)$', '^!(gban) (@)(%a+) (%d+)$',
+      '^!(superunban)$', '^!(superunban) (@)(%g+)$', '^!(superunban)(%s)(%d+)$', '^!(superunban) (@)(%a+) (%d+)$', '^!(superunban)(%s)(%d+) (%d+)$',
+      '^!(unhammer)$', '^!(unhammer) (@)(%g+)$', '^!(unhammer)(%s)(%d+)$', '^!(unhammer) (@)(%a+) (%d+)$', '^!(unhammer)(%s)(%d+) (%d+)$',
+      '^!(gunban)$', '^!(gunban) (@)(%g+)$', '^!(gunban)(%s)(%d+)$', '^!(gunban) (@)(%a+) (%d+)$', '^!(gunban)(%s)(%d+) (%d+)$',
+      '^!(unban)$', '^!(unban) (@)(%g+)$', '^!(unban)(%s)(%d+)$', '^!(unban) (%w+) (%d+)$',
       '%[(audio)%]',
       '%[(document)%]',
       '%[(photo)%]',
