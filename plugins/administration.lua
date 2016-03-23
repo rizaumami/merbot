@@ -60,7 +60,7 @@ do
     end
   end
 
-  local function get_members_list(extra, success, result)
+  local function update_members_list(extra, success, result)
     if extra.to.peer_type == 'channel' then
       chat_id = extra.to.peer_id
       member_list = result
@@ -123,7 +123,7 @@ do
     else
       local hash = 'banned:'..gid
       redis:sadd(hash, uid)
-      --kick_user(extra.msg, gid, uid)
+      kick_user(extra.msg, gid, uid)
       reply_msg(extra.msg.id, extra.usr..' has been banned.', ok_cb, true)
     end
   end
@@ -608,9 +608,9 @@ do
       create_group_data(msg, gid, user_id)
       set_group_link({msg=msg, gid=gid}, cfg, true)
       if msg.to.peer_type == 'channel' then
-        channel_get_users('channel#id'..gid, get_members_list, msg)
+        channel_get_users('channel#id'..gid, update_members_list, msg)
       else
-        chat_info('chat#id'..gid, get_members_list, msg)
+        chat_info('chat#id'..gid, update_members_list, msg)
       end
       load_group_photo(msg, gid)
       reply_msg(msg.id, 'I am now administrating '..group, ok_cb, true)
@@ -695,9 +695,12 @@ do
             end
             send_api_msg(msg, receiver_api, welcomes..about..rules..'\n', true, 'html')
           end
-          -- add user to members table
-          data.members[user_id] = uname or new_member
-          save_data(data, 'data/'..chat_id..'/'..chat_id..'.lua')
+          -- update members table
+          if msg.to.peer_type == 'channel' then
+            channel_get_users('channel#id'..gid, update_members_list, msg)
+          else
+            chat_info('chat#id'..gid, update_members_list, msg)
+          end
         end
         -- if group photo is deleted
         if msg.action.type == 'chat_delete_photo' then
@@ -725,12 +728,15 @@ do
           if data.lock.name == 'no' then
             return nil
           end
-          -- if user leave, remove from members table
-          if msg.action.type == 'chat_del_user' then
-            data.members[user_id] = nil
-            save_data(data, 'data/'..gid..'/'..gid..'.lua')
-            --return 'Bye '..new_member..'!'
+        end
+        -- if user leave, update members table
+        if msg.action.type == 'chat_del_user' then
+          if msg.to.peer_type == 'channel' then
+            channel_get_users('channel#id'..gid, update_members_list, msg)
+          else
+            chat_info('chat#id'..gid, update_members_list, msg)
           end
+          --return 'Bye '..new_member..'!'
         end
       end
       -- autoleave
@@ -1521,7 +1527,7 @@ do
       local usr = '@'..msg.from.username or msg.from.first_name
 
       if is_sudo(user_id) then
-        --TODO get_members_list an set_group_link not working in private message
+        --TODO update_members_list an set_group_link not working in private message
 --        if matches[1] == 'addgroup' or matches[1] == 'gadd' then
 --          add_group(msg, matches[2], user_id)
 --        end
