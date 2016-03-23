@@ -71,7 +71,7 @@ do
     local gid = tonumber(chat_id)
     local data = load_data(_config.administration[gid])
     for k,v in pairsByKeys(member_list) do
-      data.members[v.peer_id] = '@'..v.username or v.first_name
+      data.members[v.peer_id] = v.username or ''
     end
     save_data(data, 'data/'..gid..'/'..gid..'.lua')
   end
@@ -390,58 +390,58 @@ do
 
   -- [pro|de]mote|admin[prom|dem]|[global|un]ban|kick|[un]whitelist by reply
   local function action_by_reply(extra, success, result)
-    local chat_id = extra.to.peer_id
-    local user_id = result.from.peer_id
+    local gid = tonumber(extra.to.peer_id)
+    local uid = tonumber(result.from.peer_id)
     local usr = '@'..result.from.username or result.from.first_name
     local cmd = extra.text
     if is_chat_msg(extra) then
       if cmd == '!kick' then
-        kick_user(extra, chat_id, user_id)
+        kick_user(extra, gid, uid)
       end
       if cmd == '!visudo' or cmd == '!sudo' then
-        visudo({msg=extra, usr=usr}, user_id)
+        visudo({msg=extra, usr=usr}, uid)
       end
       if cmd == '!desudo' then
-        desudo({msg=extra, usr=usr}, user_id)
+        desudo({msg=extra, usr=usr}, uid)
       end
       if cmd == '!adminprom' or cmd == '!admin' then
-        promote_admin({msg=extra, usr=usr}, user_id)
+        promote_admin({msg=extra, usr=usr}, uid)
       end
       if cmd == '!admindem' or cmd == '!deadmin' then
-        demote_admin({msg=extra, usr=usr}, user_id)
+        demote_admin({msg=extra, usr=usr}, uid)
       end
       if cmd == '!setowner' or cmd == '!gov' then
-        promote_owner({msg=extra, usr=usr}, chat_id, user_id)
+        promote_owner({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!remowner' or cmd == '!degov' then
-        demote_owner({msg=extra, usr=usr}, chat_id, user_id)
+        demote_owner({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!promote' or cmd == '!mod' then
-        promote({msg=extra, usr=usr}, chat_id, user_id)
+        promote({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!demote' or cmd == '!demod' then
-        demote({msg=extra, usr=usr}, chat_id, user_id)
+        demote({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!invite' then
-        invite_user(extra, chat_id, user_id)
+        invite_user(extra, gid, uid)
       end
       if cmd == '!ban' then
-        ban_user({msg=extra, usr=usr}, chat_id, user_id)
+        ban_user({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!superban' or cmd == '!gban' or cmd == '!hammer' then
-        global_ban_user({msg=extra, usr=usr}, user_id)
+        global_ban_user({msg=extra, usr=usr}, uid)
       end
       if cmd == '!unban' then
-        unban_user({msg=extra, usr=usr}, chat_id, user_id)
+        unban_user({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!superunban' or cmd == '!gunban' or cmd == '!unhammer' then
-        global_unban_user({msg=extra, usr=usr}, user_id)
+        global_unban_user({msg=extra, usr=usr}, uid)
       end
       if cmd == '!whitelist' then
-        whitelisting({msg=extra, usr=usr}, chat_id, user_id)
+        whitelisting({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!unwhitelist' then
-        unwhitelisting({msg=extra, usr=usr}, chat_id, user_id)
+        unwhitelisting({msg=extra, usr=usr}, gid, uid)
       end
     end
   end
@@ -995,19 +995,19 @@ do
         If this limit is reached, than you have to wait for a days or weeks.
         So, I have diffculty to test it right in one shot.
         --]]
---        if matches[1] == 'mksupergroup' and matches[2] then
---          local uname = '@'..msg.from.username or msg.from.first_name
---          new_group_table[matches[2]] = {uid = tostring(uid), title = matches[2], uname = uname, gtype = 'supergroup'}
---          create_group_chat(msg.from.print_name, matches[2], ok_cb, false)
---          reply_msg(msg.id, 'Supergroup '..matches[2]..' has been created.', ok_cb, true)
---        end
---
---        if matches[1] == 'mkgroup' and matches[2] then
---          local uname = '@'..msg.from.username or msg.from.first_name
---          new_group_table[uid] = {uid = uid, title = matches[2], uname = uname}
---          create_group_chat(msg.from.print_name, matches[2], ok_cb, false)
---          reply_msg(msg.id, 'Group '..matches[2]..' has been created.', ok_cb, true)
---        end
+        if matches[1] == 'mksupergroup' and matches[2] then
+          local uname = '@'..msg.from.username or msg.from.first_name
+          new_group_table[matches[2]] = {uid = tostring(uid), title = matches[2], uname = uname, gtype = 'supergroup'}
+          create_group_chat(msg.from.print_name, matches[2], ok_cb, false)
+          reply_msg(msg.id, 'Supergroup '..matches[2]..' has been created.', ok_cb, true)
+        end
+
+        if matches[1] == 'mkgroup' and matches[2] then
+          local uname = '@'..msg.from.username or msg.from.first_name
+          new_group_table[uid] = {uid = uid, title = matches[2], uname = uname}
+          create_group_chat(msg.from.print_name, matches[2], ok_cb, false)
+          reply_msg(msg.id, 'Group '..matches[2]..' has been created.', ok_cb, true)
+        end
 
         if matches[1] == 'setowner' or matches[1] == 'gov' then
           if msg.reply_id then
@@ -1586,10 +1586,6 @@ do
           end
         end
 
-        if matches[1] == 'adminlist' then
-          get_adminlist(msg, matches[2])
-        end
-
         if matches[1] == 'ownerlist' then
           get_ownerlist(msg, matches[2])
         end
@@ -1672,16 +1668,16 @@ do
       '^!(unwhitelist) (chat) (%d+)$',
       '^!(superbanlist)$', '^!(gbanlist)$', '^!(hammerlist)$',
       '^!(whitelist)$', '^!(whitelist) (@)(%g+)$', '^!(whitelist)(%s)(%d+)$',
-      '^!(unwhitelist)$', '^!(unwhitelist) (%a+)$', '^!(unwhitelist) (@)(%g+)$', '^!(unwhitelist)(%s)(%d+)$',
+      '^!(unwhitelist)$', '^!(unwhitelist) (%g+)$', '^!(unwhitelist) (@)(%g+)$', '^!(unwhitelist)(%s)(%d+)$',
       '^!(addgroup)$', '^!(gadd)$', '^!(addgroup) (%d+)$', '^!(gadd) (%d+)$',
-      '^!(visudo)$', '^!(visudo) (@)(%g+)$', '^!(visudo)(%s)(%d+)$', '^!(visudo) (@)(%a+) (%d+)$', '^!(visudo)(%s)(%d+) (%d+)$',
-      '^!(sudo)$', '^!(sudo) (@)(%g+)$', '^!(sudo)(%s)(%d+)$', '^!(sudo) (@)(%a+) (%d+)$', '^!(sudo)(%s)(%d+) (%d+)$',
-      '^!(desudo)$', '^!(desudo) (@)(%g+)$', '^!(desudo)(%s)(%d+)$', '^!(desudo) (@)(%a+) (%d+)$', '^!(desudo)(%s)(%d+) (%d+)$',
-      '^!(admin)$', '^!(admin) (@)(%g+)$', '^!(admin)(%s)(%d+)$', '^!(admin) (@)(%a+) (%d+)$', '^!(admin)(%s)(%d+) (%d+)$',
-      '^!(adminprom)$', '^!(adminprom) (@)(%g+)$', '^!(adminprom)(%s)(%d+)$', '^!(adminprom) (@)(%a+) (%d+)$', '^!(adminprom)(%s)(%d+) (%d+)$',
+      '^!(visudo)$', '^!(visudo) (@)(%g+)$', '^!(visudo)(%s)(%d+)$', '^!(visudo) (@)(%g+) (%d+)$', '^!(visudo)(%s)(%d+) (%d+)$',
+      '^!(sudo)$', '^!(sudo) (@)(%g+)$', '^!(sudo)(%s)(%d+)$', '^!(sudo) (@)(%g+) (%d+)$', '^!(sudo)(%s)(%d+) (%d+)$',
+      '^!(desudo)$', '^!(desudo) (@)(%g+)$', '^!(desudo)(%s)(%d+)$', '^!(desudo) (@)(%g+) (%d+)$', '^!(desudo)(%s)(%d+) (%d+)$',
+      '^!(admin)$', '^!(admin) (@)(%g+)$', '^!(admin)(%s)(%d+)$', '^!(admin) (@)(%g+) (%d+)$', '^!(admin)(%s)(%d+) (%d+)$',
+      '^!(adminprom)$', '^!(adminprom) (@)(%g+)$', '^!(adminprom)(%s)(%d+)$', '^!(adminprom) (@)(%g+) (%d+)$', '^!(adminprom)(%s)(%d+) (%d+)$',
       '^!(ban)$', '^!(ban) (@)(%g+)$', '^!(ban)(%s)(%d+)$', '^!(ban) (%w+)(%s)(%d+)$',
-      '^!(deadmin)$', '^!(deadmin) (@)(%g+)$', '^!(deadmin)(%s)(%d+)$', '^!(deadmin) (@)(%a+) (%d+)$', '^!(deadmin)(%s)(%d+) (%d+)$',
-      '^!(admindem)$', '^!(admindem) (@)(%g+)$', '^!(admindem)(%s)(%d+)$', '^!(admindem) (@)(%a+) (%d+)$', '^!(admindem)(%s)(%d+) (%d+)$',
+      '^!(deadmin)$', '^!(deadmin) (@)(%g+)$', '^!(deadmin)(%s)(%d+)$', '^!(deadmin) (@)(%g+) (%d+)$', '^!(deadmin)(%s)(%d+) (%d+)$',
+      '^!(admindem)$', '^!(admindem) (@)(%g+)$', '^!(admindem)(%s)(%d+)$', '^!(admindem) (@)(%g+) (%d+)$', '^!(admindem)(%s)(%d+) (%d+)$',
       '^!(demote)$', '^!(demote) (@)(%g+)$', '^!(demote)(%s)(%d+)$',
       '^!(demod)$', '^!(demod) (@)(%g+)$', '^!(demod)(%s)(%d+)$',
       '^!(grem)$', '^!(grem) (%d+)$', '^!(gremove)$', '^!(gremove) (%d+)$', '^!(remgroup)$', '^!(remgroup) (%d+)$',
@@ -1689,22 +1685,22 @@ do
       '^!(group) (settings)$', '^!(gp) (settings)$',
       '^!(group) (unlock) (%a+)$', '^!(gp) (unlock) (%a+)$',
       '^!(invite)$', '^!(invite) (@)(%g+)$', '^!(invite)(%s)(%g+)$',
-      '^!(kick)$', '^!(kick) (@)(%g+)$', '^!(kick)(%s)(%d+)$', '^!(kick) (%d+) (%d+)$', '^!(kick) (@)(%a+) (%d+)$', '^!(kick)(%s)(%d+) (%d+)$',
+      '^!(kick)$', '^!(kick) (@)(%g+)$', '^!(kick)(%s)(%d+)$', '^!(kick) (%d+) (%d+)$', '^!(kick) (@)(%g+) (%d+)$', '^!(kick)(%s)(%d+) (%d+)$',
       '^!(link)$', '^!(link get)$', '^!(getlink)$',
       '^!(link set)$', '^!(setlink)$',
-      '^!(setowner)$', '^!(setowner) (@)(%g+)$', '^!(setowner)(%s)(%d+)$', '^!(setowner) (@)(%a+) (%d+)$', '^!(setowner)(%s)(%d+) (%d+)$',
-      '^!(gov)$', '^!(gov) (@)(%g+)$', '^!(gov)(%s)(%d+)$', '^!(gov) (@)(%a+) (%d+)$', '^!(gov)(%s)(%d+) (%d+)$',
-      '^!(degov)$', '^!(degov) (@)(%g+)$', '^!(degov)(%s)(%d+)$', '^!(degov) (@)(%a+) (%d+)$', '^!(degov)(%s)(%d+) (%d+)$',
-      '^!(remowner)$', '^!(remowner) (@)(%g+)$', '^!(remowner)(%s)(%d+)$', '^!(remowner) (@)(%a+) (%d+)$', '^!(remowner)(%s)(%d+) (%d+)$',
-      '^!(mod)$', '^!(mod) (@)(%g+)$', '^!(mod)(%s)(%d+)$', '^!(mod) (@)(%a+) (%d+)$', '^!(mod)(%s)(%d+) (%d+)$',
-      '^!(promote)$', '^!(promote) (@)(%g+)$', '^!(promote)(%s)(%d+)$', '^!(promote) (@)(%a+) (%d+)$', '^!(promote)(%s)(%d+) (%d+)$',
-      '^!(superban)$', '^!(superban) (@)(%g+)$', '^!(superban)(%s)(%d+)$', '^!(superban) (@)(%a+) (%d+)$', '^!(superban)(%s)(%d+) (%d+)$',
-      '^!(hammer)$', '^!(hammer) (@)(%g+)$', '^!(hammer)(%s)(%d+)$', '^!(hammer) (@)(%a+) (%d+)$', '^!(hammer)(%s)(%d+) (%d+)$',
-      '^!(gban)$', '^!(gban) (@)(%g+)$', '^!(gban)(%s)(%d+)$', '^!(gban)(%s)(%d+) (%d+)$', '^!(gban) (@)(%a+) (%d+)$',
-      '^!(superunban)$', '^!(superunban) (@)(%g+)$', '^!(superunban)(%s)(%d+)$', '^!(superunban) (@)(%a+) (%d+)$', '^!(superunban)(%s)(%d+) (%d+)$',
-      '^!(unhammer)$', '^!(unhammer) (@)(%g+)$', '^!(unhammer)(%s)(%d+)$', '^!(unhammer) (@)(%a+) (%d+)$', '^!(unhammer)(%s)(%d+) (%d+)$',
-      '^!(gunban)$', '^!(gunban) (@)(%g+)$', '^!(gunban)(%s)(%d+)$', '^!(gunban) (@)(%a+) (%d+)$', '^!(gunban)(%s)(%d+) (%d+)$',
-      '^!(unban)$', '^!(unban) (@)(%g+)$', '^!(unban)(%s)(%d+)$', '^!(unban) (%w+) (%d+)$',
+      '^!(setowner)$', '^!(setowner) (@)(%g+)$', '^!(setowner)(%s)(%d+)$', '^!(setowner) (@)(%g+) (%d+)$', '^!(setowner)(%s)(%d+) (%d+)$',
+      '^!(gov)$', '^!(gov) (@)(%g+)$', '^!(gov)(%s)(%d+)$', '^!(gov) (@)(%g+) (%d+)$', '^!(gov)(%s)(%d+) (%d+)$',
+      '^!(degov)$', '^!(degov) (@)(%g+)$', '^!(degov)(%s)(%d+)$', '^!(degov) (@)(%g+) (%d+)$', '^!(degov)(%s)(%d+) (%d+)$',
+      '^!(remowner)$', '^!(remowner) (@)(%g+)$', '^!(remowner)(%s)(%d+)$', '^!(remowner) (@)(%g+) (%d+)$', '^!(remowner)(%s)(%d+) (%d+)$',
+      '^!(mod)$', '^!(mod) (@)(%g+)$', '^!(mod)(%s)(%d+)$', '^!(mod) (@)(%g+) (%d+)$', '^!(mod)(%s)(%d+) (%d+)$',
+      '^!(promote)$', '^!(promote) (@)(%g+)$', '^!(promote)(%s)(%d+)$', '^!(promote) (@)(%g+) (%d+)$', '^!(promote)(%s)(%d+) (%d+)$',
+      '^!(superban)$', '^!(superban) (@)(%g+)$', '^!(superban)(%s)(%d+)$', '^!(superban) (@)(%g+) (%d+)$', '^!(superban)(%s)(%d+) (%d+)$',
+      '^!(hammer)$', '^!(hammer) (@)(%g+)$', '^!(hammer)(%s)(%d+)$', '^!(hammer) (@)(%g+) (%d+)$', '^!(hammer)(%s)(%d+) (%d+)$',
+      '^!(gban)$', '^!(gban) (@)(%g+)$', '^!(gban)(%s)(%d+)$', '^!(gban)(%s)(%d+) (%d+)$', '^!(gban) (@)(%g+) (%d+)$',
+      '^!(superunban)$', '^!(superunban) (@)(%g+)$', '^!(superunban)(%s)(%d+)$', '^!(superunban) (@)(%g+) (%d+)$', '^!(superunban)(%s)(%d+) (%d+)$',
+      '^!(unhammer)$', '^!(unhammer) (@)(%g+)$', '^!(unhammer)(%s)(%d+)$', '^!(unhammer) (@)(%g+) (%d+)$', '^!(unhammer)(%s)(%d+) (%d+)$',
+      '^!(gunban)$', '^!(gunban) (@)(%g+)$', '^!(gunban)(%s)(%d+)$', '^!(gunban) (@)(%g+) (%d+)$', '^!(gunban)(%s)(%d+) (%d+)$',
+      '^!(unban)$', '^!(unban) (@)(%g+)$', '^!(unban)(%s)(%d+)$', '^!(unban) (%g+) (%d+)$',
       '%[(audio)%]',
       '%[(document)%]',
       '%[(photo)%]',
@@ -1742,9 +1738,15 @@ do
         '<code>!adminprom [user_id]</code>',
         '<code>!admin [user_id]</code>',
         'Promote user_id as admin.',
+        '<code>!adminprom @[user_id] [chat_id]</code>',
+        '<code>!admin @[user_id] [chat_id]</code>',
+        'Promote @[user_id] as [chat_id] admin.',        
         '<code>!adminprom @[username]</code>',
         '<code>!admin @[username]</code>',
         'Promote username as admin.',
+        '<code>!adminprom @[username] [chat_id]</code>',
+        '<code>!admin @[username] [chat_id]</code>',
+        'Promote @[username] as [chat_id] admin.',
         '<code>!admindem</code>',
         '<code>!deadmin</code>',
         'If typed when replying, demote replied user from admin.',
@@ -1753,7 +1755,13 @@ do
         'Demote user_id from admin.',
         '<code>!admindem @[username]</code>',
         '<code>!deadmin @[username]</code>',
-        'Demote username from admin.',
+        'Demote username from admin.',        
+        '<code>!admindem @[username] [chat_id]</code>',
+        '<code>!deadmin @[username] [chat_id]</code>',
+        'Demote @[username] from [chat_id] admin.',
+        '<code>!admindem [user_id] [chat_id]</code>',
+        '<code>!deadmin [user_id] [chat_id]</code>',
+        'Demote user_id from chat_id admin.',        
         '<code>!sudolist</code>',
         'List of sudoers',
       },
@@ -1767,7 +1775,7 @@ do
         '<code>!invite [@username] [chat_id]</code>',
         'Invite <code>username</code> to <code>chat_id</code>.',
         '<code>!invite [print_name] [chat_id]</code>',
-        'Invite <code>print_name</code> to <code>chat_id</code>.',
+        'Invite <code>print_name</code> to <code>chat_id</code>.',        
         '<code>!superban</code>',
         '<code>!hammer</code>',
         '<code>!gban</code>',
@@ -1795,6 +1803,10 @@ do
         '<code>!grem</code>',
         '<code>!gremove</code>',
         'Remove group from administration list.',
+        '<code>!remgroup [chat_id]</code>',
+        '<code>!grem [chat_id]</code>',
+        '<code>!gremove [chat_id]</code>',
+        'Remove [chat_id] from administration list.',
         '<code>!whitelist [enable]/[disable]</code>',
         'Enable or disable whitelist mode',
         '<code>!whitelist</code>',
@@ -1811,8 +1823,28 @@ do
         'Remove user from whitelist',
         '<code>!adminlist</code>',
         'List of administrators',
+        '<code>!setowner</code>',
+        '<code>!gov</code>',
+        'Set owner for this chat',
+        '<code>!setowner @[username] [chat_id]</code>',
+        '<code>!gov @[username] [chat_id]</code>',
+        'Promote @[username] as chat_id owner',
+        '<code>!setowner [user_id] [chat_id]</code>',
+        '<code>!gov [user_id] [chat_id]</code>',
+        'Promote user_id as chat_id owner',        
+        '<code>!remowner</code>',
+        '<code>!degov</code>',
+        'Remove owner for this chat',
+        '<code>!remowner @[username] [chat_id]</code>',
+        '<code>!degov @[username] [chat_id]</code>',
+        'Remove @[username] from chat_id owner',
+        '<code>!remowner [user_id] [chat_id]</code>',
+        '<code>!degov [user_id] [chat_id]</code>',
+        'Remove user_id from chat_id owner',
         '<code>!ownerlist</code>',
         'List of owners',
+        '<code>!ownerlist [chat_id]</code>',
+        'List of chat_id owners',
       },
       owner = {
         '<code>!group lock bot</code>',
@@ -1858,17 +1890,35 @@ do
         '<code>!welcome disable</code>',
         'Disable welcome message.',
         '<code>!promote</code>',
+        '<code>!mod</code>',
         'If typed when replying, promote replied user as moderator',
         '<code>!promote [user_id]</code>',
+        '<code>!mod [user_id]</code>',
         'Promote user_id as moderator',
         '<code>!promote @[username]</code>',
+        '<code>!mod @[username]</code>',
         'Promote username as moderator',
+        '<code>!promote [user_id] [chat_id]</code>',
+        '<code>!mod [user_id] [chat_id]</code>',
+        'Promote user_id as chat_id moderator',
+        '<code>!promote @[username] [chat_id]</code>',
+        '<code>!mod @[username] [chat_id]</code>',
+        'Promote username as chat_id moderator',
         '<code>!demote</code>',
+        '<code>!demod</code>',
         'If typed when replying, demote replied user from moderator',
         '<code>!demote [user_id]</code>',
+        '<code>!demod [user_id]</code>',
         'Demote user_id from moderator',
         '<code>!demote @[username]</code>',
+        '<code>!demod @[username]</code>',
         'Demote username from moderator',
+        '<code>!demote [user_id] [chat_id]</code>',
+        '<code>!demod [user_id] [chat_id]</code>',
+        'Demote user_id from chat_id moderator',
+        '<code>!demote @[username] [chat_id]</code>',
+        '<code>!demod @[username] [chat_id]</code>',
+        'Demote username from chat_id moderator',
         '<code>!antispam kick</code>',
         'Enable flood and spam protection. Offender will be kicked.',
         '<code>!antispam ban</code>',
@@ -1878,11 +1928,23 @@ do
         '<code>!whitelist</code>',
         'If type in reply, allow user to use the bot when whitelist mode is enabled',
         '<code>!unwhitelist</code>',
-        'If type in reply, remove user from whitelist',
-        '<code>!whitelist [user_id]/@[username]</code>',
-        'Allow user to use the bot when whitelist mode is enabled',
-        '<code>!unwhitelist [user_id]/@[username]</code>',
-        'Remove user from whitelist',
+        'If type in reply, remove user from whitelist',        
+        '<code>!whitelist [user_id]</code>',
+        'Allow user_id to use the bot when whitelist mode is enabled',
+        '<code>!whitelist @[username]</code>',
+        'Allow @[username] to use the bot when whitelist mode is enabled',        
+        '<code>!whitelist [user_id] [chat_id]</code>',
+        'Allow user_id to use the bot in chat_id when whitelist mode is enabled',
+        '<code>!whitelist @[username] [chat_id]</code>',
+        'Allow @[username] to use the bot in chat_id when whitelist mode is enabled',        
+        '<code>!unwhitelist [user_id]</code>',
+        'Remove user_id from whitelist',
+        '<code>!unwhitelist @[username]</code>',
+        'Remove @[username] from whitelist',        
+        '<code>!unwhitelist [user_id] [chat_id]</code>',
+        'Remove user_id from chat_id whitelist',
+        '<code>!unwhitelist @[username] [chat_id]</code>',
+        'Remove @[username] from chat_id whitelist',
       },
       moderator = {
         '<code>!invite</code>',
@@ -1905,8 +1967,13 @@ do
         'Unban user',
         '<code>!kick</code>',
         'If type in reply, will kick user from chat group.',
-        '<code>!kick [user_id]/@[username]</code>',
+        '<code>!kick [user_id]</code>',
+        '<code>!kick @[username]</code>',
         'Kick user from chat group',
+        '<code>!kick @[username] [chat_id]</code>',
+        'Kick @[username] from [chat_id] group',
+        '<code>!kick @[user_id] [chat_id]</code>',
+        'Kick [user_id] from [chat_id] group',
         '<code>!modlist</code>',
         'List of moderators',
       },
