@@ -966,9 +966,6 @@ do
 
         if matches[1] == 'channel' then
           if matches[2] == 'enable' then
-            if not _config.disabled_channels then
-              _config.disabled_channels = {}
-            end
             if _config.disabled_channels[receiver] == nil then
               reply_msg(msg.id, 'Channel is not disabled', ok_cb, true)
             end
@@ -979,9 +976,6 @@ do
 
           -- Disable a channel
           if matches[2] == 'disable' then
-            if not _config.disabled_channels then
-              _config.disabled_channels = {}
-            end
             _config.disabled_channels[receiver] = true
             save_config()
             reply_msg(msg.id, 'Channel disabled.', ok_cb, true)
