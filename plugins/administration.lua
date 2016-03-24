@@ -821,6 +821,22 @@ do
 
     if is_chat_msg(msg) then
       if is_sudo(uid) then
+        -- Enabled or disable bot in a group
+        if matches[1] == 'channel' then
+          if matches[2] == 'enable' then
+            if _config.disabled_channels[receiver] == nil then
+              reply_msg(msg.id, 'Channel is not disabled', ok_cb, true)
+            end
+            _config.disabled_channels[receiver] = false
+            save_config()
+            reply_msg(msg.id, 'Channel re-enabled', ok_cb, true)
+          end
+          if matches[2] == 'disable' then
+            _config.disabled_channels[receiver] = true
+            save_config()
+            reply_msg(msg.id, 'Channel disabled.', ok_cb, true)
+          end
+        end
         -- add a user to sudoer
         if matches[1] == 'visudo' then
           if matches[2] == 'add' then
@@ -970,24 +986,6 @@ do
 
         if matches[1] == 'ownerlist' then
           get_ownerlist(msg, gid)
-        end
-
-        if matches[1] == 'channel' then
-          if matches[2] == 'enable' then
-            if _config.disabled_channels[receiver] == nil then
-              reply_msg(msg.id, 'Channel is not disabled', ok_cb, true)
-            end
-            _config.disabled_channels[receiver] = false
-            save_config()
-            reply_msg(msg.id, 'Channel re-enabled', ok_cb, true)
-          end
-
-          -- Disable a channel
-          if matches[2] == 'disable' then
-            _config.disabled_channels[receiver] = true
-            save_config()
-            reply_msg(msg.id, 'Channel disabled.', ok_cb, true)
-          end
         end
 
         if matches[1] == 'superban' or matches[1] == 'gban' or matches[1] == 'hammer' then
