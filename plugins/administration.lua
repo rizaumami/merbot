@@ -560,6 +560,52 @@ do
     local uid = msg.from.peer_id
     local gid = msg.to.peer_id
     local receiver = get_receiver(msg)
+    
+    -- If sender is sudo then re-enable the channel
+	  if msg.text == '!channel enable' and is_sudo(uid) then
+	    _config.disabled_channels[receiver] = false
+	    save_config()
+	  end
+    if _config.disabled_channels[receiver] == true then
+    	msg.text = ''
+    end
+
+    -- banned user talking
+    if is_chat_msg(msg) then
+      if is_globally_banned(uid) then
+        print('>>> SuperBanned user talking!')
+        kick_user(msg, gid, uid)
+        msg.text = ''
+      elseif is_banned(gid, uid) then
+        print('>>> Banned user talking!')
+        kick_user(msg, gid, uid)
+        msg.text = ''
+      end
+    end
+
+    -- whitelist
+    -- Allow all sudo users even if whitelist is allowed
+    if redis:get('whitelist:enabled') and not is_sudo(uid) then
+      print('>>> Whitelist enabled and not sudo')
+      -- Check if user or chat is whitelisted
+      local allowed = redis:sismember('whitelist', uid) or false
+      if not allowed then
+        print('>>> User '..uid..' not whitelisted')
+        if is_chat_msg(msg) then
+          allowed = redis:sismember('whitelist', gid) or false
+          if not allowed then
+            print('>>> Chat '..gid..' not whitelisted')
+          else
+            print('>>> Chat '..gid..' whitelisted :)')
+          end
+        end
+      else
+        print('>>> User '..uid..' allowed :)')
+      end
+      if not allowed then
+        msg.text = ''
+      end
+    end
 
     if msg.action then
       if _config.administration[gid] then
@@ -728,44 +774,6 @@ do
         trigger_anti_spam({msg=msg, stype='flooding', usr=username}, gid, uid)
       end
       redis:setex(post_count, TIME_CHECK, msgs+1)
-    end
-
-    -- banned user talking
-    if is_chat_msg(msg) then
-      if is_globally_banned(uid) then
-        print('>>> SuperBanned user talking!')
-        kick_user(msg, gid, uid)
-        msg.text = ''
-      elseif is_banned(gid, uid) then
-        print('>>> Banned user talking!')
-        kick_user(msg, gid, uid)
-        msg.text = ''
-      end
-    end
-
-    -- whitelist
-    -- Allow all sudo users even if whitelist is allowed
-    if redis:get('whitelist:enabled') and not is_sudo(uid) then
-      print('>>> Whitelist enabled and not sudo')
-      -- Check if user or chat is whitelisted
-      local allowed = redis:sismember('whitelist', uid) or false
-      if not allowed then
-        print('>>> User '..uid..' not whitelisted')
-        if is_chat_msg(msg) then
-          allowed = redis:sismember('whitelist', gid) or false
-          if not allowed then
-            print('>>> Chat '..gid..' not whitelisted')
-          else
-            print('>>> Chat '..gid..' whitelisted :)')
-          end
-        end
-      else
-        print('>>> User '..uid..' allowed :)')
-      end
-
-      if not allowed then
-        msg.text = ''
-      end
     end
 
     if msg.media and _config.administration[gid] then
