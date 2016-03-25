@@ -406,7 +406,7 @@ do
         i = i+1
         sub_id = v:gsub('_.+$', '')
         sub_name = v:gsub('^.-_', '')
-        forum_id = forum_id..'<b>'..i..'</b>. <a href="http://m.kaskus.co.id/forum/'..sub_id..'">'..sub_name..'</a>\n'
+        forum_id = forum_id..'<b>'..i..'</b>. <a href="http://m.kaskus.co.id/forum/'..sub_id..'">'..sub_id..' - '..sub_name..'</a>\n'
       end
     end
     if i == 0 then
