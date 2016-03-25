@@ -365,9 +365,11 @@ do
     i = 0
     for grabbedlink in res:gmatch(' thread_.-<span') do
       if not grabbedlink:match('<b class') then
-        i = i+1
-        kaslink = grabbedlink:gsub(' style.- ', '>')
-        kasforum = kasforum..'<b>'..i..'</b>. '..kaslink..'\n'
+        if i < 10 then
+          i = i+1
+          kaslink = grabbedlink:gsub(' style.- ', '>')
+          kasforum = kasforum..'<b>'..i..'</b>. '..kaslink..'\n'
+        end
       end
     end
     local kastrit = kasforum:gsub(' thread_', '<a href="'..url..'/thread/')
