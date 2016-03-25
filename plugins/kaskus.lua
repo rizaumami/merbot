@@ -360,8 +360,8 @@ do
   }
 
   local function get_kaskus_thread(msg, sub_id, sub_name)
-    local url = 'http://m.kaskus.co.id/forum/'
-    local res, kaskus = http.request(url..sub_id)
+    local url = 'http://m.kaskus.co.id'
+    local res, kaskus = http.request(url..'/forum/'..sub_id)
     local kasforum = '<b>'..sub_name..'</b>\n\n'
     i = 0
     for grabbedlink in res:gmatch(' thread_.-<span') do
@@ -371,7 +371,7 @@ do
         kasforum = kasforum..'<b>'..i..'</b>. '..kaslink..'\n'
       end
     end
-    local kastrit = kasforum:gsub(' thread_', '<a href="'..url)
+    local kastrit = kasforum:gsub(' thread_', '<a href="'..url..'/thread/')
     local kastrit = kastrit:gsub(' <span', '</a>')
     send_api_msg(msg, get_receiver_api(msg), kastrit, true, 'html')
   end
