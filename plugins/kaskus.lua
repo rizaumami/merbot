@@ -4,7 +4,6 @@ do
     ["lounge-video"] = "8_Lounge Video",
     ["jokes--cartoon"] = "9_Jokes & Cartoon",
     ["berita-dan-politik"] = "10_Berita dan Politik",
-    ["?ref=header&med=header"] = "10_News",
     ["movies"] = "11_Movies",
     ["website-webmaster-webdeveloper"] = "13_Website, Webmaster, Webdeveloper",
     ["ccpb---shareware-amp-freeware"] = "14_CCPB - Shareware & Freeware",
