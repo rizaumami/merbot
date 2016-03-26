@@ -131,9 +131,7 @@ do
     end
   end
 
-  local function global_ban_user(extra, user_id)
-    local gid = tonumber(chat_id)
-    local uid = tonumber(user_id)
+  local function global_ban_user(extra, gid, uid)
     if uid == tonumber(our_id) or is_admin(uid) then
       reply_msg(extra.msg.id, uid..' is too privileged to be globally banned.', ok_cb, true)
     end
@@ -142,28 +140,36 @@ do
     else
       local hash = 'globanned'
       redis:sadd(hash, uid)
-      kick_user(msg, gid, uid)
+      kick_user(extra.msg, gid, uid)
       _config.globally_banned[uid] = extra.usr
       save_config()
       reply_msg(extra.msg.id, extra.usr..' has been globally banned.', ok_cb, true)
     end
   end
 
-  local function unban_user(extra, chat_id, user_id)
-    local hash = 'banned:'..chat_id
-    local data = load_data(_config.administration[chat_id])
-    redis:srem(hash, user_id)
-    data.banned[user_id] = nil
-    save_data(data, 'data/'..chat_id..'/'..chat_id..'.lua')
-    reply_msg(extra.msg.id, extra.usr..' has been unbanned.', ok_cb, true)
+  local function unban_user(extra, gid, uid)
+    if is_banned(gid, uid) then
+      local hash = 'banned:'..gid
+      local data = load_data(_config.administration[gid])
+      redis:srem(hash, uid)
+      data.banned[uid] = nil
+      save_data(data, 'data/'..gid..'/'..gid..'.lua')
+      reply_msg(extra.msg.id, extra.usr..' has been unbanned.', ok_cb, true)
+    else
+      reply_msg(extra.msg.id, extra.usr..' is not banned.', ok_cb, true)
+    end
   end
 
   local function global_unban_user(extra, user_id)
-    local hash = 'globanned'
-    redis:srem(hash, user_id)
-    _config.globally_banned[user_id] = nil
-    save_config()
-    reply_msg(extra.msg.id, extra.usr..' has been globally unbanned.', ok_cb, true)
+    if is_globally_banned(user_id) then
+      local hash = 'globanned'
+      redis:srem(hash, user_id)
+      _config.globally_banned[user_id] = nil
+      save_config()
+      reply_msg(extra.msg.id, extra.usr..' has been globally unbanned.', ok_cb, true)
+    else
+      reply_msg(extra.msg.id, extra.usr..' is not globally banned.', ok_cb, true)
+    end
   end
 
   local function whitelisting(extra, chat_id, user_id)
@@ -393,7 +399,7 @@ do
         ban_user({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!superban' or cmd == '!gban' or cmd == '!hammer' then
-        global_ban_user({msg=extra, usr=usr}, uid)
+        global_ban_user({msg=extra, usr=usr}, gid, uid)
       end
       if cmd == '!unban' then
         unban_user({msg=extra, usr=usr}, gid, uid)
@@ -432,10 +438,10 @@ do
         ban_user({msg=msg, usr=usr}, gid, uid)
       end
       if cmd == 'superban' or cmd == 'gban' or cmd == 'hammer' then
-        global_ban_user({msg=msg, usr=usr}, uid)
+        global_ban_user({msg=msg, usr=usr}, gid, uid)
       end
       if cmd == 'unban' then
-        unban_user({msg=msg, usr=usr}, uid)
+        unban_user({msg=msg, usr=usr}, gid, uid)
       end
       if cmd == 'superunban' or cmd == 'gunban' or cmd == 'unhammer' then
         global_unban_user({msg=msg, usr=usr}, uid)
@@ -641,6 +647,30 @@ do
       end
     end
 
+    -- Anti arabic
+    if msg.text:match('([\216-\219][\128-\191])') and _config.administration[gid] then
+      if uid > 0 and not is_mod(msg, gid, uid) then
+        local data = load_data(_config.administration[gid])
+        local arabic_hash = 'mer_arabic:'..gid
+        local is_arabic_offender = redis:sismember(arabic_hash, uid)
+        if data.lock.arabic == 'warn' then
+          if is_arabic_offender then
+            kick_user(msg, gid, uid)
+            redis:srem(arabic_hash, uid)
+          end
+          if not is_arabic_offender then
+            redis:sadd(arabic_hash, uid)
+            reply_msg(msg.id, 'Please do not post in arabic.\n'
+                ..'Obey the rules or you\'ll be kicked.', ok_cb, true)
+          end
+        end
+        if data.lock.arabic == 'kick' then
+          kick_user(msg, gid, uid)
+          reply_msg(msg.id, 'Arabic is not allowed here!', ok_cb, true)
+        end
+      end
+    end
+
     if msg.action then
       if _config.administration[gid] then
         local data = load_data(_config.administration[gid])
@@ -659,7 +689,7 @@ do
           if is_globally_banned(userid) or is_banned(gid, userid) then
             kick_user(msg, gid, userid)
           end
-          -- When group locked from add member or bot, kicked newly added user if the inviter is not bot or sudoer 
+          -- When group locked from add member or bot, kicked newly added user if the inviter is not bot or sudoer
           if uid > 0 and not is_mod(msg, gid, uid) then
             if data.lock.member == 'yes' then
               kick_user(msg, gid, userid)
@@ -836,7 +866,8 @@ do
           end
           if not is_sticker_offender then
             redis:set(sticker_hash, true)
-            reply_msg(msg.id, 'DO NOT send sticker into this group!\nThis is a WARNING, next time you will be kicked!', ok_cb, true)
+            reply_msg(msg.id, 'DO NOT send sticker into this group!\n'
+                ..'This is a WARNING, next time you will be kicked!', ok_cb, true)
           end
         end
         if data.sticker == 'kick' then
@@ -1004,7 +1035,7 @@ do
             demote_owner({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
-        
+
         -- Lis of administrators
         if matches[1] == 'adminlist' then
           get_adminlist(msg, gid)
@@ -1022,7 +1053,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            global_ban_user({msg=msg, usr=matches[3]}, matches[3])
+            global_ban_user({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
 
@@ -1080,14 +1111,16 @@ do
               data.antispam = 'kick'
               save_data(data, chat_db)
             end
-              reply_msg(msg.id, 'Anti spam protection already enabled.\nOffender will be kicked.', ok_cb, true)
+              reply_msg(msg.id, 'Anti spam protection already enabled.\n'
+                  ..'Offender will be kicked.', ok_cb, true)
             end
           if matches[2] == 'ban' then
             if data.antispam ~= 'ban' then
               data.antispam = 'ban'
               save_data(data, chat_db)
             end
-              reply_msg(msg.id, 'Anti spam protection already enabled.\nOffender will be banned.', ok_cb, true)
+              reply_msg(msg.id, 'Anti spam protection already enabled.\n'
+                  ..'Offender will be banned.', ok_cb, true)
             end
           if matches[2] == 'disable' then
             if data.antispam == 'no' then
@@ -1147,7 +1180,7 @@ do
             rename_chat(receiver, data.name, ok_cb, true)
           end
         end
-        
+
         -- Set group's photo
         if matches[1] == 'setphoto' then
           data.set.photo = 'waiting'
@@ -1162,14 +1195,16 @@ do
               data.sticker = 'warn'
               save_data(data, chat_db)
             end
-            reply_msg(msg.id, 'Stickers already prohibited.\nSender will be warned first, then kicked for second violation.', ok_cb, true)
+            reply_msg(msg.id, 'Stickers already prohibited.\n'
+                ..'Sender will be warned first, then kicked for second violation.', ok_cb, true)
           end
           if matches[2] == 'kick' then
             if data.sticker ~= 'kick' then
               data.sticker = 'kick'
               save_data(data, chat_db)
             end
-            reply_msg(msg.id, 'Stickers already prohibited.\nSender will be kicked!', ok_cb, true)
+            reply_msg(msg.id, 'Stickers already prohibited.\n'
+                ..'Sender will be kicked!', ok_cb, true)
           end
           if matches[2] == 'ok' then
             if data.sticker == 'ok' then
@@ -1180,7 +1215,40 @@ do
               for k,sticker_hash in pairs(redis:keys('mer_sticker:'..gid..':*')) do
                 redis:del(sticker_hash)
               end
-              reply_msg(msg.id, 'Sticker restriction has been disabled.\nPrevious infringements record has been cleared.', ok_cb, true)
+              reply_msg(msg.id, 'Sticker restriction has been disabled.\n'
+                  ..'Previous infringements record has been cleared.', ok_cb, true)
+            end
+          end
+        end
+
+        -- Arabic settings
+        if matches[1] == 'arabic' then
+          if matches[2] == 'warn' then
+            if data.lock.arabic ~= 'warn' then
+              data.lock.arabic = 'warn'
+              save_data(data, chat_db)
+            end
+            reply_msg(msg.id, 'This group does not allow Arabic script.\n'
+                ..'Users will be warned first, then kicked for second infringements.', ok_cb, true)
+          end
+          if matches[2] == 'kick' then
+            if data.lock.arabic ~= 'kick' then
+              data.lock.arabic = 'kick'
+              save_data(data, chat_db)
+            end
+            reply_msg(msg.id, 'Users will now be removed automatically for posting Arabic script.', ok_cb, true)
+          end
+          if matches[2] == 'ok' then
+            if data.lock.arabic == 'ok' then
+              reply_msg(msg.id, 'Arabic posting restriction is not enabled.', ok_cb, true)
+            else
+              data.lock.arabic = 'ok'
+              save_data(data, chat_db)
+              redis:del('mer_arabic')
+--              for k,arabic_hash in pairs(redis:keys('mer_arabic:'..gid..':*')) do
+--                redis:del(arabic_hash)
+--              end
+              reply_msg(msg.id, 'Users will no longer be removed for posting Arabic script.', ok_cb, true)
             end
           end
         end
@@ -1197,12 +1265,14 @@ do
           if matches[2] == 'group' and data.welcome.to ~= 'group' then
             data.welcome.to = 'group'
             save_data(data, chat_db)
-            reply_msg(msg.id, 'Welcome service already enabled.\nWelcome message will shown in group.', ok_cb, true)
+            reply_msg(msg.id, 'Welcome service already enabled.\n'
+                ..'Welcome message will shown in group.', ok_cb, true)
           end
           if matches[2] == 'pm' and data.welcome.to ~= 'private' then
             data.welcome.to = 'private'
             save_data(data, chat_db)
-            reply_msg(msg.id, 'Welcome service already enabled.\nWelcome message will send as private message to new member.', ok_cb, true)
+            reply_msg(msg.id, 'Welcome service already enabled.\n'
+                ..'Welcome message will send as private message to new member.', ok_cb, true)
           end
           if matches[2] == 'disable' then
             if data.welcome.to == 'no' then
@@ -1214,7 +1284,7 @@ do
             end
           end
         end
-        
+
         -- Set group's description
         if matches[1] == 'setabout' and matches[2] then
           data.description = matches[2]
@@ -1321,7 +1391,7 @@ do
             text = text..k.." - "..v.."\n"
           end
           return text
-        end        
+        end
 
         -- Promote group moderator
         if matches[1] == 'promote' or matches[1] == 'mod' then
@@ -1330,10 +1400,10 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            promote({msg=msg, matches=matches[3]}, gid, matches[3])
+            promote({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
-        
+
         -- Demote group moderator
         if matches[1] == 'demote' or matches[1] == 'demod' then
           if msg.reply_id then
@@ -1341,7 +1411,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            demote({msg=msg, matches=matches[3]}, gid, matches[3])
+            demote({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
       end
@@ -1350,6 +1420,7 @@ do
         -- Print group settings
         if matches[1] == 'group' and matches[2] == 'settings' then
           local text = 'Settings for *'..msg.to.title..'*\n'
+                ..'*-* Arabic message = `'..data.lock.arabic..'`\n'
                 ..'*-* Lock group from bot = `'..data.lock.bot..'`\n'
                 ..'*-* Lock group name = `'..data.lock.name..'`\n'
                 ..'*-* Lock group photo = `'..data.lock.photo..'`\n'
@@ -1388,7 +1459,7 @@ do
             kick_user(msg, gid, matches[3])
           end
         end
-        
+
         -- Kick user by {id|username|name|reply} and re-kick if rejoin
         if matches[1] == 'ban' then
           if msg.reply_id then
@@ -1407,7 +1478,7 @@ do
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            unban_user({msg=msg, matches=matches[3]}, gid, matches[3])
+            unban_user({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
 
@@ -1421,7 +1492,7 @@ do
           end
           return text
         end
-        
+
         -- List of group's moderators
         if matches[1] == 'modlist' then
           if not _config.administration[gid] then
@@ -1453,7 +1524,8 @@ do
       -- Print group's invite link. Users can join group by clicking this link.
       if matches[1] == 'link' or matches[1] == 'getlink' or matches[1] == 'link get' then
         if data.link == '' then
-          send_api_msg(msg, get_receiver_api(msg), 'No link has been set for this group.\nTry <code>!link set</code> to generate.', true, 'html')
+          send_api_msg(msg, get_receiver_api(msg), 'No link has been set for this group.\n'
+              ..'Try <code>!link set</code> to generate.', true, 'html')
         elseif data.link == 'revoked' then
           reply_msg(msg.id, 'Invite link for this group has been revoked', ok_cb, true)
         else
@@ -1504,7 +1576,8 @@ do
 
       -- print merbot version
       if matches[1] == "version" then
-        reply_msg(msg.id, 'Merbot\n'..VERSION..'\nGitHub: '..bot_repo..'\nLicense: GNU GPL v2', ok_cb, true)
+        reply_msg(msg.id, 'Merbot\n'..VERSION..'\nGitHub: '..bot_repo..'\n'
+            ..'License: GNU GPL v2', ok_cb, true)
       end
 
     else -- if in private message
@@ -1579,7 +1652,7 @@ do
           if matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
           elseif matches[3]:match('^%d+$') then
-            global_ban_user({msg=msg, usr=usr}, matches[3])
+            global_ban_user({msg=msg, usr=usr}, gid, matches[3])
           end
         end
 
@@ -1625,6 +1698,7 @@ do
     description = 'Administration plugin.',
     patterns = {
       '^!(about)$',
+      '^!(arabic) (%a+)$',
       '^!(sudolist)$',
       '^!(adminlist)$', '^!(adminlist) (%d+)$',
       '^!(antispam) (%a+)$',
@@ -1686,11 +1760,11 @@ do
       '^!(unhammer)$', '^!(unhammer) (@)(%g+)$', '^!(unhammer)(%s)(%d+)$', '^!(unhammer) (@)(%g+) (%d+)$', '^!(unhammer)(%s)(%d+) (%d+)$',
       '^!(gunban)$', '^!(gunban) (@)(%g+)$', '^!(gunban)(%s)(%d+)$', '^!(gunban) (@)(%g+) (%d+)$', '^!(gunban)(%s)(%d+) (%d+)$',
       '^!(unban)$', '^!(unban) (@)(%g+)$', '^!(unban)(%s)(%d+)$', '^!(unban) (%g+) (%d+)$',
+      '^!!tgservice (.+)$',
       '%[(audio)%]',
       '%[(document)%]',
       '%[(photo)%]',
       '%[(video)%]',
-      '^!!tgservice (.+)$',
     },
     usage = {
       sudo = {
@@ -1712,6 +1786,7 @@ do
         '<a href="https://telegram.me/thefinemanual/20">Group Settings</a>',
         '<a href="https://telegram.me/thefinemanual/21">Whitelist</a>',
         '<a href="https://telegram.me/thefinemanual/22">Anti Spam</a>',
+        '<a href="https://telegram.me/thefinemanual/29">Arabic script restriction</a>',
         '<a href="https://telegram.me/thefinemanual/23">Group Promotion</a>',
         '<a href="https://telegram.me/thefinemanual/24">Invitation</a>',
         '<a href="https://telegram.me/thefinemanual/25">Kick</a>',
