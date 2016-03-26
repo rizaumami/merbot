@@ -115,6 +115,7 @@ do
   local function ban_user(extra, chat_id, user_id)
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
+    local data = load_data(_config.administration[gid])
     if uid == tonumber(our_id) or is_mod(extra.msg, gid, uid) then
       reply_msg(extra.msg.id, extra.usr..' is too privileged to be banned.', ok_cb, true)
     end
@@ -124,6 +125,8 @@ do
       local hash = 'banned:'..gid
       redis:sadd(hash, uid)
       kick_user(extra.msg, gid, uid)
+      data.banned[uid] = extra.usr
+      save_data(data, 'data/'..gid..'/'..gid..'.lua')
       reply_msg(extra.msg.id, extra.usr..' has been banned.', ok_cb, true)
     end
   end
@@ -140,19 +143,26 @@ do
       local hash = 'globanned'
       redis:sadd(hash, uid)
       kick_user(msg, gid, uid)
+      _config.globally_banned[uid] = extra.usr
+      save_config()
       reply_msg(extra.msg.id, extra.usr..' has been globally banned.', ok_cb, true)
     end
   end
 
   local function unban_user(extra, chat_id, user_id)
     local hash = 'banned:'..chat_id
+    local data = load_data(_config.administration[chat_id])
     redis:srem(hash, user_id)
+    data.banned[user_id] = nil
+    save_data(data, 'data/'..chat_id..'/'..chat_id..'.lua')
     reply_msg(extra.msg.id, extra.usr..' has been unbanned.', ok_cb, true)
   end
 
   local function global_unban_user(extra, user_id)
     local hash = 'globanned'
     redis:srem(hash, user_id)
+    _config.globally_banned[user_id] = nil
+    save_config()
     reply_msg(extra.msg.id, extra.usr..' has been globally unbanned.', ok_cb, true)
   end
 
@@ -284,6 +294,28 @@ do
     end
   end
 
+  local function get_redis_ban_records()
+    for gid,cfg in pairs(_config.administration) do
+      local data = load_data(_config.administration[gid])
+      local banlist = redis:smembers('banned:'..gid)
+      if not data.banned then
+        data.banned = {}
+      end
+      for x,uid in pairs(banlist) do
+        data.banned[tonumber(uid)] = ''
+      end
+      save_data(data, cfg)
+    end
+    local globanlist = redis:smembers('globanned')
+    if not _config.globally_banned then
+      globally_banned = {}
+    end
+    for k,uid in pairs(globanlist) do
+      _config.globally_banned[tonumber(uid)] = ''
+    end
+    save_config()
+  end
+
   local function create_group_data(msg, chat_id, user_id)
     local l_name = '@'..msg.from.username or msg.from.first_name
     if msg.action then
@@ -291,8 +323,10 @@ do
     end
     gpdata = {
         antispam = 'ban',
+        banned = {},
         founded = os.time(),
         founder = '',
+        group_type = msg.to.peer_type,
         link = '',
         lock = {
           bot = 'no',
@@ -309,7 +343,6 @@ do
           photo = 'data/'..chat_id..'/'..chat_id..'.jpg',
         },
         sticker = 'ok',
-        type = msg.to.peer_type,
         username = msg.to.username or '',
         welcome = {
           msg = '',
@@ -535,6 +568,7 @@ do
       else
         chat_info('chat#id'..gid, update_members_list, msg)
       end
+      get_redis_ban_records()
       load_group_photo(msg, gid)
       reply_msg(msg.id, 'I am now administrating '..group, ok_cb, true)
     end
@@ -560,17 +594,17 @@ do
     local uid = msg.from.peer_id
     local gid = msg.to.peer_id
     local receiver = get_receiver(msg)
-    
+
     -- If sender is sudo then re-enable the channel
-	  if msg.text == '!channel enable' and is_sudo(uid) then
-	    _config.disabled_channels[receiver] = false
-	    save_config()
-	  end
+    if msg.text == '!channel enable' and is_sudo(uid) then
+      _config.disabled_channels[receiver] = false
+      save_config()
+    end
     if _config.disabled_channels[receiver] == true then
-    	msg.text = ''
+      msg.text = ''
     end
 
-    -- banned user talking
+    -- If banned user is talking
     if is_chat_msg(msg) then
       if is_globally_banned(uid) then
         print('>>> SuperBanned user talking!')
@@ -583,7 +617,7 @@ do
       end
     end
 
-    -- whitelist
+    -- If whitelist enabled
     -- Allow all sudo users even if whitelist is allowed
     if redis:get('whitelist:enabled') and not is_sudo(uid) then
       print('>>> Whitelist enabled and not sudo')
@@ -610,7 +644,7 @@ do
     if msg.action then
       if _config.administration[gid] then
         local data = load_data(_config.administration[gid])
-        -- service message
+        -- If user enter the group, either by invited or by clicking invite link
         if msg.action.type == 'chat_add_user' or msg.action.type == 'chat_add_user_link' then
           if msg.action.link_issuer then
             userid = uid
@@ -621,44 +655,48 @@ do
             new_member = (msg.action.user.first_name or '')..' '..(msg.action.user.last_name or '')
             uname = '@'..msg.action.user.username or ''
           end
-          local username = uname..' AKA ' or ''
+          -- Kick if newcomer is a banned user
           if is_globally_banned(userid) or is_banned(gid, userid) then
             kick_user(msg, gid, userid)
           end
+          -- When group locked from add member or bot, kicked newly added user if the inviter is not bot or sudoer 
           if uid > 0 and not is_mod(msg, gid, uid) then
             if data.lock.member == 'yes' then
               kick_user(msg, gid, userid)
             end
-            -- is it an API bot?
-            if uname:match('bot$') then
+            -- Detecting API bot the hackish way.
+            -- Regular user ended with 'bot' in their username will be kicked too.
+            if data.lock.bot == 'yes' and uname:match('bot$') then
               kick_user(msg, gid, userid)
             end
           end
-          -- welcome message
+          -- Welcome message settings
           if data.welcome.to == 'group' or data.welcome.to == 'pm' then
-            -- do not greet (globally) banned users.
+            -- Do not greet (globally) banned users.
             if is_globally_banned(userid) or is_banned(gid, userid) then
               return nil
             end
-            -- do not greet when group members are locked
+            -- Do not greet when group members are locked
             if data.lock.member == 'yes' then
               return nil
             end
-            -- do not greet api bot
+            -- Do not greet api bot
             if uname:match('bot$') then
               return nil
             end
             local about = ''
             local rules = ''
-            if data.description then
-              about = '\n<b>Description</b>:\n'..data.description..'\n'
-            end
-            if data.rules then
-              rules = '\n<b>Rules</b>:\n'..data.rules..'\n'
-            end
+            -- Which welcome message to be send
             if data.welcome.msg ~= '' then
               welcomes = data.welcome.msg..'\n'
-            else
+            else -- If no custom welcome message defined, use this default
+              local username = uname..' AKA ' or ''
+              if data.description then
+                about = '\n<b>Description</b>:\n'..data.description..'\n'
+              end
+              if data.rules then
+                rules = '\n<b>Rules</b>:\n'..data.rules..'\n'
+              end
               welcomes = 'Welcome '..username..'<b>'..new_member..'</b> <code>['..userid..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
             end
             if data.welcome.to == 'group' then
@@ -668,14 +706,14 @@ do
             end
             send_api_msg(msg, receiver_api, welcomes..about..rules..'\n', true, 'html')
           end
-          -- update members table
+          -- Update group's members table
           if msg.to.peer_type == 'channel' then
             channel_get_users('channel#id'..gid, update_members_list, msg)
           else
             chat_info('chat#id'..gid, update_members_list, msg)
           end
         end
-        -- if group photo is deleted
+        -- If group photo is deleted
         if msg.action.type == 'chat_delete_photo' then
           if data.lock.photo == 'yes' then
             chat_set_photo (receiver, data.set.photo, ok_cb, false)
@@ -683,7 +721,7 @@ do
             return nil
           end
         end
-        -- if group photo is changed
+        -- If group photo is changed
         if msg.action.type == 'chat_change_photo' and uid ~= 0 then
           if data.lock.photo == 'yes' then
             chat_set_photo (receiver, data.set.photo, ok_cb, false)
@@ -691,7 +729,7 @@ do
             return nil
           end
         end
-        -- if group name is renamed
+        -- If group name is renamed
         if msg.action.type == 'chat_rename' then
           if data.lock.name == 'yes' then
             if data.set.name ~= tostring(msg.to.print_name) then
@@ -702,7 +740,7 @@ do
             return nil
           end
         end
-        -- if user leave, update members table
+        -- If user leave, update group's members table
         if msg.action.type == 'chat_del_user' then
           if msg.to.peer_type == 'channel' then
             channel_get_users('channel#id'..gid, update_members_list, msg)
@@ -712,7 +750,7 @@ do
           --return 'Bye '..new_member..'!'
         end
       end
-      -- autoleave
+      -- Autoleave. Don't let users add bot to their group without permission
       if msg.action.type == 'chat_add_user' and not is_sudo(uid) then
         if _config.autoleave == true and not _config.administration[gid] then
           if msg.to.peer_type == 'channel' then
@@ -748,14 +786,14 @@ do
       end
     end
 
-    -- anti spam
+    -- Anti spam
     if msg.from.peer_type == 'user' and msg.text and not is_mod(msg, gid, uid) then
       local _nl, ctrl_chars = msg.text:gsub('%c', '')
-      -- if string length more than 2048 or control characters is more than 50
+      -- If string length more than 2048 or control characters is more than 50
       if string.len(msg.text) > 2048 or ctrl_chars > 50 then
         local _c, chars = msg.text:gsub('%a', '')
         local _nc, non_chars = msg.text:gsub('%A', '')
-        -- if non characters is bigger than characters
+        -- If sums of non characters is bigger than characters
         if non_chars > chars then
           local username = '@'..msg.from.username or msg.from.first_name
           trigger_anti_spam({msg=msg, stype='spamming', usr=username}, gid, uid)
@@ -763,7 +801,7 @@ do
       end
     end
 
-    -- anti flood
+    -- Anti flood
     local post_count = 'floodc:'..uid..':'..gid
     redis:incr(post_count)
     if msg.from.peer_type == 'user' and not is_mod(msg, gid, uid) then
@@ -781,12 +819,13 @@ do
       if not msg.text then
         msg.text = '['..msg.media.type..']'
       end
+      -- Bot is waiting user to upload a new group photo
       if is_mod(msg, gid, uid) and msg.media.type == 'photo' then
         if data.set.photo == 'waiting' then
           load_photo(msg.id, set_group_photo, {msg=msg, data=data})
         end
       end
-      -- if sticker is sent
+      -- If user is sending sticker
       if msg.media.caption == 'sticker.webp' then
         local sticker_hash = 'mer_sticker:'..gid..':'..uid
         local is_sticker_offender = redis:get(sticker_hash)
@@ -819,7 +858,7 @@ do
     local chat_db = 'data/'..gid..'/'..gid..'.lua'
     local receiver = get_receiver(msg)
 
-    if is_chat_msg(msg) then
+    if is_chat_msg(msg) then -- if in a chat group
       if is_sudo(uid) then
         -- Enabled or disable bot in a group
         if matches[1] == 'channel' then
@@ -837,36 +876,13 @@ do
             reply_msg(msg.id, 'Channel disabled.', ok_cb, true)
           end
         end
-        -- add a user to sudoer
-        if matches[1] == 'visudo' then
-          if matches[2] == 'add' then
-            local uid = tonumber(matches[3])
-            _config.sudo_users[uid] =
-            save_config()
-            reply_msg(msg.id, uid..' added to sudo users list.', ok_cb, true)
-          end
-          if matches[2] == 'del' then
-            local uid = tonumber(matches[3])
-            _config.sudo_users[uid] = nil
-            save_config()
-            reply_msg(msg.id, uid..' deleted from sudo users list.', ok_cb, true)
-          end
-          if matches[2] == 'list' then
-            local sudoers = 'Sudo users for this bot are:\n\n'
-            n=1
-            for k,v in pairs(_config.sudo_users) do
-              sudoers = sudoers..n..'. '..k..' - '..v..'\n'
-              n=n+1
-            end
-            reply_msg(msg.id, sudoers, ok_cb, true)
-          end
-        end
-        -- add a group to be moderated
+        -- Add a group to be moderated. Note, this will automatically generate invite link.
         if matches[1] == 'addgroup' or matches[1] == 'gadd' then
           add_group(msg, gid, uid)
           resolve_username(_config.bot_api.uname, resolve_username_cb, {msg=msg, matches=matches})
         end
 
+        -- Automatically leaving from unadministrated group
         if matches[1] == 'autoleave' then
           if matches[2] == 'enable' then
             _config.autoleave = true
@@ -889,11 +905,12 @@ do
           end
         end
 
-        -- remove group from administration
+        -- Remove group from administration
         if matches[1] == 'remgroup' or matches[1] == 'grem' or matches[1] == 'gremove' then
           remove_group(msg, gid)
         end
 
+        -- Promote a user to sudoer by {id|username|name|reply}
         if matches[1] == 'visudo' or matches[1] == 'sudo' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -904,6 +921,7 @@ do
           end
         end
 
+        -- Demote a user from sudoer by {id|username|name|reply}
         if matches[1] == 'desudo' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -914,10 +932,12 @@ do
           end
         end
 
+        -- List of sudoers
         if matches[1] == 'sudolist' then
           get_sudolist(msg)
         end
 
+        -- Promote user to be an admin by {id|username|name|reply}
         if matches[1] == 'adminprom' or matches[1] == 'admin' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -928,6 +948,7 @@ do
           end
         end
 
+        -- Demote user from admin by {id|username|name|reply}
         if matches[1] == 'admindem' or matches[1] == 'deadmin' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -946,6 +967,7 @@ do
         If this limit is reached, than you have to wait for a days or weeks.
         So, I have diffculty to test it right in one shot.
         --]]
+        -- Create a Supergroup
         if matches[1] == 'mksupergroup' and matches[2] then
           local uname = '@'..msg.from.username or msg.from.first_name
           new_group_table[matches[2]] = {uid = tostring(uid), title = matches[2], uname = uname, gtype = 'supergroup'}
@@ -953,6 +975,7 @@ do
           reply_msg(msg.id, 'Supergroup '..matches[2]..' has been created.', ok_cb, true)
         end
 
+        -- Create a (normal) Group
         if matches[1] == 'mkgroup' and matches[2] then
           local uname = '@'..msg.from.username or msg.from.first_name
           new_group_table[uid] = {uid = uid, title = matches[2], uname = uname}
@@ -960,6 +983,7 @@ do
           reply_msg(msg.id, 'Group '..matches[2]..' has been created.', ok_cb, true)
         end
 
+        -- Set owner of a group
         if matches[1] == 'setowner' or matches[1] == 'gov' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -970,6 +994,7 @@ do
           end
         end
 
+        -- Remove owner of a group
         if matches[1] == 'remowner' or matches[1] == 'degov' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -979,15 +1004,18 @@ do
             demote_owner({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
-
+        
+        -- Lis of administrators
         if matches[1] == 'adminlist' then
           get_adminlist(msg, gid)
         end
 
+        -- List of owners
         if matches[1] == 'ownerlist' then
           get_ownerlist(msg, gid)
         end
 
+        -- Globally ban user by {id|username|name|reply}
         if matches[1] == 'superban' or matches[1] == 'gban' or matches[1] == 'hammer' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -998,6 +1026,7 @@ do
           end
         end
 
+        -- Globally lift ban from user by {id|username|name|reply}
         if matches[1] == 'superunban' or matches[1] == 'gunban' or matches[1] == 'unhammer' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1008,6 +1037,7 @@ do
           end
         end
 
+        -- Enable whitelist
         if matches[1] == 'whitelist' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1027,6 +1057,7 @@ do
           end
         end
 
+        -- Remove user from whitelist by {id|username|name|reply}
         if matches[1] == 'unwhitelist' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1042,6 +1073,7 @@ do
       local data = load_data(_config.administration[gid])
 
       if is_owner(msg, gid, uid) then
+        -- Anti spam and flood settings
         if matches[1] == 'antispam' then
           if matches[2] == 'kick' then
             if data.antispam ~= 'kick' then
@@ -1068,6 +1100,7 @@ do
           end
         end
 
+        -- Allow user by {is|name|username|reply} to use the bot when whitelist is enabled.
         if matches[1] == 'whitelist' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1078,6 +1111,7 @@ do
           end
         end
 
+        -- Remove users permission by {is|name|username|reply} to use the bot when whitelist is enabled.
         if matches[1] == 'unwhitelist' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1088,10 +1122,12 @@ do
           end
         end
 
+        -- Generate invite link. Users could join the group by clicking this link.
         if matches[1] == 'setlink' or matches[1] == 'link set' then
           set_group_link({msg=msg, gid=gid}, chat_db)
         end
 
+        -- Revoke group's invite link to make the group private
         if matches[1] == 'link revoke' then
           if data.link == '' then
             reply_msg(msg.id, 'This group don\'t have invite link', ok_cb, true)
@@ -1101,6 +1137,7 @@ do
           end
         end
 
+        -- Set group's name/title
         if matches[1] == 'setname' then
           data.name = matches[2]
           save_data(data, chat_db)
@@ -1110,13 +1147,15 @@ do
             rename_chat(receiver, data.name, ok_cb, true)
           end
         end
-
+        
+        -- Set group's photo
         if matches[1] == 'setphoto' then
           data.set.photo = 'waiting'
           save_data(data, chat_db)
           reply_msg(msg.id, 'Please send me new group photo now', ok_cb, true)
         end
 
+        -- Sticker settings
         if matches[1] == 'sticker' then
           if matches[2] == 'warn' then
             if data.sticker ~= 'warn' then
@@ -1146,12 +1185,14 @@ do
           end
         end
 
+        -- Set custom welcome message
         if matches[1] == 'setwelcome' and matches[2] then
           data.welcome.msg = matches[2]
           save_data(data, chat_db)
           reply_msg(msg.id, 'Set group welcome message to:\n'..matches[2], ok_cb, true)
         end
 
+        -- Welcome message settings
         if matches[1] == 'welcome' then
           if matches[2] == 'group' and data.welcome.to ~= 'group' then
             data.welcome.to = 'group'
@@ -1173,13 +1214,15 @@ do
             end
           end
         end
-
+        
+        -- Set group's description
         if matches[1] == 'setabout' and matches[2] then
           data.description = matches[2]
           save_data(data, chat_db)
           reply_msg(msg.id, 'Set group description to:\n'..matches[2], ok_cb, true)
         end
 
+        -- Set group's rules
         if matches[1] == 'setrules' and matches[2] then
           data.rules = matches[2]
           save_data(data, chat_db)
@@ -1187,7 +1230,7 @@ do
         end
 
         if matches[1] == 'group' or matches[1] == 'gp' then
-          -- lock {bot|name|member|photo|sticker}
+          -- Lock {bot|name|member|photo|sticker}
           if matches[2] == 'lock' then
             if matches[3] == 'bot' then
               if data.lock.bot == 'yes' then
@@ -1228,7 +1271,7 @@ do
               reply_msg(msg.id, 'Please send me the group photo now', ok_cb, true)
             end
           end
-          -- unlock {bot|name|member|photo|sticker}
+          -- Unlock {bot|name|member|photo|sticker}
           if matches[2] == 'unlock' then
             if matches[3] == 'bot' then
               if data.lock.bot == 'no' then
@@ -1268,10 +1311,43 @@ do
             end
           end
         end
+
+        -- List of globally banned users
+        if matches[1] == 'superbanlist' or matches[1] == 'gbanlist' or matches[1] == 'hammerlist' then
+          local hash = 'globanned'
+          local list = redis:smembers(hash)
+          local text = "Global bans!\n\n"
+          for k,v in pairs(list) do
+            text = text..k.." - "..v.."\n"
+          end
+          return text
+        end        
+
+        -- Promote group moderator
+        if matches[1] == 'promote' or matches[1] == 'mod' then
+          if msg.reply_id then
+            get_message(msg.reply_id, action_by_reply, msg)
+          elseif matches[2] == '@' then
+            resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
+          elseif matches[3]:match('^%d+$') then
+            promote({msg=msg, matches=matches[3]}, gid, matches[3])
+          end
+        end
+        
+        -- Demote group moderator
+        if matches[1] == 'demote' or matches[1] == 'demod' then
+          if msg.reply_id then
+            get_message(msg.reply_id, action_by_reply, msg)
+          elseif matches[2] == '@' then
+            resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
+          elseif matches[3]:match('^%d+$') then
+            demote({msg=msg, matches=matches[3]}, gid, matches[3])
+          end
+        end
       end
 
       if is_mod(msg, gid, uid) then
-        -- view group settings
+        -- Print group settings
         if matches[1] == 'group' and matches[2] == 'settings' then
           local text = 'Settings for *'..msg.to.title..'*\n'
                 ..'*-* Lock group from bot = `'..data.lock.bot..'`\n'
@@ -1284,6 +1360,7 @@ do
           send_api_msg(msg, get_receiver_api(msg), text, true, 'md')
         end
 
+        -- Invite user by {id|username|name|reply}
         if matches[1] == 'invite' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1301,6 +1378,7 @@ do
           end
         end
 
+        -- Kick user by {id|username|name|reply}
         if matches[1] == 'kick' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1310,6 +1388,8 @@ do
             kick_user(msg, gid, matches[3])
           end
         end
+        
+        -- Kick user by {id|username|name|reply} and re-kick if rejoin
         if matches[1] == 'ban' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1320,27 +1400,7 @@ do
           end
         end
 
-        if matches[1] == 'banlist' then
-          local hash =  'banned:'..gid
-          local list = redis:smembers(hash)
-          local text = "Ban list!\n\n"
-          for k,v in pairs(list) do
-            text = text..k.." - "..v.."\n"
-          end
-          return text
-        end
-
-        -- Returns globally ban list
-        if matches[1] == 'superbanlist' or matches[1] == 'gbanlist' or matches[1] == 'hammerlist' then
-          local hash =  'globanned'
-          local list = redis:smembers(hash)
-          local text = "Global bans!\n\n"
-          for k,v in pairs(list) do
-            text = text..k.." - "..v.."\n"
-          end
-          return text
-        end
-
+        -- Lift ban by {id|username|name|reply}
         if matches[1] == 'unban' then
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
@@ -1351,30 +1411,23 @@ do
           end
         end
 
-        if matches[1] == 'promote' or matches[1] == 'mod' then
-          if msg.reply_id then
-            get_message(msg.reply_id, action_by_reply, msg)
-          elseif matches[2] == '@' then
-            resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
-          elseif matches[3]:match('^%d+$') then
-            promote({msg=msg, matches=matches[3]}, gid, matches[3])
+        -- List of group's banned users
+        if matches[1] == 'banlist' then
+          local hash = 'banned:'..gid
+          local list = redis:smembers(hash)
+          local text = "Ban list!\n\n"
+          for k,v in pairs(list) do
+            text = text..k.." - "..v.."\n"
           end
+          return text
         end
-        if matches[1] == 'demote' or matches[1] == 'demod' then
-          if msg.reply_id then
-            get_message(msg.reply_id, action_by_reply, msg)
-          elseif matches[2] == '@' then
-            resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
-          elseif matches[3]:match('^%d+$') then
-            demote({msg=msg, matches=matches[3]}, gid, matches[3])
-          end
-        end
+        
+        -- List of group's moderators
         if matches[1] == 'modlist' then
           if not _config.administration[gid] then
             reply_msg(msg.id, 'I do not administrate this group.', ok_cb, true)
             return
           end
-          -- determine if table is empty
           if next(data.moderators) == nil then
             reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
           else
@@ -1388,6 +1441,7 @@ do
         end
       end
 
+      -- Kick per user's request. Don't do this in supergroup, because that's mean ban
       if matches[1] == 'kickme' or matches[1] == 'leave' then
         if msg.to.peer_type == 'channel' then
           reply_msg(msg.id, 'Leave this group manually or you will be unable to rejoin.', ok_cb, true)
@@ -1396,6 +1450,7 @@ do
         end
       end
 
+      -- Print group's invite link. Users can join group by clicking this link.
       if matches[1] == 'link' or matches[1] == 'getlink' or matches[1] == 'link get' then
         if data.link == '' then
           send_api_msg(msg, get_receiver_api(msg), 'No link has been set for this group.\nTry <code>!link set</code> to generate.', true, 'html')
@@ -1408,6 +1463,7 @@ do
         end
       end
 
+      -- Print group's description.
       if matches[1] == 'about' then
         if not data.description then
           reply_msg(msg.id, 'No description available', ok_cb, true)
@@ -1416,6 +1472,7 @@ do
         end
       end
 
+      -- Print group's rules
       if matches[1] == 'rules' then
         if not data.rules then
           reply_msg(msg.id, 'No rules have been set for '..msg.to.title..'.', ok_cb, true)
@@ -1426,6 +1483,7 @@ do
         end
       end
 
+      -- List of groups managed by this bot (listed in data/config.lua)
       if matches[1] == 'grouplist' or matches[1] == 'groups' or matches[1] == 'glist' then
         local gplist = ''
         for k,v in pairs(_config.administration) do
@@ -1449,7 +1507,7 @@ do
         reply_msg(msg.id, 'Merbot\n'..VERSION..'\nGitHub: '..bot_repo..'\nLicense: GNU GPL v2', ok_cb, true)
       end
 
-    else -- if private message
+    else -- if in private message
 
       local usr = '@'..msg.from.username or msg.from.first_name
 
