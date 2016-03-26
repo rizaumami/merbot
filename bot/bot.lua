@@ -172,28 +172,53 @@ function _send_msg(destination, text)
   send_large_msg(destination, text)
 end
 
+-- Create a basic config.lua file and saves it.
+function create_config()
+  print('\nSome functions and plugins using bot API as sender.\n'
+      ..'Please provide bots API token and username to ensure it\'s works as intended.\n'
+      ..'You can ENTER to skip and then fill the required info into data/config.lua.\n')
+  io.write('Please input your bot API key (token): ')
+  local bot_api_key=io.read()
+  io.write('\nPlease input your bot API @username: ')
+  local bot_api_uname=io.read()
+  local bot_api_uname = bot_api_uname:gsub('@', '')
+  print('\nYour bots API token is: '..bot_api_key..'\n'
+      ..'Your bots API @username is : @'..bot_api_uname)
+  -- A simple config with basic plugins and ourselves as privileged user
+  _config = {
+    administration = {},
+    administrators = {},
+    autoleave = false,
+    bot_api = {
+      key = bot_api_key,
+      uname = bot_api_uname
+    },
+    disabled_channels = {},
+    enabled_plugins = {
+      'administration',
+      'google',
+      'help',
+      'id',
+      'pattern',
+      'plugins',
+      'reddit',
+      'rss',
+      'sudo'
+    },
+    globally_banned = {},
+    sudo_users = {
+      [our_id] = '0'
+    }
+  }
+  save_config()
+  --serialize_to_file(config, './data/config.lua')
+  --print ('saved config into ./data/config.lua')
+end
+
 -- Save the content of _config to config.lua
 function save_config()
   serialize_to_file(_config, './data/config.lua')
-  print ('saved config into ./data/config.lua')
-end
-
-function fill_bot_api_info()
-  if next(_config.bot_api) == nil or _config.bot_api.key == '' then
-    print('\nSome functions and plugins using bot API as sender.\n'
-        ..'Please provide bots API token and username to ensure it\'s works as intended.\n'
-        ..'You can ENTER to skip and then fill the required info into data/config.lua.\n')
-    io.write('Please input your bot API key (token): ')
-    local bot_api_key=io.read()
-
-    io.write('\nPlease input your bot API @username: ')
-    local bot_api_uname=io.read()
-    local bot_api_uname = bot_api_uname:gsub('@', '')
-    _config.bot_api = {key = bot_api_key, uname = bot_api_uname}
-    save_config()
-    print('\nYour bots API token is: '..bot_api_key..'\n'
-        ..'Your bots API @username is : @'..bot_api_uname)
-  end
+  print ('Saved config into ./data/config.lua')
 end
 
 -- Returns the config from config.lua file.
@@ -204,7 +229,6 @@ function load_config()
   if not f then
     print ('Created new config file: data/config.lua')
     create_config()
-    fill_bot_api_info()
   else
     f:close()
   end
@@ -232,33 +256,6 @@ function on_secret_chat_update (schat, what)
 end
 
 function on_get_difference_end ()
-end
-
--- Create a basic config.lua file and saves it.
-function create_config()
-  -- A simple config with basic plugins and ourselves as privileged user
-  config = {
-    administration = {},
-    administrators = {},
-    autoleave = false,
-    bot_api = {},
-    disabled_channels = {},
-    enabled_plugins = {
-      'administration',
-      'google',
-      'help',
-      'id',
-      'pattern',
-      'plugins',
-      'reddit',
-      'rss',
-      'sudo' },
-    sudo_users = {
-      [our_id] = '0'
-    }
-  }
-  serialize_to_file(config, './data/config.lua')
-  print ('saved config into ./data/config.lua')
 end
 
 -- Enable plugins in config.json
