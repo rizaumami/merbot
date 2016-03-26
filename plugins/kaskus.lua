@@ -108,6 +108,7 @@ do
     ["makassar"] = "170_Makassar",
     ["tv"] = "171_TV",
     ["spiritual"] = "173_Spiritual",
+    ["programmer-forum"] = "176_Programmer Forum",
     ["kaskus-plus-lounge"] = "177_KASKUS Plus Lounge",
     ["manado"] = "179_Manado",
     ["banyumas"] = "181_Banyumas",
