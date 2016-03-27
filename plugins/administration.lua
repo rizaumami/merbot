@@ -612,7 +612,7 @@ do
       end
 
       -- Anti arabic
-      if msg.text and msg.text:match('([\216-\219][\128-\191])') and _config.administration[gid] then
+      if msg.text:match('([\216-\219][\128-\191])') and _config.administration[gid] then
         if uid > 0 and not is_mod(msg, gid, uid) then
           local data = load_data(_config.administration[gid])
           local arabic_hash = 'mer_arabic:'..gid
@@ -1157,9 +1157,17 @@ do
           end
         end
 
-        -- Generate invite link. Users could join the group by clicking this link.
+        -- Invite link. Users could join the group by clicking this link.
         if matches[1] == 'setlink' or matches[1] == 'link set' then
-          set_group_link({msg=msg, gid=gid}, chat_db)
+           -- manually insert invite link
+          if matches[2] then
+            data.link = matches[2]
+            save_data(data, chat_db)
+            reply_msg(msg.id, data.link, ok_cb, true)
+           -- generate invite link
+          else
+            set_group_link({msg=msg, gid=gid}, chat_db)
+          end
         end
 
         -- Revoke group's invite link to make the group private
