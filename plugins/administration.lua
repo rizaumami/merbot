@@ -601,13 +601,54 @@ do
     local gid = msg.to.peer_id
     local receiver = get_receiver(msg)
 
-    -- If sender is sudo then re-enable the channel
-    if msg.text == '!channel enable' and is_sudo(uid) then
-      _config.disabled_channels[receiver] = false
-      save_config()
-    end
-    if _config.disabled_channels[receiver] == true then
-      msg.text = ''
+    if msg.text then
+      -- If sender is sudo then re-enable the channel
+      if msg.text == '!channel enable' and is_sudo(uid) then
+        _config.disabled_channels[receiver] = false
+        save_config()
+      end
+      if _config.disabled_channels[receiver] == true then
+        msg.text = ''
+      end
+
+      -- Anti arabic
+      if msg.text and msg.text:match('([\216-\219][\128-\191])') and _config.administration[gid] then
+        if uid > 0 and not is_mod(msg, gid, uid) then
+          local data = load_data(_config.administration[gid])
+          local arabic_hash = 'mer_arabic:'..gid
+          local is_arabic_offender = redis:sismember(arabic_hash, uid)
+          if data.lock.arabic == 'warn' then
+            if is_arabic_offender then
+              kick_user(msg, gid, uid)
+              redis:srem(arabic_hash, uid)
+            end
+            if not is_arabic_offender then
+              redis:sadd(arabic_hash, uid)
+              reply_msg(msg.id, 'Please do not post in arabic.\n'
+                  ..'Obey the rules or you\'ll be kicked.', ok_cb, true)
+            end
+          end
+          if data.lock.arabic == 'kick' then
+            kick_user(msg, gid, uid)
+            reply_msg(msg.id, 'Arabic is not allowed here!', ok_cb, true)
+          end
+        end
+      end
+
+      -- Anti spam
+      if msg.from.peer_type == 'user' and not is_mod(msg, gid, uid) then
+        local _nl, ctrl_chars = msg.text:gsub('%c', '')
+        -- If string length more than 2048 or control characters is more than 50
+        if string.len(msg.text) > 2048 or ctrl_chars > 50 then
+          local _c, chars = msg.text:gsub('%a', '')
+          local _nc, non_chars = msg.text:gsub('%A', '')
+          -- If sums of non characters is bigger than characters
+          if non_chars > chars then
+            local username = '@'..msg.from.username or msg.from.first_name
+            trigger_anti_spam({msg=msg, stype='spamming', usr=username}, gid, uid)
+          end
+        end
+      end
     end
 
     -- If banned user is talking
@@ -644,30 +685,6 @@ do
       end
       if not allowed then
         msg.text = ''
-      end
-    end
-
-    -- Anti arabic
-    if msg.text:match('([\216-\219][\128-\191])') and _config.administration[gid] then
-      if uid > 0 and not is_mod(msg, gid, uid) then
-        local data = load_data(_config.administration[gid])
-        local arabic_hash = 'mer_arabic:'..gid
-        local is_arabic_offender = redis:sismember(arabic_hash, uid)
-        if data.lock.arabic == 'warn' then
-          if is_arabic_offender then
-            kick_user(msg, gid, uid)
-            redis:srem(arabic_hash, uid)
-          end
-          if not is_arabic_offender then
-            redis:sadd(arabic_hash, uid)
-            reply_msg(msg.id, 'Please do not post in arabic.\n'
-                ..'Obey the rules or you\'ll be kicked.', ok_cb, true)
-          end
-        end
-        if data.lock.arabic == 'kick' then
-          kick_user(msg, gid, uid)
-          reply_msg(msg.id, 'Arabic is not allowed here!', ok_cb, true)
-        end
       end
     end
 
@@ -812,21 +829,6 @@ do
         if msg.to.title == title then
           channel_set_admin(get_receiver(msg), 'user#id'..uid, ok_cb, true)
           new_group_table[group] = nil
-        end
-      end
-    end
-
-    -- Anti spam
-    if msg.from.peer_type == 'user' and msg.text and not is_mod(msg, gid, uid) then
-      local _nl, ctrl_chars = msg.text:gsub('%c', '')
-      -- If string length more than 2048 or control characters is more than 50
-      if string.len(msg.text) > 2048 or ctrl_chars > 50 then
-        local _c, chars = msg.text:gsub('%a', '')
-        local _nc, non_chars = msg.text:gsub('%A', '')
-        -- If sums of non characters is bigger than characters
-        if non_chars > chars then
-          local username = '@'..msg.from.username or msg.from.first_name
-          trigger_anti_spam({msg=msg, stype='spamming', usr=username}, gid, uid)
         end
       end
     end
