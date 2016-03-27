@@ -13,53 +13,53 @@ it into group or PM.
 
 do
 
-  local function resolve_username_cb(extra, success, result)
+  local function resolve_user(extra, success, result)
     if success == 1 then
       if result.username then
         user_name = ' @'..result.username
       else
         user_name = ''
       end
+      local msg = extra.msg
       local text = '<code>Name      :</code><b>'..(result.first_name or '')..' '..(result.last_name or '')..'</b>\n'
                  ..'<code>First name:</code>'..(result.first_name or '')..'\n'
                  ..'<code>Last name :</code>'..(result.last_name or '')..'\n'
                  ..'<code>User name :</code>'..user_name..'\n'
                  ..'<code>ID        :'..result.peer_id..'</code>'
-      send_api_msg(msg, get_receiver_api(extra), text, true, 'html')
+      send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
     else
-      send_api_msg(msg, get_receiver_api(extra), '<b>Failed</b> to resolve '
-          ..extra.text:gsub('!id ', '')..' IDs.\n'
-          ..'Check if the username is correct.', true, 'html')
+      send_api_msg(msg, get_receiver_api(msg), '<b>Failed</b> to resolve <code>'
+          ..extra.usr..'</code> IDs.\nCheck if <code>'..extra.usr..'</code> is correct.', true, 'html')
     end
   end
 
   local function scan_name(extra, success, result)
-    if extra.to.peer_type == 'channel' then
+    local msg = extra.msg
+    local uname = extra.uname
+    if msg.to.peer_type == 'channel' then
       member_list = result
     else
       member_list = result.members
     end
-    local user = extra.text:gsub('!id.+ ', '')
-    local user = user:gsub(' ', '_')
     local founds = {}
     for k,member in pairs(member_list) do
       fields = {'first_name', 'last_name', 'print_name'}
       for k,field in pairs(fields) do
         if member[field] and type(member[field]) == 'string' then
           local gp_member = member[field]:lower()
-          if gp_member:match(user:lower()) then
+          if gp_member:match(uname:lower()) then
             founds[tostring(member.id)] = member
           end
         end
       end
     end
     if next(founds) == nil then -- Empty table
-      send_api_msg(msg, get_receiver_api(extra), user..' <b>not found on this chat</b>', true, 'html')
+      send_api_msg(msg, get_receiver_api(msg), uname..' <b>not found on this chat</b>', true, 'html')
     else
       local text = ''
       for k,user in pairs(founds) do
         if user.username then
-          user_name = ' @'..user.username 
+          user_name = ' @'..user.username
         else
           user_name = ''
         end
@@ -69,7 +69,7 @@ do
              ..'<code>User name :</code>'..user_name..'\n'
              ..'<code>ID        :'..user.peer_id..'</code>\n\n'
       end
-      send_api_msg(msg, get_receiver_api(extra), text, true, 'html')
+      send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
     end
   end
 
@@ -84,20 +84,21 @@ do
                ..'<code>Last name :</code>'..(result.from.last_name or '')..'\n'
                ..'<code>User name :</code>'..user_name..'\n'
                ..'<code>ID        :'..result.from.peer_id..'</code>'
-    send_api_msg(msg, get_receiver_api(extra), text, true, 'html')
+    send_api_msg(extra, get_receiver_api(extra), text, true, 'html')
   end
 
   local function returnids(extra, success, result)
-    if extra.to.peer_type == 'channel' then
-      chat_id = extra.to.peer_id
-      chat_title = extra.to.title
+    local msg = extra.msg
+    local cmd = extra.cmd
+    if msg.to.peer_type == 'channel' then
+      chat_id = msg.to.peer_id
+      chat_title = msg.to.title
       member_list = result
     else
       chat_id = result.peer_id
       chat_title = result.title
       member_list = result.members
     end
-    local match = extra.text:gsub('!id chat ', '')
     local list = '*'..chat_title..' -* `'..chat_id..'`\n\n'
     local text = chat_title..' - '..chat_id..'\n\n'
     i = 0
@@ -111,48 +112,55 @@ do
       list = list..'*'..i..'*. `'..v.peer_id..'` -'..user_name..' '..(v.first_name or '')..(v.last_name or '')..'\n'
       text = text..i..'. '..v.peer_id..' -'..user_name..' '..(v.first_name or '')..(v.last_name or '')..'\n'
     end
-    if match == 'pm' then
-      send_api_msg(msg, extra.from.peer_id, list:gsub('_', '[_]'), true, 'md')
-    elseif match == 'txt' or match == 'pmtxt' then
-      local textfile = '/tmp/chat_info_'..extra.to.peer_id..'_'..os.date("%y%m%d.%H%M%S")..'.txt'
+    if cmd == 'pm' then
+      send_api_msg(msg, msg.from.peer_id, list:gsub('_', '[_]'), true, 'md')
+    elseif cmd == 'txt' or cmd == 'pmtxt' then
+      local textfile = '/tmp/chat_info_'..msg.to.peer_id..'_'..os.date("%y%m%d.%H%M%S")..'.txt'
       local file = io.open(textfile, 'w')
       file:write(text)
       file:flush()
       file:close()
-      if match == 'txt' then
-        send_document(get_receiver(extra), textfile, rmtmp_cb, {file_path=textfile})
-      elseif match == 'pmtxt' then
-        send_document('user#id'..extra.from.peer_id, textfile, rmtmp_cb, {file_path=textfile})
+      if cmd == 'txt' then
+        send_document(get_receiver(msg), textfile, rmtmp_cb, {file_path=textfile})
+      elseif cmd == 'pmtxt' then
+        send_document('user#id'..msg.from.peer_id, textfile, rmtmp_cb, {file_path=textfile})
       end
     else
-      send_api_msg(msg, get_receiver_api(extra), list:gsub('_', '[_]'), true, 'md')
+      send_api_msg(msg, get_receiver_api(msg), list:gsub('_', '[_]'), true, 'md')
     end
   end
 
 --------------------------------------------------------------------------------
 
   local function run(msg, matches)
-  
-    if not is_chat_msg(msg) and not is_admin(msg.from.peer_id) then return nil end
 
-    if is_mod(msg, msg.to.peer_id, msg.from.peer_id) then
+    local gid = msg.to.peer_id
+    local uid = msg.from.peer_id
+
+    if not is_chat_msg(msg) and not is_admin(uid) then
+      return nil
+    end
+
+    if is_mod(msg, gid, uid) then
       if msg.reply_id and msg.text == '!id' then
         get_message(msg.reply_id, action_by_reply, msg)
       elseif matches[1] == 'chat' then
         if msg.to.peer_type == 'channel' then
-          channel_get_users('channel#id'..msg.to.peer_id, returnids, msg)
+          channel_get_users('channel#id'..gid, returnids, {msg=msg, cmd=matches[2]})
         end
         if msg.to.peer_type == 'chat' then
-          chat_info('chat#id'..msg.to.peer_id, returnids, msg)
+          chat_info('chat#id'..gid, returnids, {msg=msg, cmd=matches[2]})
         end
       elseif matches[1] == '@' then
-        resolve_username(matches[2], resolve_username_cb, msg)
+        resolve_username(matches[2], resolve_user, {msg=msg, usr=matches[2]})
+      elseif matches[1]:match('%d+$') then
+        user_info('user#id'..matches[1], resolve_user, {msg=msg, usr=matches[1]})
       elseif matches[1] == 'name' then
         if msg.to.peer_type == 'channel' then
-          channel_get_users('channel#id'..msg.to.peer_id, scan_name, msg)
+          channel_get_users('channel#id'..gid, scan_name, {msg=msg, uname=matches[2]})
         end
         if msg.to.peer_type == 'chat' then
-          chat_info('chat#id'..msg.to.peer_id, scan_name, msg)
+          chat_info('chat#id'..gid, scan_name, {msg=msg, uname=matches[2]})
         end
       end
     end
@@ -167,11 +175,11 @@ do
                  ..'<code>First name:</code>'..(msg.from.first_name or '')..'\n'
                  ..'<code>Last name :</code>'..(msg.from.last_name or '')..'\n'
                  ..'<code>User name :</code>'..user_name..'\n'
-                 ..'<code>ID        :'..msg.from.peer_id..'</code>'
+                 ..'<code>ID        :'..uid..'</code>'
       if not is_chat_msg(msg) then
         send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
       else
-        send_api_msg(msg, get_receiver_api(msg), text..'\n\nYou are in group <b>'..msg.to.title..'</b> [<code>'..msg.to.peer_id..'</code>]', true, 'html')
+        send_api_msg(msg, get_receiver_api(msg), text..'\n\nYou are in group <b>'..msg.to.title..'</b> [<code>'..gid..'</code>]', true, 'html')
       end
     end
 
@@ -210,7 +218,8 @@ do
       '^!id (chat)$',
       '^!id (chat) (.+)$',
       '^!id (name) (.*)$',
-      '^!id (@)(.+)$'
+      '^!id (@)(.+)$',
+      '^!id (%d+)$',
     },
     run = run
   }
