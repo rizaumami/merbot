@@ -1756,7 +1756,7 @@ do
       '^!(invite)$', '^!(invite) (@)(%g+)$', '^!(invite)(%s)(%g+)$',
       '^!(kick)$', '^!(kick) (@)(%g+)$', '^!(kick)(%s)(%d+)$', '^!(kick) (%d+) (%d+)$', '^!(kick) (@)(%g+) (%d+)$', '^!(kick)(%s)(%d+) (%d+)$',
       '^!(link)$', '^!(link get)$', '^!(getlink)$',
-      '^!(link set)$', '^!(setlink)$',
+      '^!(link set)$', '^!(setlink)$', '^!(link set) (.*)$', '^!(setlink) (.*)$',
       '^!(setowner)$', '^!(setowner) (@)(%g+)$', '^!(setowner)(%s)(%d+)$', '^!(setowner) (@)(%g+) (%d+)$', '^!(setowner)(%s)(%d+) (%d+)$',
       '^!(gov)$', '^!(gov) (@)(%g+)$', '^!(gov)(%s)(%d+)$', '^!(gov) (@)(%g+) (%d+)$', '^!(gov)(%s)(%d+) (%d+)$',
       '^!(degov)$', '^!(degov) (@)(%g+)$', '^!(degov)(%s)(%d+)$', '^!(degov) (@)(%g+) (%d+)$', '^!(degov)(%s)(%d+) (%d+)$',
