@@ -118,8 +118,7 @@ do
     local data = load_data(_config.administration[gid])
     if uid == tonumber(our_id) or is_mod(extra.msg, gid, uid) then
       reply_msg(extra.msg.id, extra.usr..' is too privileged to be banned.', ok_cb, true)
-    end
-    if is_banned(gid, uid) then
+    elseif is_banned(gid, uid) then
       reply_msg(extra.msg.id, extra.usr..' is already banned.', ok_cb, true)
     else
       local hash = 'banned:'..gid
@@ -134,8 +133,7 @@ do
   local function global_ban_user(extra, gid, uid)
     if uid == tonumber(our_id) or is_admin(uid) then
       reply_msg(extra.msg.id, uid..' is too privileged to be globally banned.', ok_cb, true)
-    end
-    if is_globally_banned(uid) then
+    elseif is_globally_banned(uid) then
       reply_msg(extra.msg.id, extra.usr..' is already globally banned.', ok_cb, true)
     else
       local hash = 'globanned'
@@ -329,6 +327,7 @@ do
     end
     gpdata = {
         antispam = 'ban',
+        arabic = 'ok',
         banned = {},
         founded = os.time(),
         founder = '',
@@ -1297,7 +1296,7 @@ do
 
         -- Set group's description
         if matches[1] == 'setabout' and matches[2] then
-          data.description = matches[2]
+          data.description = matches[2]..'\n\n'
           save_data(data, chat_db)
           reply_msg(msg.id, 'Set group description to:\n'..matches[2], ok_cb, true)
         end
