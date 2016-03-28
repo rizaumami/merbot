@@ -1400,11 +1400,16 @@ do
         if matches[1] == 'superbanlist' or matches[1] == 'gbanlist' or matches[1] == 'hammerlist' then
           local hash = 'globanned'
           local list = redis:smembers(hash)
-          local text = "Global bans!\n\n"
+          local gbanlist = ''
           for k,v in pairs(list) do
-            text = text..k.." - "..v.."\n"
+            gbanlist = gbanlist..k.." - "..v.."\n"
           end
-          return text
+          if gbanlist == '' then
+            gbanlist = 'There are currently no globally banned users.'
+          else
+            gbanlist = 'Globally banned users list:\n\n'..gbanlist
+          end
+          return gbanlist
         end
 
         -- Promote group moderator
@@ -1500,11 +1505,16 @@ do
         if matches[1] == 'banlist' then
           local hash = 'banned:'..gid
           local list = redis:smembers(hash)
-          local text = "Ban list!\n\n"
+          local banlist = ''
           for k,v in pairs(list) do
-            text = text..k.." - "..v.."\n"
+            banlist = banlist..k.." - "..v.."\n"
           end
-          return text
+          if banlist == '' then
+            banlist = 'There are currently no banned users.'
+          else
+            banlist = 'Banned users list:\n\n'..banlist
+          end
+          return banlist
         end
 
         -- List of group's moderators
