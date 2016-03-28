@@ -327,13 +327,13 @@ do
     end
     gpdata = {
         antispam = 'ban',
-        arabic = 'ok',
         banned = {},
         founded = os.time(),
         founder = '',
         group_type = msg.to.peer_type,
         link = '',
         lock = {
+          arabic = 'ok',
           bot = 'no',
           member = 'no',
           name = 'yes',
