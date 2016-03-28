@@ -1540,7 +1540,7 @@ do
         else
           local about = data.description or ''
           local link = data.link
-          send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about..link, true, 'html')
+          send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about..'\n\n'..link, true, 'html')
         end
       end
 
