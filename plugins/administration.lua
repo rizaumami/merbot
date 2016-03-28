@@ -695,11 +695,11 @@ do
           if msg.action.link_issuer then
             userid = uid
             new_member = (msg.from.first_name or '')..' '..(msg.from.last_name or '')
-            uname = '@'..msg.from.username or ''
+            greet_uname = msg.from.username or ''
           else
             userid = msg.action.user.peer_id
             new_member = (msg.action.user.first_name or '')..' '..(msg.action.user.last_name or '')
-            uname = '@'..msg.action.user.username or ''
+            greet_uname = msg.action.user.username or ''
           end
           -- Kick if newcomer is a banned user
           if is_globally_banned(userid) or is_banned(gid, userid) then
@@ -712,7 +712,7 @@ do
             end
             -- Detecting API bot the hackish way.
             -- Regular user ended with 'bot' in their username will be kicked too.
-            if data.lock.bot == 'yes' and uname:match('bot$') then
+            if data.lock.bot == 'yes' and greet_uname:match('bot$') then
               kick_user(msg, gid, userid)
             end
           end
@@ -727,30 +727,35 @@ do
               return nil
             end
             -- Do not greet api bot
-            if uname:match('bot$') then
+            if greet_uname:match('bot$') then
               return nil
             end
-            local about = ''
-            local rules = ''
+            local group_about = ''
+            local group_rules = ''
+            if greet_uname:match('^%g+$') then
+              greet_uname = '@'..greet_uname..' AKA '
+            else
+              greet_uname = ''
+            end
+            if data.description then
+              group_about = '\n<b>Description</b>:\n'..data.description..'\n'
+            end
+            if data.rules then
+              group_rules = '\n<b>Rules</b>:\n'..data.rules..'\n'
+            end
             -- Which welcome message to be send
             if data.welcome.msg ~= '' then
               welcomes = data.welcome.msg..'\n'
-            else -- If no custom welcome message defined, use this default
-              local username = uname..' AKA ' or ''
-              if data.description then
-                about = '\n<b>Description</b>:\n'..data.description..'\n'
-              end
-              if data.rules then
-                rules = '\n<b>Rules</b>:\n'..data.rules..'\n'
-              end
-              welcomes = 'Welcome '..username..'<b>'..new_member..'</b> <code>['..userid..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
+            -- If no custom welcome message defined, use this default
+            else
+              welcomes = 'Welcome '..greet_uname..'<b>'..new_member..'</b> <code>['..userid..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
             end
             if data.welcome.to == 'group' then
               receiver_api = get_receiver_api(msg)
             elseif data.welcome.to == 'private' then
               receiver_api = 'user#id'..userid
             end
-            send_api_msg(msg, receiver_api, welcomes..about..rules..'\n', true, 'html')
+            send_api_msg(msg, receiver_api, welcomes..group_about..group_rules..'\n', true, 'html')
           end
           -- Update group's members table
           if msg.to.peer_type == 'channel' then
@@ -1296,7 +1301,7 @@ do
 
         -- Set group's description
         if matches[1] == 'setabout' and matches[2] then
-          data.description = matches[2]..'\n\n'
+          data.description = matches[2]
           save_data(data, chat_db)
           reply_msg(msg.id, 'Set group description to:\n'..matches[2], ok_cb, true)
         end
@@ -1538,18 +1543,23 @@ do
         elseif data.link == 'revoked' then
           reply_msg(msg.id, 'Invite link for this group has been revoked', ok_cb, true)
         else
-          local about = data.description or ''
           local link = data.link
-          send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about..'\n\n'..link, true, 'html')
+          local about = data.description
+          if not about then
+            send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..link, true, 'html')
+          else
+            send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about..link, true, 'html')
+          end
         end
       end
 
       -- Print group's description.
       if matches[1] == 'about' then
-        if not data.description then
+        local about = data.description
+        if not about then
           reply_msg(msg.id, 'No description available', ok_cb, true)
         else
-          send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..data.description, true, 'html')
+          send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about, true, 'html')
         end
       end
 
