@@ -57,85 +57,112 @@ do
 
   local function run(msg, matches)
 
+    local plugin = matches[2]
+    local receiver = get_receiver(msg)
+
     if is_sudo(msg.from.peer_id) then
+
       -- Enable a plugin
-      if matches[1] == 'enable' then
-        print('enable: '..matches[2])
-        print('checking if '..matches[2]..' exists')
-        -- Check if plugin is enabled
-        if plugin_enabled(matches[2]) then
-          reply_msg(msg.id, 'Plugin '..matches[2]..' is enabled', ok_cb, true)
+      if not matches[3] then
+        if matches[1] == 'enable' then
+          print("enable: "..plugin)
+          print('checking if '..plugin..' exists')
+
+          -- Check if plugin is enabled
+          if plugin_enabled(plugin) then
+            reply_msg(msg.id, 'Plugin '..plugin..' is enabled', ok_cb, true)
+          end
+
+          -- Checks if plugin exists
+          if plugin_exists(plugin) then
+            -- Add to the config table
+            table.insert(_config.enabled_plugins, plugin)
+            print(plugin..' added to _config table')
+            save_config()
+            -- Reload the plugins
+            return reload_plugins(false, msg)
+          else
+            reply_msg(msg.id, 'Plugin '..plugin..' does not exists', ok_cb, true)
+          end
         end
-        -- Checks if plugin exists
-        if plugin_exists(matches[2]) then
-          -- Add to the config table
-          table.insert(_config.enabled_plugins, matches[2])
-          print(matches[2]..' added to _config table')
-          save_config()
-          -- Reload the plugins
-          return reload_plugins(false, msg)
-        else
-          reply_msg(msg.id, 'Plugin '..matches[2]..' does not exists', ok_cb, true)
+
+        -- Disable a plugin
+        if matches[1] == 'disable' then
+          print("disable: "..plugin)
+
+          -- Check if plugins exists
+          if not plugin_exists(plugin) then
+            reply_msg(msg.id, 'Plugin '..plugin..' does not exists', ok_cb, true)
+          end
+
+          local k = plugin_enabled(plugin)
+          -- Check if plugin is enabled
+          if not k then
+            reply_msg(msg.id, 'Plugin '..plugin..' not enabled', ok_cb, true)
+          end
+
+          -- Disable and reload
+          table.remove(_config.enabled_plugins, k)
+          save_config( )
+          return reload_plugins(true, msg)
         end
-      -- Disable a plugin
-      elseif matches[1] == 'disable' then
-        print('disable: '..matches[2])
-        -- Check if plugins exists
-        if not plugin_exists(matches[2]) then
-          reply_msg(msg.id, 'Plugin '..matches[2]..' does not exists', ok_cb, true)
-        end
-        local k = plugin_enabled(matches[2])
-        -- Check if plugin is enabled
-        if not k then
-          reply_msg(msg.id, 'Plugin '..matches[2]..' not enabled', ok_cb, true)
-        end
-        -- Disable and reload
-        table.remove(_config.enabled_plugins, k)
-        save_config( )
-        return reload_plugins(true, msg)
+      end
+
       -- Reload all the plugins!
-      elseif matches[1] == 'reload' then
-        return reload_plugins(true, msg)
+      if matches[1] == 'reload' then
+        return reload_plugins(false, msg)
       end
     end
 
     if is_mod(msg, msg.to.peer_id, msg.from.peer_id) then
+
       -- Show the available plugins
       if matches[1] == '!plugins' then
         return list_plugins(false, msg)
+      end
+
       -- Re-enable a plugin for this chat
-      elseif matches[1] == 'enable' and matches[3] == 'chat' then
-        print('enable '..matches[2]..' on this chat')
-        if not _config.disabled_plugin_on_chat then
-          reply_msg(msg.id, 'There aren\'t any disabled plugins for this chat.', ok_cb, true)
+      if matches[3] == 'chat' then
+        if matches[1] == 'enable' then
+          print('enable '..plugin..' on this chat')
+          if not _config.disabled_plugin_on_chat then
+            reply_msg(msg.id, 'There aren\'t any disabled plugins', ok_cb, true)
+          end
+
+          if not _config.disabled_plugin_on_chat[receiver] then
+            reply_msg(msg.id, 'There aren\'t any disabled plugins for this chat', ok_cb, true)
+          end
+
+          if not _config.disabled_plugin_on_chat[receiver][plugin] then
+            reply_msg(msg.id, 'This plugin is not disabled', ok_cb, true)
+          end
+
+          _config.disabled_plugin_on_chat[receiver][plugin] = false
+          save_config()
+          reply_msg(msg.id, 'Plugin '..plugin..' is enabled again', ok_cb, true)
         end
-        if not _config.disabled_plugin_on_chat[get_receiver(msg)] then
-          reply_msg(msg.id, 'There aren\'t any disabled plugins for this chat.', ok_cb, true)
+
+        -- Disable a plugin on a chat
+        if matches[1] == 'disable' then
+          print('disable '..plugin..' on this chat')
+          if not plugin_exists(plugin) then
+            reply_msg(msg.id, 'Plugin doesn\'t exists', ok_cb, true)
+          end
+
+          if not _config.disabled_plugin_on_chat then
+            _config.disabled_plugin_on_chat = {}
+          end
+
+          if not _config.disabled_plugin_on_chat[receiver] then
+            _config.disabled_plugin_on_chat[receiver] = {}
+          end
+
+          _config.disabled_plugin_on_chat[receiver][plugin] = true
+          save_config()
+          reply_msg(msg.id, 'Plugin '..plugin..' disabled on this chat', ok_cb, true)
         end
-        if not _config.disabled_plugin_on_chat[get_receiver(msg)][matches[2]] then
-          reply_msg(msg.id, 'Plugin '..matches[2]..' is not disabled for this chat.', ok_cb, true)
-        end
-        _config.disabled_plugin_on_chat[get_receiver(msg)][matches[2]] = false
-        save_config()
-        reply_msg(msg.id, 'Plugin '..matches[2]..' is enabled again for this chat.', ok_cb, true)
-      -- Disable a plugin on a chat
-      elseif matches[1] == 'disable' and matches[3] == 'chat' then
-        print('disable '..matches[2]..' on this chat')
-        if not plugin_exists(matches[2]) then
-          reply_msg(msg.id, 'Plugin '..matches[2]..' doesn\'t exists', ok_cb, true)
-        end
-        if not _config.disabled_plugin_on_chat then
-          _config.disabled_plugin_on_chat = {}
-        end
-        if not _config.disabled_plugin_on_chat[get_receiver(msg)] then
-          _config.disabled_plugin_on_chat[get_receiver(msg)] = {}
-        end
-        _config.disabled_plugin_on_chat[get_receiver(msg)][matches[2]] = true
-        save_config()
-        reply_msg(msg.id, 'Plugin '..matches[2]..' disabled for this chat', ok_cb, true)
       end
     end
-
   end
 
 --------------------------------------------------------------------------------
