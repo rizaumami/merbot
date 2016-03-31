@@ -1,0 +1,12 @@
+# Site settings
+title: merbot
+email: riza@openmailbox.org
+description: A Telegram Group Peace Keeper Bot >  # this means to ignore newlines until "baseurl:"
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://rizaumami.github.io/merbot" # the base hostname & protocol for your site
+
+telegram_username: si_kabayan 
+github_username: rizaumami
+
+# Build settings
+markdown: kramdown
