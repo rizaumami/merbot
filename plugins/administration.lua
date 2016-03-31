@@ -20,6 +20,14 @@ do
     return banned or false
   end
 
+  local function is_privileged(msg, gid, uid)
+    local var = false
+    if is_mod(msg, gid, uid) or uid == our_id or uid == tonumber(_config.bot_api.uid) then
+      var = true
+    end
+    return var
+  end
+
   local function get_sudolist(msg)
     local sudoers = 'List of sudoers:\n\n'
     for k,v in pairs(_config.sudo_users) do
@@ -82,7 +90,7 @@ do
     local uid = tonumber(user_id)
     -- check if user was kicked in the last TIME_CHECK seconds
     if not redis:get('kicked:'..gid..':'..uid) or false then
-      if is_mod(msg, gid, uid) or uid == our_id then
+      if is_privileged(msg, gid, uid) then
         reply_msg(msg.id, uid..' is too privileged to be kicked.', ok_cb, true)
       else
         if msg.to.peer_type == 'channel' then
@@ -112,29 +120,32 @@ do
     end
   end
 
-  local function ban_user(extra, chat_id, user_id)
-    local gid = tonumber(chat_id)
-    local uid = tonumber(user_id)
+  local function ban_user(extra, gid, uid)
+    local msg = extra.msg
+    local usr = extra.usr
+--    local gid = tonumber(chat_id)
+--    local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
-    if uid == tonumber(our_id) or is_mod(extra.msg, gid, uid) then
-      reply_msg(extra.msg.id, extra.usr..' is too privileged to be banned.', ok_cb, true)
+    if is_privileged(msg, gid, uid) then
+      reply_msg(msg.id, usr..' is too privileged to be banned.', ok_cb, true)
     elseif is_banned(gid, uid) then
-      reply_msg(extra.msg.id, extra.usr..' is already banned.', ok_cb, true)
+      reply_msg(msg.id, usr..' is already banned.', ok_cb, true)
     else
       local hash = 'banned:'..gid
       redis:sadd(hash, uid)
-      kick_user(extra.msg, gid, uid)
-      data.banned[uid] = extra.usr
+      kick_user(msg, gid, uid)
+      data.banned[uid] = usr
       save_data(data, 'data/'..gid..'/'..gid..'.lua')
-      reply_msg(extra.msg.id, extra.usr..' has been banned.', ok_cb, true)
+      reply_msg(msg.id, usr..' has been banned.', ok_cb, true)
     end
   end
 
   local function global_ban_user(extra, gid, uid)
-    if uid == tonumber(our_id) or is_admin(uid) then
-      reply_msg(extra.msg.id, uid..' is too privileged to be globally banned.', ok_cb, true)
+    local msg = extra.msg
+    if is_privileged(msg, gid, uid) then
+      reply_msg(msg.id, uid..' is too privileged to be globally banned.', ok_cb, true)
     elseif is_globally_banned(uid) then
-      reply_msg(extra.msg.id, extra.usr..' is already globally banned.', ok_cb, true)
+      reply_msg(msg.id, extra.usr..' is already globally banned.', ok_cb, true)
     else
       local hash = 'globanned'
       redis:sadd(hash, uid)
