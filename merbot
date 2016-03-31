@@ -1,7 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-THIS_DIR=$(cd $(dirname $0); pwd)
-cd $THIS_DIR
+#set -euo
+
+THIS_DIR=$(cd "$(dirname "$0")"; pwd)
+cd "$THIS_DIR"
 
 update() {
   git pull
@@ -17,18 +19,18 @@ install_luarocks() {
 
   PREFIX="$THIS_DIR/.luarocks"
 
-  ./configure --prefix=$PREFIX --sysconfdir=$PREFIX/luarocks --force-config
+  ./configure --prefix="$PREFIX" --sysconfdir="$PREFIX"/luarocks --force-config
 
   RET=$?
   if [ $RET -ne 0 ]; then
-    printf '%s\n' 'Error. Exiting.'
+    printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
     exit $RET
   fi
 
   make build && make install
   RET=$?
   if [ $RET -ne 0 ]; then
-    printf '%s\n' 'Error. Exiting.'
+    printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
     exit $RET
   fi
 
@@ -38,14 +40,16 @@ install_luarocks() {
 
 install_rocks() {
   ./.luarocks/bin/luarocks install lbase64 20120807-3
-  RET=$?; if [ $RET -ne 0 ];
-    then echo "Error. Exiting."; exit $RET;
+  RET=$?
+  if [ $RET -ne 0 ]; then
+    printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
+  exit $RET
   fi
   for i in luasec luasocket oauth redis-lua lua-cjson fakeredis xml feedparser serpent; do
     ./.luarocks/bin/luarocks install "$i"
     RET=$?
     if [ $RET -ne 0 ]; then
-      printf '%s\n' 'Error. Exiting.'
+      printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
       exit $RET
     fi
   done
@@ -77,7 +81,7 @@ exec /bin/sh $(pwd)/merbot
 }
 
 tgcli_config() {
-  mkdir -p $THIS_DIR/.telegram-cli
+  mkdir -p "$THIS_DIR"/.telegram-cli
   printf '%s\n' "
 default_profile = \"default\";
 
@@ -88,7 +92,7 @@ default = {
   msg_num = true;
   log_level = 2;
 };
-" > $THIS_DIR/data/tg-cli.config
+" > "$THIS_DIR"/data/tg-cli.config
 }
 
 install() {
@@ -105,7 +109,7 @@ install() {
 
   RET=$?
   if [ $RET -ne 0 ]; then
-    printf '%s\n' 'Error. Exiting.'
+    printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
     exit $RET
   fi
   cd ..
@@ -122,15 +126,14 @@ elif [[ "$1" = "upstart" ]]; then
   merbot_upstart
 else
   if [[ ! -f ./tg/telegram.h ]]; then
-    printf '%s\n' "tg not found" "Run $0 install"
+    printf '\e[1;31m%s\n\e[0;39;49m' '  tg not found' "  Run $0 install"
     exit 1
   fi
 
   if [[ ! -f ./tg/bin/telegram-cli ]]; then
-    printf '%s\n' "tg binary not found" "Run $0 install"
+    printf '\e[1;31m%s\n\e[0;39;49m' '  tg binary not found' "  Run $0 install"
     exit 1
   fi
 
-  ./tg/bin/telegram-cli -k ./tg/tg-server-pub -s ./bot/bot.lua -l 1 -E -c ./data/tg-cli.config -p default $@
-
+  ./tg/bin/telegram-cli -k ./tg/tg-server-pub -s ./bot/bot.lua -l 1 -E -c ./data/tg-cli.config -p default "$@"
 fi
