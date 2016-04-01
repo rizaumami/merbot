@@ -106,7 +106,6 @@ do
       '^!bot (token) (.*)$',
       '^!(join)$',
       '^!(join) (.*)$',
-      '^!(version)$',
     },
     run = run
   }
