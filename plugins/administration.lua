@@ -354,6 +354,7 @@ do
         moderators = {},
         name = msg.to.title,
         owners = {[user_id] = t_name or l_name},
+        public = true,
         set = {
           name = msg.to.title,
           photo = 'data/'..chat_id..'/'..chat_id..'.jpg',
@@ -1121,6 +1122,19 @@ do
       local data = load_data(_config.administration[gid])
 
       if is_owner(msg, gid, uid) then
+      
+        if matches[1] == 'setprivate' then
+          data.public = false
+          save_data(data, chat_db)
+          reply_msg(msg.id, 'This group is now private, will hide its invite link and no longer listed in !groups.', ok_cb, true)
+        end
+      
+        if matches[1] == 'setpublic' then
+          data.public = true
+          save_data(data, chat_db)
+          reply_msg(msg.id, 'This group is now public, will show its invite link and listed in !groups.', ok_cb, true)
+        end
+        
         -- Anti spam and flood settings
         if matches[1] == 'antispam' then
           if matches[2] == 'kick' then
@@ -1558,19 +1572,25 @@ do
 
       -- Print group's invite link. Users can join group by clicking this link.
       if matches[1] == 'link' or matches[1] == 'getlink' or matches[1] == 'link get' then
-        if data.link == '' then
-          send_api_msg(msg, get_receiver_api(msg), 'No link has been set for this group.\n'
-              ..'Try <code>!link set</code> to generate.', true, 'html')
-        elseif data.link == 'revoked' then
-          reply_msg(msg.id, 'Invite link for this group has been revoked', ok_cb, true)
-        else
-          local link = data.link
-          local about = data.description
-          if not about then
-            send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..link, true, 'html')
+        local link = data.link
+        local gtitle = msg.to.title
+        if data.public then
+          if link == '' then
+            send_api_msg(msg, get_receiver_api(msg), 'No link has been set for this group.\n'
+                ..'Try <code>!link set</code> to generate.', true, 'html')
+          elseif link == 'revoked' then
+            reply_msg(msg.id, 'Invite link for this group has been revoked', ok_cb, true)
           else
-            send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about..link, true, 'html')
+            local about = data.description
+            local clickme = '<a href="'..link..'">Click me to join '..gtitle..'</a>'
+            if not about then
+              send_api_msg(msg, get_receiver_api(msg), '<b>'..gtitle..'</b>\n\n'..clickme, true, 'html')
+            else
+              send_api_msg(msg, get_receiver_api(msg), '<b>'..gtitle..'</b>\n\n'..about..clickme, true, 'html')
+            end
           end
+        else
+          reply_msg(msg.id, 'This group is private.', ok_cb, true)
         end
       end
 
@@ -1600,10 +1620,12 @@ do
         local gplist = ''
         for k,v in pairs(_config.administration) do
           local gpdata = load_data(v)
-          if gpdata.link then
-            gplist = gplist..'• ['..gpdata.name..']('..gpdata.link..')\n'
-          else
-            gplist = gplist..'• '..gpdata.name..'\n'
+          if gpdata.public then
+            if gpdata.link then
+              gplist = gplist..'• ['..gpdata.name..']('..gpdata.link..')\n'
+            else
+              gplist = gplist..'• '..gpdata.name..'\n'
+            end
           end
         end
         if gplist == '' then
@@ -1758,6 +1780,8 @@ do
       '^!(setabout) (.*)$',
       '^!(setname) (.*)$',
       '^!(setphoto)$',
+      '^!(setprivate)$',
+      '^!(setpublic)$',
       '^!(setrules) (.*)$',
       '^!(sticker) (%a+)$',
       '^!(welcome) (%a+)$',
