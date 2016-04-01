@@ -135,5 +135,5 @@ else
     exit 1
   fi
 
-  ./tg/bin/telegram-cli -k ./tg/tg-server-pub -s ./bot/bot.lua -l 1 -E -c ./data/tg-cli.config -p default "$@"
+  ./tg/bin/telegram-cli -k ./tg/tg-server-pub --disable-link-preview -s ./bot/bot.lua -l 1 -E -c ./data/tg-cli.config -p default "$@"
 fi
