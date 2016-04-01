@@ -64,7 +64,7 @@ do
       'Safe searches Google by reply. The search terms is the replied message text.',
       '<code>!googlensfw [terms]</code>',
       '<code>!gnsfw [terms]</code>',
-      'Searches Google (include NSFW)'
+      'Searches Google (include NSFW)',
       '<code>!googlensfw</code>',
       '<code>!gnsfw</code>',
       'Searches Google (include NSFW). The search terms is the replied message text.'
