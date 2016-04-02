@@ -1,53 +1,58 @@
 do
 
-  local function lmgtfy(url)
+  local function lmgtfy(msg, url)
+    local url = url..'&rsz=5'
+    if is_chat_msg(msg) then
+      if msg.to.peer_type == 'channel' then
+        greceiver = '-100'..msg.to.peer_id
+      else
+        greceiver = '-'..msg.to.peer_id
+      end
+    else
+      url = url..'&rsz=8'
+      greceiver = msg.from.peer_id
+    end
+
     -- Do the request
     local res, code = https.request(url)
-    if code ~=200 then return nil  end
+    if code ~=200 then
+      return nil
+    end
     local data = json:decode(res)
+    local gsearches = data.responseData.results
 
     local stringresults=''
-    for key,result in ipairs(data.responseData.results) do
-      stringresults = stringresults..'<b>'..key..'</b>. '
-                      ..'<a href="'..(result.unescapedUrl or result.url)..'">'
-                      ..unescape_html(result.titleNoFormatting)..'</a>\n'
+    for k=1, #gsearches do
+      local res_tbl = gsearches[k]
+      stringresults = stringresults..'<b>'..k..'</b>. '
+          ..'<a href="'..(res_tbl.unescapedUrl or res_tbl.url)..'">'
+          ..unescape_html(res_tbl.titleNoFormatting)..'</a>\n'
     end
-    send_api_msg(msg, receiver, stringresults, true, 'html')
+    send_api_msg(msg, greceiver, stringresults, true, 'html')
   end
 
   local function lmgtfy_by_reply(extra, success, result)
+    local msg = extra.msg
     local terms = result.text
     local url = extra.url..'&q='..(URL.escape(terms) or '')
-    lmgtfy(url)
+    lmgtfy(msg, url)
   end
 
   local function run(msg, matches)
     -- comment this line if you want this plugin to works in private message.
     if not is_chat_msg(msg) and not is_admin(msg.from.peer_id) then return nil end
 
-    local url        = 'https://ajax.googleapis.com/ajax/services/search/web?v=1.0'
-
-    if is_chat_msg(msg) then
-      url = url..'&rsz=5'
-      if msg.to.peer_type == 'channel' then
-        receiver = '-100'..msg.to.peer_id
-      else
-        receiver = '-'..msg.to.peer_id
-      end
-    else
-      url = url..'&rsz=8'
-      receiver = msg.from.peer_id
-    end
+    local url = 'https://ajax.googleapis.com/ajax/services/search/web?v=1.0'
 
     if not matches[1]:match('nsfw') then
       url = url .. '&safe=active'
     end
 
     if msg.reply_id then
-      get_message(msg.reply_id, lmgtfy_by_reply, {url=url})
+      get_message(msg.reply_id, lmgtfy_by_reply, {msg=msg, url=url})
     else
       local url = url..'&q='..(URL.escape(matches[2]) or '')
-      lmgtfy(url)
+      lmgtfy(msg, url)
     end
   end
 
