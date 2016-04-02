@@ -34,7 +34,7 @@ do
     if #jdata_child == 0 then
       return nil
     end
-    local subreddit = '<b>'..(matches[2] or 'redd.it')..'</b>\n'
+    local threadit = {}
     for k=1, #jdata_child do
       local redd = jdata_child[k].data
       local long_url = '\n'
@@ -44,15 +44,21 @@ do
       end
       local title = unescape_html(redd.title)
       if redd.over_18 and not is_nsfw then
-        over_18 = subreddit..'You must be 18+ to view this community'
+        threadit[k] = ''
       elseif redd.over_18 and is_nsfw then
-        subreddit = subreddit..'<b>'..k..'. NSFW</b> '..'<a href="redd.it/'..redd.id..'">'..title..'</a>'..long_url
+        threadit[k] = '<b>'..k..'. NSFW</b> '..'<a href="redd.it/'..redd.id..'">'..title..'</a>'..long_url
       else
-        subreddit = subreddit..'<b>'..k..'. </b>'..'<a href="redd.it/'..redd.id..'">'..title..'</a>'..long_url
+        threadit[k] = '<b>'..k..'. </b>'..'<a href="redd.it/'..redd.id..'">'..title..'</a>'..long_url
       end
     end
-    local reddit = over_18 or subreddit
-    send_api_msg(msg, get_receiver_api(msg), reddit, true, 'html')
+    local threadit = table.concat(threadit)
+    local subreddit = '<b>'..(matches[2] or 'redd.it')..'</b>\n'
+    local subreddit = subreddit..threadit
+    if threadit == '' then
+      reply_msg(msg.id, 'You must be 18+ to view this community.', ok_cb, true)
+    else
+      send_api_msg(msg, get_receiver_api(msg), subreddit, true, 'html')
+    end
   end
 
 --------------------------------------------------------------------------------
