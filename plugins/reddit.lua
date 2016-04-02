@@ -4,16 +4,15 @@ do
 
     if not is_chat_msg(msg) and not is_admin(msg.from.peer_id, msg) then return nil end
 
-    if is_chat_msg(msg) then
-      thread_limit = 5
-    else
+    local thread_limit = 5
+    local is_nsfw = false
+
+    if not is_chat_msg(msg) then
       thread_limit = 8
     end
 
     if matches[1] == 'nsfw' then
       is_nsfw = true
-    else
-      is_nsfw = false
     end
 
     if matches[2] then
@@ -31,26 +30,29 @@ do
     if code ~=200 then return nil  end
 
     local jdat = json:decode(res)
-    if #jdat.data.children == 0 then
+    local jdata_child = jdat.data.children
+    if #jdata_child == 0 then
       return nil
     end
     local subreddit = '<b>'..(matches[2] or 'redd.it')..'</b>\n'
-    for i,v in ipairs(jdat.data.children) do
+    for k=1, #jdata_child do
+      local redd = jdata_child[k].data
       local long_url = '\n'
-      if not v.data.is_self then
-        local link = URL.parse(v.data.url)
-        long_url = '\nLink: <a href="'..v.data.url..'">'..link.scheme..'://'..link.host..'</a>\n'
+      if not redd.is_self then
+        local link = URL.parse(redd.url)
+        long_url = '\nLink: <a href="'..redd.url..'">'..link.scheme..'://'..link.host..'</a>\n'
       end
-      local title = unescape_html(v.data.title)
-      if v.data.over_18 and not is_nsfw then
-        subreddit = ''
-      elseif v.data.over_18 and is_nsfw then
-        subreddit = subreddit..'<b>'..i..'. NSFW</b> '..'<a href="redd.it/'..v.data.id..'">'..title..'</a>'..long_url
+      local title = unescape_html(redd.title)
+      if redd.over_18 and not is_nsfw then
+        over_18 = subreddit..'You must be 18+ to view this community'
+      elseif redd.over_18 and is_nsfw then
+        subreddit = subreddit..'<b>'..k..'. NSFW</b> '..'<a href="redd.it/'..redd.id..'">'..title..'</a>'..long_url
       else
-        subreddit = subreddit..'<b>'..i..'. </b>'..'<a href="redd.it/'..v.data.id..'">'..title..'</a>'..long_url
+        subreddit = subreddit..'<b>'..k..'. </b>'..'<a href="redd.it/'..redd.id..'">'..title..'</a>'..long_url
       end
     end
-    send_api_msg(msg, get_receiver_api(msg), subreddit, true, 'html')
+    local reddit = over_18 or subreddit
+    send_api_msg(msg, get_receiver_api(msg), reddit, true, 'html')
   end
 
 --------------------------------------------------------------------------------
