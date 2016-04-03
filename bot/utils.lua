@@ -65,12 +65,6 @@ function string:split(sep)
   return fields
 end
 
--- DEPRECATED
-function string.trim(s)
-  print("string.trim(s) is DEPRECATED use string:trim() instead")
-  return s:gsub("^%s*(.-)%s*$", "%1")
-end
-
 -- Removes spaces
 function string:trim()
   return self:gsub("^%s*(.-)%s*$", "%1")
@@ -602,10 +596,12 @@ end
 
 function pairsByKeys(t, f)
   local a = {}
-  for n in pairs(t) do table.insert(a, n) end
-    table.sort(a, f)
-    local i = 0      -- iterator variable
-    local iter = function ()   -- iterator function
+  for n in pairs(t) do
+    a[#a+1] = n
+  end
+  table.sort(a, f)
+  local i = 0      -- iterator variable
+  local iter = function ()   -- iterator function
     i = i + 1
     if a[i] == nil then
       return nil
