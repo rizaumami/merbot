@@ -146,7 +146,8 @@ do
     if matches[1] == 'help' then
       return telegram_help(msg)
     elseif matches[1] == 'all' then
-      return help_all(requester)
+      reply_msg(msg.id, 'Please read @thefinemanual', ok_cb, true)
+      --return help_all(requester)
     else
       local text = ''
       if tonumber(matches[1])  then
