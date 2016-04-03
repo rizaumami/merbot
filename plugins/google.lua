@@ -1,6 +1,7 @@
 do
 
-  local function lmgtfy(msg, url)
+  local function lmgtfy(msg, url, terms)
+    local url = url..'&q='..URL.escape(terms)
     local url = url..'&rsz=5'
     if is_chat_msg(msg) then
       if msg.to.peer_type == 'channel' then
@@ -29,15 +30,13 @@ do
           ..unescape_html(res_tbl.titleNoFormatting)..'</a>\n'
     end
     local stringresults = table.concat(stringresults)
-    local header = '<b>Google results for</b> <i>'..msg.text:gsub('^.- ', '')..'</i> <b>:</b>\n'
+    local header = '<b>Google results for</b> <i>'..terms..'</i> <b>:</b>\n'
     send_api_msg(msg, greceiver, header..stringresults, true, 'html')
   end
 
   local function lmgtfy_by_reply(extra, success, result)
-    local msg = extra.msg
     local terms = result.text
-    local url = extra.url..'&q='..(URL.escape(terms) or '')
-    lmgtfy(msg, url)
+    lmgtfy(extra.msg, extra.url, terms)
   end
 
   local function run(msg, matches)
@@ -53,8 +52,7 @@ do
     if msg.reply_id then
       get_message(msg.reply_id, lmgtfy_by_reply, {msg=msg, url=url})
     else
-      local url = url..'&q='..(URL.escape(matches[2]) or '')
-      lmgtfy(msg, url)
+      lmgtfy(msg, url, matches[2])
     end
   end
 
