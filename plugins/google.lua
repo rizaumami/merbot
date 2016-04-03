@@ -21,14 +21,16 @@ do
     local data = json:decode(res)
     local gsearches = data.responseData.results
 
-    local stringresults=''
+    local stringresults = {}
     for k=1, #gsearches do
       local res_tbl = gsearches[k]
-      stringresults = stringresults..'<b>'..k..'</b>. '
+      stringresults[k] = '<b>'..k..'</b>. '
           ..'<a href="'..(res_tbl.unescapedUrl or res_tbl.url)..'">'
           ..unescape_html(res_tbl.titleNoFormatting)..'</a>\n'
     end
-    send_api_msg(msg, greceiver, stringresults, true, 'html')
+    local stringresults = table.concat(stringresults)
+    local header = '<b>Google results for</b> <i>'..msg.text:gsub('^.- ', '')..'</i> <b>:</b>\n'
+    send_api_msg(msg, greceiver, header..stringresults, true, 'html')
   end
 
   local function lmgtfy_by_reply(extra, success, result)
