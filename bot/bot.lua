@@ -191,9 +191,11 @@ function create_config()
     autoleave = false,
     bot_api = {
       key = bot_api_key,
+      uid = bot_api_key:match('^%d+'),
       uname = bot_api_uname
     },
     disabled_channels = {},
+    disabled_plugin_on_chat = {},
     enabled_plugins = {
       'administration',
       'google',

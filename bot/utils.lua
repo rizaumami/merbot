@@ -628,6 +628,6 @@ function send_api_msg(msg, receiver, text, disable_web_page_preview, markdown)
   end
   local dat, res = https.request(url_api)
   if res == 400 then
-    reply_msg(msg.id, 'Error 400.\nWhat ever that\'s mean...', ok_cb, true)
+    reply_msg(msg.id, 'Error 400.\nWhat ever that means...', ok_cb, true)
   end
 end

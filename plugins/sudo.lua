@@ -26,22 +26,32 @@ do
 
   function run(msg, matches)
 
-    if not is_sudo(msg.from.peer_id) then return end
+    if not is_sudo(msg.from.peer_id) then
+      return
+    end
 
     if matches[1] == 'bin' then
+      local header = '<b>$</b> <code>'..matches[2]..'</code>\n'
       local stdout = io.popen(matches[2]):read('*all')
-      send_api_msg(msg, get_receiver_api(msg), '<code>'..stdout..'</code>', true, 'html')
+      send_api_msg(msg, get_receiver_api(msg), header..'<code>'..stdout..'</code>', true, 'html')
     end
 
-    if matches[1] == 'token' then
-      if not _config.bot_api_key then
-        _config.bot_api_key = ''
+    if matches[1] == 'bot' then
+      if matches[2] == 'token' then
+        if not _config.bot_api then
+          _config.bot_api = {key = '', uid = '', uname = ''}
+        end
+        _config.bot_api.key = matches[3]
+        _config.bot_api.uid = matches[3]:match('^%d+')
+        save_config()
+        reply_msg(msg.id, 'Bot API key has been saved.', ok_cb, true)
       end
-      _config.bot_api_key = matches[2]
-      save_config()
-      reply_msg(msg.id, 'Bot API key has been saved.', ok_cb, true)
+      if matches[2] == 'apiname' then
+        _config.bot_api.uname = matches[3]:gsub('@', '')
+        save_config()
+        reply_msg(msg.id, 'Bot API username has been saved.', ok_cb, true)
+      end
     end
-
     if matches[1] == "block" then
       block_user("user#id"..matches[2], ok_cb, false)
 
@@ -102,8 +112,7 @@ do
       '^!(unblock) (.*)$',
       '^!(block) (%d+)$',
       '^!(unblock) (%d+)$',
-      '^!bot (.*)$',
-      '^!bot (token) (.*)$',
+      '^!(bot) (%g+) (.*)$',
       '^!(join)$',
       '^!(join) (.*)$',
     },
