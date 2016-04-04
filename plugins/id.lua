@@ -19,7 +19,7 @@ do
     if cmd == 'pm' then
       send_api_msg(msg, msg.from.peer_id, list, true, 'html')
     elseif msg.text == '!id chat' then
-      send_api_msg(msg, '-140638536', list, true, 'html')
+      send_api_msg(msg, get_receiver_api(msg), list, true, 'html')
     end
   end
 
