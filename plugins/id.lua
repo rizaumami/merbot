@@ -13,6 +13,16 @@ it into group or PM.
 
 do
 
+  local function send_group_members(extra, list)
+    local msg = extra.msg
+    local cmd = extra.cmd
+    if cmd == 'pm' then
+      send_api_msg(msg, msg.from.peer_id, list, true, 'html')
+    elseif msg.text == '!id chat' then
+      send_api_msg(msg, '-140638536', list, true, 'html')
+    end
+  end
+
   local function resolve_user(extra, success, result)
     if success == 1 then
       if result.username then
@@ -90,6 +100,7 @@ do
   local function returnids(extra, success, result)
     local msg = extra.msg
     local cmd = extra.cmd
+
     if msg.to.peer_type == 'channel' then
       chat_id = msg.to.peer_id
       chat_title = msg.to.title
@@ -99,8 +110,10 @@ do
       chat_title = result.title
       member_list = result.members
     end
-    local list = '*'..chat_title..' -* `'..chat_id..'`\n\n'
+
+    local list = '<b>'..chat_title..'</b> - <code>'..chat_id..'</code>\n\n'
     local text = chat_title..' - '..chat_id..'\n\n'
+
     i = 0
     for k,v in pairsByKeys(member_list) do
       i = i+1
@@ -109,12 +122,15 @@ do
       else
         user_name = ''
       end
-      list = list..'*'..i..'*. `'..v.peer_id..'` -'..user_name..' '..(v.first_name or '')..(v.last_name or '')..'\n'
+      list = list..'<b>'..i..'</b>. <code>'..v.peer_id..'</code> -'..user_name..' '..(v.first_name or '')..(v.last_name or '')..'\n'
+      if #list > 2048 then
+        send_group_members(extra, list)
+        list = ''
+      end
       text = text..i..'. '..v.peer_id..' -'..user_name..' '..(v.first_name or '')..(v.last_name or '')..'\n'
     end
-    if cmd == 'pm' then
-      send_api_msg(msg, msg.from.peer_id, list:gsub('_', '[_]'), true, 'md')
-    elseif cmd == 'txt' or cmd == 'pmtxt' then
+
+    if cmd == 'txt' or cmd == 'pmtxt' then
       local textfile = '/tmp/chat_info_'..msg.to.peer_id..'_'..os.date("%y%m%d.%H%M%S")..'.txt'
       local file = io.open(textfile, 'w')
       file:write(text)
@@ -125,9 +141,8 @@ do
       elseif cmd == 'pmtxt' then
         send_document('user#id'..msg.from.peer_id, textfile, rmtmp_cb, {file_path=textfile})
       end
-    else
-      send_api_msg(msg, get_receiver_api(msg), list:gsub('_', '[_]'), true, 'md')
     end
+    send_group_members(extra, list)
   end
 
 --------------------------------------------------------------------------------
