@@ -1586,7 +1586,7 @@ do
             if not about then
               send_api_msg(msg, get_receiver_api(msg), '<b>'..gtitle..'</b>\n\n'..clickme, true, 'html')
             else
-              send_api_msg(msg, get_receiver_api(msg), '<b>'..gtitle..'</b>\n\n'..about..clickme, true, 'html')
+              send_api_msg(msg, get_receiver_api(msg), '<b>'..gtitle..'</b>\n\n'..about..'\n\n'..clickme, true, 'html')
             end
           end
         else

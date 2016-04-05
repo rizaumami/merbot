@@ -30,8 +30,12 @@ do
           ..unescape_html(res_tbl.titleNoFormatting)..'</a>\n'
     end
     local stringresults = table.concat(stringresults)
-    local header = '<b>Google results for</b> <i>'..terms..'</i> <b>:</b>\n'
-    send_api_msg(msg, greceiver, header..stringresults, true, 'html')
+    if stringresults == '' then
+      reply_msg(msg.id, 'No Google results for: '..terms, ok_cb, true)
+    else
+      local header = '<b>Google results for</b> <i>'..terms..'</i> <b>:</b>\n'
+      send_api_msg(msg, greceiver, header..stringresults, true, 'html')
+    end
   end
 
   local function lmgtfy_by_reply(extra, success, result)

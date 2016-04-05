@@ -174,16 +174,17 @@ end
 
 -- Create a basic config.lua file and saves it.
 function create_config()
-  print('\nSome functions and plugins using bot API as sender.\n'
+  print('\n\27[1;33mSome functions and plugins using bot API as sender.\n'
       ..'Please provide bots API token and username to ensure it\'s works as intended.\n'
-      ..'You can ENTER to skip and then fill the required info into data/config.lua.\n')
-  io.write('Please input your bot API key (token): ')
-  local bot_api_key=io.read()
-  io.write('\nPlease input your bot API @username: ')
-  local bot_api_uname=io.read()
+      ..'You can ENTER to skip and then fill the required info into data/config.lua.\27[0;39;49m\n')
+      
+  io.write('\27[1mPlease input your bot API key (token): \27[0;39;49m')
+  local bot_api_key = io.read()
+  
+  io.write('\n\27[1mPlease input your bot API @username: \27[0;39;49m')
+  local bot_api_uname = io.read()
   local bot_api_uname = bot_api_uname:gsub('@', '')
-  print('\nYour bots API token is: '..bot_api_key..'\n'
-      ..'Your bots API @username is : @'..bot_api_uname)
+  
   -- A simple config with basic plugins and ourselves as privileged user
   _config = {
     administration = {},
@@ -213,8 +214,6 @@ function create_config()
     }
   }
   save_config()
-  --serialize_to_file(config, './data/config.lua')
-  --print ('saved config into ./data/config.lua')
 end
 
 -- Save the content of _config to config.lua
