@@ -4,7 +4,6 @@ do
   local tgexec = "./tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De "
   local NUM_MSG_MAX = 4  -- Max number of messages per TIME_CHECK seconds
   local TIME_CHECK = 4
-  local new_group_table = {}
 
 
 
@@ -18,6 +17,15 @@ do
     local hash = 'globanned'
     local banned = redis:sismember(hash, user_id)
     return banned or false
+  end
+
+  local function is_administrate(msg, gid)
+    local var = true
+    if not _config.administration[gid] then
+      var = false
+      reply_msg(msg.id, 'I do not administrate this group.', ok_cb, true)
+    end
+    return var
   end
 
   local function is_privileged(msg, gid, uid)
@@ -36,18 +44,31 @@ do
     reply_msg(msg.id, sudoers, ok_cb, true)
   end
 
-  local function get_adminlist(msg, chat_id)
-    local group = msg.to.title or chat_id
-    if not _config.administration[tonumber(chat_id)] then
-      reply_msg(msg.id, 'I do not administrate this group.', ok_cb, true)
-    elseif next(_config.administrators) == nil then
-      reply_msg(msg.id, 'There are currently no listed administrators.', ok_cb, true)
-    else
-      local message = 'List of administrators:\n\n'
-      for k,v in pairs(_config.administrators) do
-        message = message..'- '..v..' - '..k..'\n'
+  local function get_adminlist(msg, gid)
+    local group = gid or msg.to.title
+    if is_administrate(msg, gid) then
+      if next(_config.administrators) == nil then
+        reply_msg(msg.id, 'There are currently no listed administrators.', ok_cb, true)
+      else
+        local message = 'List of administrators:\n\n'
+        for k,v in pairs(_config.administrators) do
+          message = message..'- '..v..' - '..k..'\n'
+        end
+        reply_msg(msg.id, message, ok_cb, true)
       end
-      reply_msg(msg.id, message, ok_cb, true)
+    end
+  end
+
+  local function del_adminlist(msg, gid)
+    local group = gid or msg.to.title
+    if is_administrate(msg, gid) then
+      if next(_config.administrators) == nil then
+        reply_msg(msg.id, 'There are currently no listed administrators.', ok_cb, true)
+      else
+        _config.administrators = {}
+        save_config()
+        reply_msg(msg.id, 'All administrators has been demoted.', ok_cb, true)
+      end
     end
   end
 
@@ -55,16 +76,61 @@ do
     local gid = tonumber(chat_id)
     local group = msg.to.title or gid
     local data = load_data(_config.administration[gid])
-    if not _config.administration[gid] then
-      reply_msg(msg.id, 'I do not administrate this group.', ok_cb, true)
-    elseif next(data.owners) == nil then
-      reply_msg(msg.id, 'There are currently no listed owners.', ok_cb, true)
-    else
-      local message = group..' owner(s):\n\n'
-      for k,v in pairs(data.owners) do
-        message = message..'- '..v..' - '..k..'\n'
+    if is_administrate(msg, gid) then
+      if next(data.owners) == nil then
+        reply_msg(msg.id, 'There are currently no listed owners.', ok_cb, true)
+      else
+        local message = group..' owner(s):\n\n'
+        for k,v in pairs(data.owners) do
+          message = message..'- '..v..' - '..k..'\n'
+        end
+        reply_msg(msg.id, message, ok_cb, true)
       end
-      reply_msg(msg.id, message, ok_cb, true)
+    end
+  end
+
+  local function del_ownerlist(msg, gid)
+    local group = gid or msg.to.title
+    if is_administrate(msg, gid) then
+      local data = load_data(_config.administration[gid])
+      if next(data.owners) == nil then
+        reply_msg(msg.id, 'There are currently no listed owners.', ok_cb, true)
+      else
+        data.owners = {}
+        save_data(data, 'data/'..gid..'/'..gid..'.lua')
+        reply_msg(msg.id, 'All of '..group..' owners has been demoted.', ok_cb, true)
+      end
+    end
+  end
+
+  local function get_modlist(msg, gid)
+    local gid = tonumber(gid)
+    if is_administrate(msg, gid) then
+      local group = gid or msg.to.title
+      local data = load_data(_config.administration[gid])
+      if next(data.moderators) == nil then
+        reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
+      else
+        local message = 'Moderators for '..msg.to.title..':\n\n'
+        for k,v in pairs(data.moderators) do
+          message = message..'- '..v..' ['..k..'] \n'
+        end
+        reply_msg(msg.id, message, ok_cb, true)
+      end
+    end
+  end
+
+  local function del_modlist(msg, gid)
+    if is_administrate(msg, gid) then
+      local group = gid or msg.to.title
+      local data = load_data(_config.administration[gid])
+      if next(data.moderators) == nil then
+        reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
+      else
+        data.moderators = {}
+        save_data(data, 'data/'..gid..'/'..gid..'.lua')
+        reply_msg(msg.id, 'All of '..group..' moderators has been demoted.', ok_cb, true)
+      end
     end
   end
 
@@ -104,18 +170,18 @@ do
     redis:setex('kicked:'..gid..':'..uid, TIME_CHECK, 'true')
   end
 
-  local function invite_user(msg, chat_id, user_id)
-    local gid = tonumber(chat_id)
-    local uid = tonumber(user_id)
+  local function invite_user(msg, gid, uid)
+    local data = load_data(_config.administration[gid])
+    local g_type = data.group_type
     if is_globally_banned(uid) then
       reply_msg(msg.id, 'Invitation canceled.\nID '..uid..' is globally banned.', ok_cb, true)
     elseif is_banned(gid, uid) then
       reply_msg(msg.id, 'Invitation canceled.\nID '..uid..' is banned.', ok_cb, true)
     else
-      if msg.to.peer_type == 'channel' then
-        channel_invite_user('channel#id'..gid, 'user#id'..uid, ok_cb, false)
+      if g_type == 'channel' then
+        channel_invite_user(g_type..'#id'..gid, 'user#id'..uid, ok_cb, true)
       else
-        chat_add_user('chat#id'..gid, 'user#id'..uid, ok_cb, true)
+        chat_add_user(g_type..'#id'..gid, 'user#id'..uid, ok_cb, true)
       end
     end
   end
@@ -334,7 +400,7 @@ do
   local function create_group_data(msg, chat_id, user_id)
     local l_name = '@'..msg.from.username or msg.from.first_name
     if msg.action then
-      t_name = new_group_table[msg.action.title].uname
+      t_name = _config.mkgroup.founder
     end
     gpdata = {
         antispam = 'ban',
@@ -594,13 +660,54 @@ do
   local function remove_group(msg, chat_id)
     local gid = tonumber(chat_id)
     local group = msg.to.title or gid
-    if not _config.administration[gid] then
-      reply_msg(msg.id, 'I do not administrate '..group, ok_cb, true)
-    else
+    if is_administrate(msg, gid) then
       _config.administration[gid] = nil
       save_config()
       os.execute('rm -r data/'..gid)
       reply_msg(msg.id, 'I am no longer administrating '..group, ok_cb, true)
+    end
+  end
+
+  local function get_config(msg, gid)
+    if gid then
+      cfg_db = 'data/'..gid..'/'..gid..'.lua'
+      cfg_cp = '/tmp/'..gid..'.lua'
+    else
+      cfg_db = 'data/config.lua'
+      cfg_cp = '/tmp/config.lua'
+    end
+    os.execute('cp '..cfg_db..' '..cfg_cp)
+    send_document(get_receiver(msg), cfg_cp, rmtmp_cb, {file_path=cfg_cp})
+  end
+
+  -- Create a Group chat
+  local function create_group(msg, title, g_type)
+    local rightnow = msg.date
+    local last_time = tonumber(_config.mkgroup.founded) or 0
+    if os.difftime(rightnow, last_time) > 3600 then
+      local uname = msg.from.username or msg.from.first_name
+      _config.mkgroup = {founded = rightnow, founder = uname, title = title, gtype = g_type, uid = msg.from.peer_id}
+      save_config()
+      create_group_chat(msg.from.print_name, title, ok_cb, false)
+      reply_msg(msg.id, 'Group '..title..' has been created.', ok_cb, true)
+    else
+      reply_msg(msg.id, 'I limit myself to create a group per hours.\n'
+          ..'Please try again in next one hour.', ok_cb, true)
+    end
+  end
+
+  -- Global broadcasting
+  local function send_broadcast(msg, bc_msg)
+    local data = _config.administration
+    for gid,v in pairs(data) do
+      local g_type = load_data(data[gid]).group_type
+      if g_type == 'chat' then
+        bc_rcvr = '-'..gid
+      elseif g_type == 'channel' then
+        bc_rcvr = '-100'..gid
+      end
+      --send_large_msg(g_type..'#id'..gid, bc_msg)
+      send_api_msg(msg, bc_rcvr, bc_msg, true, 'html')
     end
   end
 
@@ -776,6 +883,7 @@ do
             chat_info('chat#id'..gid, update_members_list, msg)
           end
         end
+
         -- If group photo is deleted
         if msg.action.type == 'chat_delete_photo' then
           if data.lock.photo == 'yes' then
@@ -784,6 +892,7 @@ do
             return nil
           end
         end
+
         -- If group photo is changed
         if msg.action.type == 'chat_change_photo' and uid ~= 0 then
           if data.lock.photo == 'yes' then
@@ -792,6 +901,7 @@ do
             return nil
           end
         end
+
         -- If group name is renamed
         if msg.action.type == 'chat_rename' then
           if data.lock.name == 'yes' then
@@ -803,6 +913,7 @@ do
             return nil
           end
         end
+
         -- If user leave, update group's members table
         if msg.action.type == 'chat_del_user' then
           if msg.to.peer_type == 'channel' then
@@ -813,6 +924,7 @@ do
           --return 'Bye '..new_member..'!'
         end
       end
+
       -- Autoleave. Don't let users add bot to their group without permission
       if msg.action.type == 'chat_add_user' and not is_sudo(uid) then
         if _config.autoleave == true and not _config.administration[gid] then
@@ -823,29 +935,26 @@ do
           end
         end
       end
-      --TODO See mkgroup or mksupergroup functions
-      -- create group config when the group is just created
+
+      -- Add newly created group to be administrate
       if msg.action.type == 'chat_created' then
-        local group = msg.action.title
-        local uid = new_group_table[group].uid
-        local g_type = new_group_table[group].gtype
-        local r_name = new_group_table[group].uname
-        add_group(msg, gid, uid)
-        if g_type then
+        local title = _config.mkgroup.title
+        local founder = _config.mkgroup.uid
+        local g_type = _config.mkgroup.gtype
+        if g_type == 'channel' then
           chat_upgrade('chat#id'..gid, ok_cb, false)
-        else
-          new_group_table[group] = nil
+        elseif g_type == 'realm' then
+          local cfg = 'data/'..gid..'/'..gid..'.lua'
+          _config.realm = {[gid] = cfg, rgid = gid, rname = title}
+          save_config()
         end
+        add_group(msg, gid, founder)
       end
-      -- create group config when the group is just created
+
+      -- Promote supergroup founder to be the group admin
       if msg.action.type == 'migrated_from' then
-        local group = msg.to.title
-        local uid = new_group_table[group].uid
-        local title = new_group_table[group].title
-        if msg.to.title == title then
-          channel_set_admin(get_receiver(msg), 'user#id'..uid, ok_cb, true)
-          new_group_table[group] = nil
-        end
+        local founder = _config.mkgroup.uid
+        channel_set_admin(get_receiver(msg), 'user#id'..founder, ok_cb, true)
       end
     end
 
@@ -1007,29 +1116,72 @@ do
             demote_admin({msg=msg, usr=matches[3]}, matches[3])
           end
         end
+
+        -- Demote all administrators
+        if matches[1] == 'clear' and matches[2] == 'admins' then
+          del_adminlist(msg, gid)
+        end
+
+        -- Download 'data/config.lua'
+        if msg.text == '!getconfig' then
+          get_config(msg)
+        end
+
+        -- Create the realm
+        if matches[2] == 'realm' then
+          if not _config.realm then
+            _config.realm = {}
+            save_config()
+          end
+          if _config.realm[gid] then
+            reply_msg(msg.id, 'Realm is already set.\nIf you want to replace it:\n'
+                ..'(1) !removerealm to delete the old realm\n'
+                ..'(2) !addrealm to add an existing group ass a realm, or\n'
+                ..'(3) !mkrealm to create and set new realm.', ok_cb, true)
+          else
+            if matches[1] == 'mk' and matches[3] then
+              n_realm = matches[3]
+              create_group(msg, matches[3], 'realm')
+            elseif matches[1] == 'add' then
+              n_realm = msg.to.title
+              local cfg = 'data/'..gid..'/'..gid..'.lua'
+              _config.realm = {[gid] = cfg, rgid = gid, rname = n_realm}
+              save_config()
+            end
+            local bc_msg = '<b>'..n_realm..'</b> is now our new realm.\n'
+                ..'Administrators are welcome to join in by issuing:\n<code>!joinrealm</code>'
+            send_broadcast(msg, bc_msg)
+          end
+        end
+
+        -- Delete the realm
+        if matches[1] == 'removerealm' then
+          local r_name = _config.realm.rname
+          if _config.realm[gid] then
+            _config.realm = {}
+            save_config()
+            send_broadcast(msg, 'The <b>'..r_name..'</b> realm has been deleted.')
+          else
+            reply_msg(msg.id, 'We have no realm at the moment.', ok_cb, true)
+          end
+        end
+
+        -- Global broadcasting
+        if matches[1] == 'broadcast' then
+          send_broadcast(msg, matches[2])
+        end
       end
 
       if is_admin(uid) then
-        --[[
-        TODO Not yet tested, because unfortunatelly, Telegram restrict how
-        much you can create create a group in a period of time.
-        If this limit is reached, than you have to wait for a days or weeks.
-        So, I have diffculty to test it right in one shot.
-        --]]
+
         -- Create a Supergroup
         if matches[1] == 'mksupergroup' and matches[2] then
-          local uname = '@'..msg.from.username or msg.from.first_name
-          new_group_table[matches[2]] = {uid = tostring(uid), title = matches[2], uname = uname, gtype = 'supergroup'}
-          create_group_chat(msg.from.print_name, matches[2], ok_cb, false)
-          reply_msg(msg.id, 'Supergroup '..matches[2]..' has been created.', ok_cb, true)
+          create_group(msg, matches[2], 'channel')
         end
 
         -- Create a (normal) Group
         if matches[1] == 'mkgroup' and matches[2] then
-          local uname = '@'..msg.from.username or msg.from.first_name
-          new_group_table[uid] = {uid = uid, title = matches[2], uname = uname}
-          create_group_chat(msg.from.print_name, matches[2], ok_cb, false)
-          reply_msg(msg.id, 'Group '..matches[2]..' has been created.', ok_cb, true)
+          create_group(msg, matches[2], 'chat')
         end
 
         -- Set owner of a group
@@ -1062,6 +1214,11 @@ do
         -- List of owners
         if matches[1] == 'ownerlist' then
           get_ownerlist(msg, gid)
+        end
+
+        -- Demote all owners
+        if matches[1] == 'clear' and matches[2] == 'owners' then
+          del_ownerlist(msg, gid)
         end
 
         -- Globally ban user by {id|username|name|reply}
@@ -1115,6 +1272,30 @@ do
             reply_msg(msg.id, 'Chat '..gid..' removed from whitelist', ok_cb, true)
           end
         end
+
+        -- List of group's moderators
+        if matches[1] == 'modlist' and matches[2]:match('^%d+$') then
+          get_modlist(msg, matches[2])
+        end
+
+        -- Broadcasting
+        if matches[1] == 'bc' then
+          local gid = tonumber(matches[2])
+          local data = load_data(_config.administration[gid])
+          local g_type = data.group_type
+          send_large_msg(g_type..'#id'..gid, matches[3])
+        end
+
+        -- Join realm
+        if matches[1] == 'joinrealm' then
+          local realm_id = _config.realm.rgid
+          if realm_id then
+            invite_user(msg, realm_id, uid)
+          else
+            reply_msg(msg.id, 'No Realm at the moment', ok_cb, true)
+          end
+        end
+
       end
 
       if not _config.administration[gid] then return end
@@ -1122,19 +1303,19 @@ do
       local data = load_data(_config.administration[gid])
 
       if is_owner(msg, gid, uid) then
-      
+
         if matches[1] == 'setprivate' then
           data.public = false
           save_data(data, chat_db)
           reply_msg(msg.id, 'This group is now private, will hide its invite link and no longer listed in !groups.', ok_cb, true)
         end
-      
+
         if matches[1] == 'setpublic' then
           data.public = true
           save_data(data, chat_db)
           reply_msg(msg.id, 'This group is now public, will show its invite link and listed in !groups.', ok_cb, true)
         end
-        
+
         -- Anti spam and flood settings
         if matches[1] == 'antispam' then
           if matches[2] == 'kick' then
@@ -1458,6 +1639,16 @@ do
             demote({msg=msg, usr=matches[3]}, gid, matches[3])
           end
         end
+
+        -- Demote all moderators
+        if matches[1] == 'clear' and matches[2] == 'mods' then
+          del_modlist(msg, gid)
+        end
+
+        -- Download group configuration file.
+        if matches[1] == 'getconfig' and matches[2]:match('^%d+$') then
+          get_config(msg, matches[2])
+        end
       end
 
       if is_mod(msg, gid, uid) then
@@ -1543,21 +1734,8 @@ do
         end
 
         -- List of group's moderators
-        if matches[1] == 'modlist' then
-          if not _config.administration[gid] then
-            reply_msg(msg.id, 'I do not administrate this group.', ok_cb, true)
-            return
-          end
-          if next(data.moderators) == nil then
-            reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
-          else
-            local message = 'Moderators for '..msg.to.title..':\n\n'
-            local mod = data.moderators
-            for k,v in pairs(data.moderators) do
-              message = message..'- '..v..' ['..k..'] \n'
-            end
-            reply_msg(msg.id, message, ok_cb, true)
-          end
+        if msg.text == '!modlist' and is_administrate(msg, gid) then
+          get_modlist(msg, gid)
         end
       end
 
@@ -1760,21 +1938,28 @@ do
     description = 'Administration plugin.',
     patterns = {
       '^!(about)$',
-      '^!(arabic) (%a+)$',
-      '^!(sudolist)$',
       '^!(adminlist)$', '^!(adminlist) (%d+)$',
       '^!(antispam) (%a+)$',
+      '^!(arabic) (%a+)$',
       '^!(autoleave) (%a+)$',
       '^!(banlist)$',
+      '^!(bc) (%d+) (.*)$',
+      '^!(broadcast) (.*)$',
       '^!(channel) (%a+)$',
+      '^!(clear) (%a+)$',
+      '^!(getconfig)$', '^!(getconfig) (%d+)$',
+      '^!(grouplist)$', '^!(groups)$', '^!(glist)$',
+      '^!(joinrealm)$',
       '^!(kickme)$',
       '^!(leave)$',
       '^!(leaveall)$',
       '^!(link revoke)$',
       '^!(mkgroup) (.*)$',
+      '^!(add)(realm)$',
+      '^!(mk)(realm) (.*)$',
+      '^!(removerealm)$',
       '^!(mksupergroup) (.*)$',
-      '^!(grouplist)$', '^!(groups)$', '^!(glist)$',
-      '^!(modlist)$',
+      '^!(modlist)$', '^!(modlist) (%d+)$',
       '^!(ownerlist)$', '^!(ownerlist) (%d+)$',
       '^!(rules)$',
       '^!(setabout) (.*)$',
@@ -1783,13 +1968,14 @@ do
       '^!(setprivate)$',
       '^!(setpublic)$',
       '^!(setrules) (.*)$',
-      '^!(sticker) (%a+)$',
-      '^!(welcome) (%a+)$',
       '^!(setwelcome) (.*)$',
+      '^!(sticker) (%a+)$',
+      '^!(sudolist)$',
+      '^!(unwhitelist) (chat) (%d+)$',
       '^!(version)$',
+      '^!(welcome) (%a+)$',
       '^!(whitelist) (%a+)$',
       '^!(whitelist) (chat) (%d+)$',
-      '^!(unwhitelist) (chat) (%d+)$',
       '^!(superbanlist)$', '^!(gbanlist)$', '^!(hammerlist)$',
       '^!(whitelist)$', '^!(whitelist) (@)(%g+)$', '^!(whitelist)(%s)(%d+)$',
       '^!(unwhitelist)$', '^!(unwhitelist) (%g+)$', '^!(unwhitelist) (@)(%g+)$', '^!(unwhitelist)(%s)(%d+)$',
@@ -1878,3 +2064,4 @@ do
   }
 
 end
+

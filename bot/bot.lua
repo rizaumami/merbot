@@ -202,6 +202,7 @@ function create_config()
       'google',
       'help',
       'id',
+      'logger',
       'pattern',
       'plugins',
       'reddit',
@@ -209,9 +210,9 @@ function create_config()
       'sudo'
     },
     globally_banned = {},
-    sudo_users = {
-      [our_id] = '0'
-    }
+    mkgroup = {},
+    realm = {},
+    sudo_users = {[our_id] = our_id}
   }
   save_config()
 end

@@ -45,8 +45,17 @@ end
 function is_chat_msg(msg)
   if msg.to.peer_type == 'chat' or msg.to.peer_type == 'channel' then
     return true
+  else
+    return false
   end
-  return false
+end
+
+function is_realm(msg)
+  if msg.to.peer_id == _config.realm.gid then
+    return true
+  else
+    return false
+  end
 end
 
 function string.random(length)
