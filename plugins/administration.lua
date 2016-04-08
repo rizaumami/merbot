@@ -189,10 +189,8 @@ do
   local function ban_user(extra, gid, uid)
     local msg = extra.msg
     local usr = extra.usr
---    local gid = tonumber(chat_id)
---    local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
-    if is_privileged(msg, gid, uid) then
+    if not is_sudo(uid) and is_privileged(msg, gid, uid) then
       reply_msg(msg.id, usr..' is too privileged to be banned.', ok_cb, true)
     elseif is_banned(gid, uid) then
       reply_msg(msg.id, usr..' is already banned.', ok_cb, true)
@@ -566,10 +564,10 @@ do
     local data = load_data(_config.administration[chat_id])
     if data.antispam == 'kick' then
       kick_user(extra.msg, chat_id, user_id)
-      reply_msg(extr.msg.id, extra.usr..' is '..splooder)
+      reply_msg(extra.msg.id, extra.usr..' is '..splooder)
     elseif data.antispam == 'ban' then
       ban_user({msg=extra.msg, usr=extra.usr}, chat_id, user_id)
-      reply_msg(extr.msg.id, extra.usr..' is '..splooder..'. Banned')
+      reply_msg(extra.msg.id, extra.usr..' is '..splooder..'. Banned')
     end
     msg = nil
   end
@@ -630,8 +628,11 @@ do
       os.execute(tgexec.."\'load_chat_photo chat#id"..chat_id.."\'")
     end
     local g_photo = scandir(dl_dir)
-    os.rename(dl_dir..'/'..g_photo[3], 'data/'..chat_id..'/'..chat_id..'.jpg')
-    os.execute('rm -r '..dl_dir..' && mv '..dl_dir..'-bak '..dl_dir)
+    --vardump(g_photo)
+    if g_photo[3] and g_photo[3]:match('jpg') then
+      os.rename(dl_dir..'/'..g_photo[3], 'data/'..chat_id..'/'..chat_id..'.jpg')
+      os.execute('rm -r '..dl_dir..' && mv '..dl_dir..'-bak '..dl_dir)
+    end
   end
 
   local function add_group(msg, chat_id, user_id)
@@ -682,6 +683,10 @@ do
 
   -- Create a Group chat
   local function create_group(msg, title, g_type)
+    if not _config.mkgroup then
+      _config.mkgroup = {founded = '', founder = '', title = '', gtype = '', uid = ''}
+      save_config()
+    end
     local rightnow = msg.date
     local last_time = tonumber(_config.mkgroup.founded) or 0
     if os.difftime(rightnow, last_time) > 3600 then

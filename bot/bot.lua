@@ -210,7 +210,7 @@ function create_config()
       'sudo'
     },
     globally_banned = {},
-    mkgroup = {},
+    mkgroup = {founded = '', founder = '', title = '', gtype = '', uid = ''},
     realm = {},
     sudo_users = {[our_id] = our_id}
   }
