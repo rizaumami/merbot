@@ -106,12 +106,11 @@ do
   local function get_modlist(msg, gid)
     local gid = tonumber(gid)
     if is_administrate(msg, gid) then
-      local group = gid or msg.to.title
       local data = load_data(_config.administration[gid])
       if next(data.moderators) == nil then
         reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
       else
-        local message = 'Moderators for '..msg.to.title..':\n\n'
+        local message = 'Moderators for '..data.name..':\n\n'
         for k,v in pairs(data.moderators) do
           message = message..'- '..v..' ['..k..'] \n'
         end
@@ -122,14 +121,13 @@ do
 
   local function del_modlist(msg, gid)
     if is_administrate(msg, gid) then
-      local group = gid or msg.to.title
       local data = load_data(_config.administration[gid])
       if next(data.moderators) == nil then
         reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
       else
         data.moderators = {}
         save_data(data, 'data/'..gid..'/'..gid..'.lua')
-        reply_msg(msg.id, 'All of '..group..' moderators has been demoted.', ok_cb, true)
+        reply_msg(msg.id, 'All of '..data.name..' moderators has been demoted.', ok_cb, true)
       end
     end
   end
@@ -426,7 +424,6 @@ do
         sticker = 'ok',
         username = msg.to.username or '',
         welcome = {
-          msg = '',
           to = 'group',
         },
     }
@@ -671,14 +668,14 @@ do
 
   local function get_config(msg, gid)
     if gid then
-      cfg_db = 'data/'..gid..'/'..gid..'.lua'
-      cfg_cp = '/tmp/'..gid..'.lua'
+      local cfg_cp = '/tmp/'..gid..'.lua'
+      os.execute('cp data/'..gid..'/'..gid..'.lua '..cfg_cp)
+      send_document(get_receiver(msg), cfg_cp, rmtmp_cb, {file_path=cfg_cp})
     else
-      cfg_db = 'data/config.lua'
-      cfg_cp = '/tmp/config.lua'
+      local cfg_cp = '/tmp/config.lua'
+      os.execute('cp data/config.lua '..cfg_cp)
+      send_document('user#id'..msg.from.peer_id, cfg_cp, rmtmp_cb, {file_path=cfg_cp})
     end
-    os.execute('cp '..cfg_db..' '..cfg_cp)
-    send_document(get_receiver(msg), cfg_cp, rmtmp_cb, {file_path=cfg_cp})
   end
 
   -- Create a Group chat
@@ -868,7 +865,7 @@ do
               group_rules = '\n<b>Rules</b>:\n'..data.rules..'\n'
             end
             -- Which welcome message to be send
-            if data.welcome.msg ~= '' then
+            if data.welcome.msg then
               welcomes = data.welcome.msg..'\n'
             -- If no custom welcome message defined, use this default
             else
@@ -1279,7 +1276,7 @@ do
         end
 
         -- List of group's moderators
-        if matches[1] == 'modlist' and matches[2]:match('^%d+$') then
+        if matches[1] == 'modlist' and matches[2] and matches[2]:match('^%d+$') then
           get_modlist(msg, matches[2])
         end
 
@@ -1483,6 +1480,13 @@ do
           data.welcome.msg = matches[2]
           save_data(data, chat_db)
           reply_msg(msg.id, 'Set group welcome message to:\n'..matches[2], ok_cb, true)
+        end
+
+        -- Reset custom welcome message
+        if matches[1] == 'resetwelcome' then
+          data.welcome.msg = nil
+          save_data(data, chat_db)
+          reply_msg(msg.id, 'Welcome message has been reset.', ok_cb, true)
         end
 
         -- Welcome message settings
@@ -1974,6 +1978,7 @@ do
       '^!(setpublic)$',
       '^!(setrules) (.*)$',
       '^!(setwelcome) (.*)$',
+      '^!(resetwelcome)$',
       '^!(sticker) (%a+)$',
       '^!(sudolist)$',
       '^!(unwhitelist) (chat) (%d+)$',
