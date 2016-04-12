@@ -50,14 +50,18 @@ do
     return entries
   end
 
-  local function print_subs(id)
+  local function print_subs(msg, id)
+    local subscriber = msg.to.title
+    if id:match('user') then
+      subscriber = 'You'
+    end
     local uhash = get_base_redis(id)
     local subs = redis:smembers(uhash)
-    local text = id..' are subscribed to:\n---------\n'
+    local text = subscriber..' are subscribed to:\n---------\n'
     for k,v in pairs(subs) do
       text = text..k..') '..v..'\n'
     end
-    return text
+    reply_msg(msg.id, text, ok_cb, true)
   end
 
   local function subscribe(id, url)
@@ -68,7 +72,7 @@ do
     local uhash = get_base_redis(id)
 
     if redis:sismember(uhash, baseurl) then
-      return 'You are already subscribed to '..url
+      reply_msg(msg.id, 'You are already subscribed to '..url, ok_cb, true)
     end
 
     local parsed, err = get_rss(url, protocol)
@@ -90,12 +94,12 @@ do
     redis:sadd(lhash, id)
     redis:sadd(uhash, baseurl)
 
-    return 'You had been subscribed to '..name
+    reply_msg(msg.id, 'You had been subscribed to '..name, ok_cb, true)
   end
 
-  local function unsubscribe(id, n)
+  local function unsubscribe(msg, id, n)
     if #n > 3 then
-      return 'I don\'t think that you have that many subscriptions.'
+      reply_msg(msg.id, 'I don\'t think that you have that many subscriptions.', ok_cb, true)
     end
 
     n = tonumber(n)
@@ -103,7 +107,7 @@ do
     local subs = redis:smembers(uhash)
 
     if n < 1 or n > #subs then
-      return 'Subscription id out of range!'
+      reply_msg(msg.id, 'Subscription id out of range!', ok_cb, true)
     end
 
     local sub = subs[n]
@@ -121,7 +125,7 @@ do
       redis:del(lasthash)
     end
 
-    return 'You had been unsubscribed from '..sub
+    reply_msg(msg.id, 'You had been unsubscribed from '..sub, ok_cb, true)
   end
 
   local function cron()
@@ -163,29 +167,27 @@ do
   local function run(msg, matches)
 
     -- comment this line if you want this plugin works for all members.
-    if not is_owner(msg, msg.to.peer_id , msg.from.peer_id) then return nil end
+    if not is_owner(msg, msg.to.peer_id , uid) then return nil end
 
-    local id = 'user#id'..msg.from.peer_id
-
-    if is_chat_msg(msg) then
-      id = 'chat#id'..msg.to.peer_id
-    end
+    local uid = msg.from.peer_id
+    local id = get_receiver(msg)
 
     if matches[1] == '!rss'then
-      return print_subs(id)
+      print_subs(msg, id)
     end
     if matches[1] == 'sync' then
-      if not is_sudo(msg.from.peer_id) then
-        return 'Only sudo users can sync the RSS.'
+      if not is_sudo(uid) then
+        reply_msg(msg.id, 'Only sudo users can sync the RSS.', ok_cb, true)
+      else
+        cron()
       end
-      cron()
     end
     if matches[1] == 'subscribe' or matches[1] == 'sub' then
-      return subscribe(id, matches[2])
+      return subscribe(msg, id, matches[2])
     end
 
     if matches[1] == 'unsubscribe' or matches[1] == 'uns' then
-      return unsubscribe(id, matches[2])
+      return unsubscribe(msg, id, matches[2])
     end
   end
 
