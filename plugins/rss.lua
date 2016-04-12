@@ -64,7 +64,7 @@ do
     reply_msg(msg.id, text, ok_cb, true)
   end
 
-  local function subscribe(id, url)
+  local function subscribe(msg, id, url)
     local baseurl, protocol = prot_url(url)
     local prothash = get_base_redis(baseurl, 'protocol')
     local lasthash = get_base_redis(baseurl, 'last_entry')
@@ -166,10 +166,11 @@ do
 
   local function run(msg, matches)
 
+    local uid = msg.from.peer_id
+
     -- comment this line if you want this plugin works for all members.
     if not is_owner(msg, msg.to.peer_id , uid) then return nil end
 
-    local uid = msg.from.peer_id
     local id = get_receiver(msg)
 
     if matches[1] == '!rss'then
@@ -183,11 +184,11 @@ do
       end
     end
     if matches[1] == 'subscribe' or matches[1] == 'sub' then
-      return subscribe(msg, id, matches[2])
+      subscribe(msg, id, matches[2])
     end
 
     if matches[1] == 'unsubscribe' or matches[1] == 'uns' then
-      return unsubscribe(msg, id, matches[2])
+      unsubscribe(msg, id, matches[2])
     end
   end
 
