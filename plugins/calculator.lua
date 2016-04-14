@@ -29,7 +29,7 @@ do
   return {
     description = "Calculate math expressions with mathjs API",
     usage = {
-      '<code>!calc [expression]</code>',
+      '<code> !calc [expression]</code>',
       'evaluates the expression and sends the result.',
     },
     patterns = {

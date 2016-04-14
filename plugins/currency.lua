@@ -60,7 +60,7 @@ do
     description = 'Returns (Google Finance) exchange rates for various currencies.',
     usage = {
       '<code> !cash [amount] [from] to [to]</code>',
-      'Example: /cash 5 USD to EUR',
+      'Example: !cash 5 USD to EUR',
     },
     patterns = {
       '^!(cash) (.*)$',

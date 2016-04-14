@@ -27,7 +27,8 @@ do
   return {
     description = 'Returns a definition from Urban Dictionary.',
     usage = {
-      '<code> !urbandictionary <query></code>',
+      '<code> !urbandictionary [query]</code>',
+      'Returns a [query] definition from urbandictionary.com'
     },
     patterns = {
       '^!(urbandictionary) (.*)$',
