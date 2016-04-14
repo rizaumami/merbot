@@ -42,7 +42,7 @@ do
     end
 
     while true do
-      result, k = string.gsub(result, "^(-?%d+)(%d%d%d)", '%1,%2')
+      result, k = string.gsub(result, "^(-?%d+)(%d%d%d)", '%1 %2')
       if (k==0) then
         break
       end
