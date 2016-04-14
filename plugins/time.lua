@@ -90,7 +90,7 @@ do
     local localTime, timeZoneId = get_time(lat,lng)
 
     reply_msg(msg.id, 'The local time in '..area..'('..timeZoneId..') is:\n'
-        ..os.date(dateFormat,localTime)
+        ..os.date(dateFormat,localTime), ok_cb, true)
   end
 
   function run(msg, matches)
