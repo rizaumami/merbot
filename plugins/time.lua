@@ -3,14 +3,13 @@
 --  1. Geocoding to get from area to a lat/long pair
 --  2. Timezone to get the local time in that lat/long location
 
-do
-
+do 
   -- Globals
   -- If you have a google api key for the geocoding/timezone api
   api_key  = nil
 
   base_api = 'https://maps.googleapis.com/maps/api'
-  dateFormat = '%A, %F %T %Z'
+  dateFormat = '%A, %F %T'
 
   -- Need the utc time for the google api
   function utctime()
@@ -78,23 +77,23 @@ do
     return localTime
   end
 
-  function getformattedLocalTime(area)
+  function getformattedLocalTime(msg, area)
     if area == nil then
-      return 'The time in nowhere is never'
+      reply_msg(msg.id, 'The time in nowhere is never.', ok_cb, true)
     end
 
     lat,lng,acc = get_latlong(area)
     if lat == nil and lng == nil then
-      return 'It seems that in "'..area..'" they do not have a concept of time.'
+      reply_msg(msg.id, 'It seems that in "'..area..'" they do not have a concept of time.', ok_cb, true)
     end
     local localTime, timeZoneId = get_time(lat,lng)
 
-    reply_msg(msg.id, 'The local time in '..area..'('..timeZoneId..') is:\n'
+    reply_msg(msg.id, 'The local time in '..area..' ('..timeZoneId..') is:\n'
         ..os.date(dateFormat,localTime), ok_cb, true)
   end
 
   function run(msg, matches)
-    return getformattedLocalTime(matches[1])
+    return getformattedLocalTime(msg, matches[1])
   end
 
   return {
@@ -110,3 +109,4 @@ do
   }
 
 end
+
