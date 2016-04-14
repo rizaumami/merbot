@@ -8,6 +8,12 @@ do
     local b,c = http.request(url)
     local text = nil
     if c == 200 or c == 400 then
+      while true do
+        b, k = string.gsub(b, '^(-?%d+)(%d%d%d)', '%1 %2')
+        if (k==0) then
+          break
+        end
+      end
       text = b
     else
       text = 'Unexpected error\n'
