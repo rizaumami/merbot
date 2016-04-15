@@ -62,7 +62,7 @@ do
       '<code>!salat [area]</code>',
       'Returns todays prayer times for that area',
       '',
-      '<code>!salat [area] [method]</code>',
+      '<code>!salat [method] [area]</code>',
       'Returns todays prayer times for that area calculated by [method]:',
       '<b>1</b> = Egyptian General Authority of Survey',
       '<b>2</b> = University Of Islamic Sciences, Karachi (Shafi)',
