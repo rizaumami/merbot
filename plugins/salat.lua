@@ -2,21 +2,36 @@ do
 
   local base_api = 'http://muslimsalat.com'
   local api_key = '?key=e2de2d3ed5c3b37b9d3bd6faeafa7891'
+  local calculation = {
+    [1] = 'Egyptian General Authority of Survey',
+    [2] = 'University Of Islamic Sciences, Karachi (Shafi)',
+    [3] = 'University Of Islamic Sciences, Karachi (Hanafi)',
+    [4] = 'Islamic Circle of North America',
+    [5] = 'Muslim World League',
+    [6] = 'Umm Al-Qura',
+    [7] = 'Fixed Isha'
+  }
 
   function run(msg, matches)
-    local url = base_api..'/'..URL.escape(matches[1])..'.json'
+    local method = 5
 
-    if matches[2] and matches[2]:match('^%d+$') then
-      if matches[2] == 0 or matches[2] > 7 then
+    if matches[2] and matches[1]:match('%d') then
+      local c_method = tonumber(matches[1])
+      if c_method == 0 or c_method > 7 then
         reply_msg(msg.id, 'Calculation method is out of range.\n'
-            ..'Normally, you don\'t need to set this, it will auto select based on the country where query is located.\n'
             ..'Consult !help salat.', ok_cb, true)
+        return
       else
-        url = url..'/'..matches[2]
+        method = c_method
+        url = base_api..'/'..URL.escape(matches[2])..'.json'
+        notif = '\n\nMethod: '..calculation[method]
       end
+    else
+      url = base_api..'/'..URL.escape(matches[1])..'.json'
+      notif = ''
     end
 
-    local res, code = http.request(url..api_key)
+    local res, code = http.request(url..'/'..method..api_key)
     if code ~= 200 then
       reply_msg(msg.id, 'Error: '..code, ok_cb, true)
       return
@@ -24,7 +39,7 @@ do
     local salat = json:decode(res)
 
     if salat.title == '' then
-      salat_area = salat.query..', '..salat.country
+      salat_area = matches[2]..', '..salat.country
     else
       salat_area = salat.title
     end
@@ -38,15 +53,16 @@ do
         ..'Dhuhr    : '..salat.items[1].dhuhr..'\n'
         ..'Asr      : '..salat.items[1].asr..'\n'
         ..'Maghrib  : '..salat.items[1].maghrib..'\n'
-        ..'Isha     : '..salat.items[1].isha..'</code>', true, 'html')
+        ..'Isha     : '..salat.items[1].isha..'</code>'..notif, true, 'html')
   end
 
   return {
     description = 'Returns todays prayer times.',
     usage = {
-      '<code> !salat [area]</code>',
+      '<code>!salat [area]</code>',
       'Returns todays prayer times for that area',
-      '<code> !salat [area] [method]</code>',
+      '',
+      '<code>!salat [area] [method]</code>',
       'Returns todays prayer times for that area calculated by [method]:',
       '<b>1</b> = Egyptian General Authority of Survey',
       '<b>2</b> = University Of Islamic Sciences, Karachi (Shafi)',
@@ -57,8 +73,8 @@ do
       '<b>7</b> = Fixed Isha'
     },
     patterns = {
-      '^!salat (.+)$',
-      '^!salat (.+) (%d+)$',
+      '^!salat (%a.*)$',
+      '^!salat (%d) (%a.*)$',
     },
     run = run
   }
