@@ -3,52 +3,22 @@
 --  1. Geocoding to get from area to a lat/long pair
 --  2. Timezone to get the local time in that lat/long location
 
-do 
+do
+
   -- Globals
   -- If you have a google api key for the geocoding/timezone api
-  api_key  = nil
-
-  base_api = 'https://maps.googleapis.com/maps/api'
-  dateFormat = '%A, %F %T'
+  local api_key  = nil
+  local dateFormat = '%A, %F %T'
 
   -- Need the utc time for the google api
-  function utctime()
+  local function utctime()
     return os.time(os.date('!*t'))
-  end
-
-  -- Use the geocoding api to get the lattitude and longitude with accuracy specifier
-  -- CHECKME: this seems to work without a key??
-  function get_latlong(area)
-    local api = base_api..'/geocode/json?'
-    local parameters = 'address='..(URL.escape(area) or '')
-    if api_key ~= nil then
-      parameters = parameters..'&key='..api_key
-    end
-
-    -- Do the request
-    local res, code = https.request(api..parameters)
-    if code ~=200 then
-      return nil
-    end
-    local data = json:decode(res)
-
-    if (data.status == 'ZERO_RESULTS') then
-      return nil
-    end
-    if (data.status == 'OK') then
-      -- Get the data
-      lat  = data.results[1].geometry.location.lat
-      lng  = data.results[1].geometry.location.lng
-      acc  = data.results[1].geometry.location_type
-      types= data.results[1].types
-      return lat,lng,acc,types
-    end
   end
 
   -- Use timezone api to get the time in the lat,
   -- Note: this needs an API key
-  function get_time(lat,lng)
-    local api = base_api..'/timezone/json?'
+  local function get_time(lat, lng)
+    local api = 'https://maps.googleapis.com/maps/api/timezone/json?'
 
     -- Get a timestamp (server time is relevant here)
     local timestamp = utctime()
@@ -77,22 +47,24 @@ do
     return localTime
   end
 
-  function getformattedLocalTime(msg, area)
+  local function getformattedLocalTime(msg, area)
     if area == nil then
       reply_msg(msg.id, 'The time in nowhere is never.', ok_cb, true)
     end
 
-    lat,lng,acc = get_latlong(area)
-    if lat == nil and lng == nil then
+    local coordinats, code = get_coords(msg, area)
+    local lat = coordinats.lat
+    local long = coordinats.lon
+    if lat == nil and long == nil then
       reply_msg(msg.id, 'It seems that in "'..area..'" they do not have a concept of time.', ok_cb, true)
     end
-    local localTime, timeZoneId = get_time(lat,lng)
+    local localTime, timeZoneId = get_time(lat, long)
 
     reply_msg(msg.id, 'The local time in '..area..' ('..timeZoneId..') is:\n'
         ..os.date(dateFormat,localTime), ok_cb, true)
   end
 
-  function run(msg, matches)
+  local function run(msg, matches)
     return getformattedLocalTime(msg, matches[1])
   end
 

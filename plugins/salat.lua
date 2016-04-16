@@ -13,7 +13,10 @@ do
   }
 
   function run(msg, matches)
+    local area = matches[1]
     local method = 5
+    local notif = ''
+    local url = base_api..'/'..URL.escape(area)..'.json'
 
     if matches[2] and matches[1]:match('%d') then
       local c_method = tonumber(matches[1])
@@ -25,10 +28,8 @@ do
         method = c_method
         url = base_api..'/'..URL.escape(matches[2])..'.json'
         notif = '\n\nMethod: '..calculation[method]
+        area = matches[2]
       end
-    else
-      url = base_api..'/'..URL.escape(matches[1])..'.json'
-      notif = ''
     end
 
     local res, code = http.request(url..'/'..method..api_key)
@@ -39,7 +40,7 @@ do
     local salat = json:decode(res)
 
     if salat.title == '' then
-      salat_area = matches[2]..', '..salat.country
+      salat_area = area..', '..salat.country
     else
       salat_area = salat.title
     end

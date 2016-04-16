@@ -623,7 +623,7 @@ end
 
 -- Gets coordinates for a location.
 function get_coords(msg, input)
-  local url = base_api..'/geocode/json?address='..URL.escape(input)
+  local url = 'https://maps.googleapis.com/maps/api/geocode/json?address='..URL.escape(input)
 
   local jstr, res = http.request(url)
   if res ~= 200 then
