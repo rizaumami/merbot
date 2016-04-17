@@ -23,7 +23,7 @@ do
     local jcast = json:decode(res)
     local todate = os.date('%A, %F', jcast.currently.time)
 
-    local forecast = '<b>Weather for City: '..address..'</b>\n'..todate..'\n\n'
+    local forecast = '<b>Weather for: '..address..'</b>\n'..todate..'\n\n'
     local forecast = forecast..'<b>Right now</b>\n'..jcast.currently.summary
         ..' - Feels like '..round(jcast.currently.apparentTemperature)..'°C\n\n'
     local forecast = forecast..'<b>Next 24 hours</b>\n'..jcast.hourly.summary..'\n\n'
@@ -36,10 +36,11 @@ do
   end
 
   return {
-    description = 'Displays the local time in an area',
+    description = 'Returns forecast from forecast.io.',
     usage = {
-      '<code> !time [area]</code>',
-      'Displays the local time in that area',
+      '<code> !cast [area]</code>',
+      '<code> !weather [area]</code>',
+      'Forecast for that [area].',
     },
     patterns = {
       '^!cast (.*)$',
