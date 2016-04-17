@@ -639,7 +639,8 @@ function get_coords(msg, input)
 
   return {
     lat = jdat.results[1].geometry.location.lat,
-    lon = jdat.results[1].geometry.location.lng
+    lon = jdat.results[1].geometry.location.lng,
+    formatted_address = jdat.results[1].formatted_address
   }
 end
 
