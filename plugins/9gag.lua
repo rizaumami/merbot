@@ -17,17 +17,15 @@ do
     return link_image, title
   end
 
-  local function send_title(cb_extra, success, result)
-    if success then
-      send_msg(cb_extra[1], cb_extra[2], ok_cb, false)
-    end
-  end
-
   local function run(msg, matches)
-    local receiver = get_receiver(msg)
     local url, title = get_9GAG()
-    send_photo_from_url(receiver, url, send_title, {receiver, title})
-    return false
+    local gag_file = '/tmp/gag.jpg'
+    local g_file = ltn12.sink.file(io.open(gag_file, 'w'))
+    http.request {
+        url = url,
+        sink = g_file,
+      }
+    reply_photo(msg.id, gag_file, ok_cb, true)
   end
 
   return {
