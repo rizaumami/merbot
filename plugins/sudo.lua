@@ -31,8 +31,9 @@ do
     end
 
     if matches[1] == 'bin' then
-      local header = '<b>$</b> <code>'..matches[2]..'</code>\n'
-      local stdout = io.popen(matches[2]):read('*all')
+      local input = matches[2]:gsub('—', '--')
+      local header = '<b>$</b> <code>'..input..'</code>\n'
+      local stdout = io.popen(input):read('*all')
       send_api_msg(msg, get_receiver_api(msg), header..'<code>'..stdout..'</code>', true, 'html')
     end
 
