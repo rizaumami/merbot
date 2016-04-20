@@ -10,7 +10,7 @@ do
   return {
     description = 'Returns a location from Google Maps.',
     usage = {
-      '<code> !location [query]</code>',
+      '<code>!location [query]</code>',
       'Returns Google Maps of [query]',
     },
     patterns = {

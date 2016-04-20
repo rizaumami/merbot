@@ -41,8 +41,9 @@ do
   return {
     description = 'Returns top stories from Hacker News.',
     usage = {
-      '<code> !hackernews</code>',
-      '<code> !hn</code>',
+      '<code>!hackernews</code>',
+      '<code>!hn</code>',
+      'Returns top stories from Hacker News.',
     },
     patterns = {
       '^!(hackernews)$',

@@ -50,12 +50,14 @@ do
       sudo = {
         '<code>!log get [chat_id]</code>',
         'Send <code>chat_id</code> chat log.',
+        '',
         '<code>!log pm [chat_id]</code>',
         'Send <code>chat_id</code> chat log to private message'
       },
       owner = {
         '<code>!log get</code>',
         'Send chat log to its chat group',
+        '',
         '<code>!log pm</code>',
         'Send chat log to private message'
       },

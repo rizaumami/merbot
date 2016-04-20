@@ -26,7 +26,10 @@ do
 
   return {
     description = 'IMDB plugin for telegram',
-    usage = '<code> !imdb [movie]</code>',
+    usage = {
+      '<code>!imdb [movie]</code>',
+      'Returns IMDb entry for <code>[movie]</code>',
+    },
     patterns = {
       '^!imdb (.+)'
     },

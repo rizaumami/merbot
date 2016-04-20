@@ -112,11 +112,13 @@ do
   return {
     description = 'Check if a website or server is up.',
     usage = {
-      '<code> !isup [host]</code>',
+      '<code>!isup [host]</code>',
       'Performs a HTTP request or Socket (ip:port) connection',
-      '<code> !isup cron [host]</code>',
+      '',
+      '<code>!isup cron [host]</code>',
       'Every 5mins check if host is up. (Requires privileged user)',
-      '<code> !isup cron delete [host]</code>',
+      '',
+      '<code>!isup cron delete [host]</code>',
       'Disable checking that host.'
     },
     patterns = {

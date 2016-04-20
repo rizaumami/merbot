@@ -71,7 +71,7 @@ do
   return {
     description = 'Displays the local time in an area',
     usage = {
-      '<code> !time [area]</code>',
+      '<code>!time [area]</code>',
       'Displays the local time in that area',
     },
     patterns = {

@@ -31,7 +31,7 @@ do
   return {
     description = '9GAG for Telegram',
     usage = {
-      '<code> !9gag</code>',
+      '<code>!9gag</code>',
       'Send random image from 9gag',
     },
     patterns = {

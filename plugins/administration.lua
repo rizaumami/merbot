@@ -2063,10 +2063,13 @@ do
       user = {
         '<code> !about</code>',
         'Read group description',
+        '',
         '<code> !rules</code>',
         'Read group rules',
+        '',
         '<code> !link get</code>',
         'Print invite link',
+        '',
         '<code> !kickme</code>',
         'Kick yourself out of this group.'
       },

@@ -83,9 +83,9 @@ do
           text = text..usage..'\n'
         end
       end
-      text = text..'=========================\n'
+      --text = text..'=========================\n'
     elseif has_usage_data(plugin) then -- Is not empty
-      text = text..plugin.usage..'\n=========================\n'
+      text = text..plugin.usage --..'\n=========================\n'
     end
     return text
   end
@@ -170,10 +170,13 @@ do
     usage = {
       '<code>!help</code>',
       'Show list of plugins.',
+      '',
       '<code>!help all</code>',
       'Show all commands for every plugin.',
+      '',
       '<code>!help [plugin_name]</code>',
       'Commands for that plugin.',
+      '',
       '<code>!help [number]</code>',
       'Commands for that plugin. Type !help to get the plugin number.'
     },

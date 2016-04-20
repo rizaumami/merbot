@@ -425,9 +425,10 @@ do
   return {
     description = 'Menampilkan (sub)forum Kaskus.',
     usage = {
-      '<code> !kaskus [forum_id]</code>',
+      '<code>!kaskus [forum_id]</code>',
       'Menampilkan (sub)forum Kaskus berdasar nomor (sub)forum',
-      '<code> !kaskus [forum_name]</code>',
+      '',
+      '<code>!kaskus [forum_name]</code>',
       'Menampilkan (sub)forum Kaskus berdasar nama (sub)forum',
     },
     patterns = {

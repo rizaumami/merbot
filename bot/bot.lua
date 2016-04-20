@@ -68,6 +68,11 @@ function msg_valid(msg)
     return false
   end
 
+  if msg.from.peer_id == tonumber(_config.bot_api.uid) then
+    print('\27[36mNot valid: Msg from our companion bot\27[39m')
+    return false
+  end
+
 --  if msg.from.peer_id == our_id then
 --    print('\27[36mNot valid: Msg from our id\27[39m')
 --    return false
@@ -177,13 +182,14 @@ function create_config()
   print('\n\27[1;33mSome functions and plugins using bot API as sender.\n'
       ..'Please provide bots API token and username to ensure it\'s works as intended.\n'
       ..'You can ENTER to skip and then fill the required info into data/config.lua.\27[0;39;49m\n')
-      
+
   io.write('\27[1mPlease input your bot API key (token): \27[0;39;49m')
   local bot_api_key = io.read()
-  
+
   io.write('\n\27[1mPlease input your bot API @username: \27[0;39;49m')
   local bot_api_uname = io.read()
   local bot_api_uname = bot_api_uname:gsub('@', '')
+  local bot_api_uid = bot_api_key:match('^%d+')
   
   -- A simple config with basic plugins and ourselves as privileged user
   _config = {
@@ -192,7 +198,7 @@ function create_config()
     autoleave = false,
     bot_api = {
       key = bot_api_key,
-      uid = bot_api_key:match('^%d+'),
+      uid = tonumber(bot_api_uid),
       uname = bot_api_uname
     },
     disabled_channels = {},

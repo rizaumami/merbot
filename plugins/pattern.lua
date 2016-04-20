@@ -2,17 +2,17 @@ do
 
   local words = { -- perhaps, maybe, do you, etc...
     'Mungkin', 'Pasti', 'Apakah', 'Mungkinkah', 'Ane yakin', 'Mimin yakin',
-    'Saya rasa', 'Gue yakin', 'Mbah rasa', 
+    'Saya rasa', 'Gue yakin', 'Mbah rasa',
   }
-  
-  local target = { -- you 
+
+  local target = { -- you
     'kamu', 'ente', 'Anda', 'sampeyan', 'akang', 'lu', 'Bapak', 'Ibu', 'kakak',
     'nyai', 'mbah', 'juragan', 'pah erte', 'pak lurah', 'komandan', 'pak guru',
     'bos', 'pas ustadz',
-    
+
   }
-  
-  local verba = { -- description 
+
+  local verba = { -- description
     'mau ngomong', 'hendak bicara', 'akan khotbah', 'bakal mangap', 'mau pidato',
     'bermaksud', 'akan menyampaikan', 'hendak bersabda',
   }

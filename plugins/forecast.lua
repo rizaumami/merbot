@@ -38,8 +38,8 @@ do
   return {
     description = 'Returns forecast from forecast.io.',
     usage = {
-      '<code> !cast [area]</code>',
-      '<code> !weather [area]</code>',
+      '<code>!cast [area]</code>',
+      '<code>!weather [area]</code>',
       'Forecast for that [area].',
     },
     patterns = {

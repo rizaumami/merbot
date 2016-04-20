@@ -51,9 +51,10 @@ do
   return {
     description = 'Send comic images from xkcd',
     usage = {
-      '<code> !xkcd</code>',
+      '<code>!xkcd</code>',
       'Send random xkcd image and title.',
-      '<code> !xkcd (id)</code>',
+      '',
+      '<code>!xkcd (id)</code>',
       'Send an xkcd image and title.'
     },
     patterns = {

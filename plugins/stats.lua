@@ -171,8 +171,10 @@ do
     usage = {
       '<code>!stats</code>',
       'Returns a list of Username <code>[telegram_id] : msg_num</code>',
+      '',
       '<code>!stats chat [chat_id]</code>',
       'Show stats for chat_id',
+      '',
       '<code>!stats bot</code>',
       'Shows bot stats (sudo users)'
     },

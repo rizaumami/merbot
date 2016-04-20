@@ -201,10 +201,13 @@ do
       admin = {
         '<code>!rss</code>',
         'Get your rss (or chat rss) subscriptions',
+        '',
         '<code>!rss subscribe [url]</code>',
         'Subscribe to that url',
+        '',
         '<code>!rss unsubscribe [id]</code>',
         'Unsubscribe of that id',
+        '',
         '<code>!rss sync</code>',
         'Download now the updates and send it. Only sudo users can use this option.'
       },

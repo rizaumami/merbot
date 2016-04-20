@@ -12,7 +12,8 @@ do
   return {
     description = 'Whois lookup.',
     usage = {
-      '<code> !whois [url]</code>',
+      '<code>!whois [url]</code>',
+      'Returns whois lookup for <code>[url]</code>',
     },
     patterns = {
       '^!whois (.*)$'

@@ -48,7 +48,7 @@ do
   return {
     description = 'Send an screenshot of a website.',
     usage = {
-      '<code> !webshot [url]</code>',
+      '<code>!webshot [url]</code>',
       'Take an screenshot of the web and send it back to you.'
     },
     patterns = {
