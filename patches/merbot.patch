@@ -1,5 +1,5 @@
---- tg/lua-tg.c	2016-04-18 18:53:21.344792927 +0700
-+++ /tmp/lua-tg.c	2016-04-18 19:04:00.845334720 +0700
+--- tg/lua-tg.c	2016-04-21 23:15:20.657750668 +0700
++++ /home/iza/lua-tg.c	2016-04-21 23:15:02.649847315 +0700
 @@ -161,6 +161,7 @@
    my_lua_checkstack (luaState, 4);
    lua_add_string_field ("title", P->channel.title);
@@ -47,7 +47,14 @@
    lq_fwd,
    lq_fwd_media,
    lq_load_photo,
-@@ -718,7 +738,24 @@
+@@ -712,13 +732,37 @@
+   lq_status_online,
+   lq_status_offline,
+   lq_send_location,
++  lq_post_location,
+   lq_extf,
+   lq_import_chat_link,
+   lq_export_chat_link,
    lq_channel_invite_user,
    lq_channel_kick_user,
    lq_channel_get_admins,
@@ -69,11 +76,17 @@
 +  lq_get_message,
 +  lq_channel_join,
 +  lq_channel_leave,
-+  lq_channel_list
++  lq_channel_list,
++  lq_post_audio,
++  lq_post_document,
++  lq_post_file,
++  lq_post_photo,
++  lq_post_text,
++  lq_post_video,
  };
  
  struct lua_query_extra {
-@@ -1138,6 +1175,38 @@
+@@ -1138,6 +1182,38 @@
    free (cb);
  }
  
@@ -112,7 +125,38 @@
  #define LUA_STR_ARG(n) lua_ptr[n].str, strlen (lua_ptr[n].str)
  
  void lua_do_all (void) {
-@@ -1238,6 +1307,30 @@
+@@ -1199,6 +1275,30 @@
+     case lq_send_text:
+       tgl_do_send_text (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].str, 0, lua_msg_cb, lua_ptr[p].ptr);
+       p += 3;
++      break;    
++    case lq_post_audio:
++      tgl_do_send_document (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].str, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUDIO | TGLMF_POST_AS_CHANNEL, lua_msg_cb, lua_ptr[p].ptr);
++      p += 3;
++      break;
++    case lq_post_document:
++      tgl_do_send_document (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].str, NULL, 0, TGLMF_POST_AS_CHANNEL, lua_msg_cb, lua_ptr[p].ptr);
++      p += 3;
++      break;
++    case lq_post_file:
++      tgl_do_send_document (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].str, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_AUTO | TGLMF_POST_AS_CHANNEL, lua_msg_cb, lua_ptr[p].ptr);
++      p += 3;
++      break;
++    case lq_post_photo:
++      tgl_do_send_document (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].str, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_PHOTO | TGLMF_POST_AS_CHANNEL, lua_msg_cb, lua_ptr[p].ptr);
++      p += 3;
++      break;
++    case lq_post_text:
++      tgl_do_send_text (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].str, 256, lua_msg_cb, lua_ptr[p].ptr);
++      p += 3;
++      break;
++    case lq_post_video:
++      tgl_do_send_document (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].str, NULL, 0, TGL_SEND_MSG_FLAG_DOCUMENT_VIDEO | TGLMF_POST_AS_CHANNEL, lua_msg_cb, lua_ptr[p].ptr);
++      p += 3;
+       break;
+     case lq_chat_set_photo:
+       tgl_do_set_chat_photo (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].str, lua_empty_cb, lua_ptr[p].ptr);
+@@ -1238,6 +1338,30 @@
        tgl_do_reply_message (TLS, &lua_ptr[p + 1].msg_id, LUA_STR_ARG (p + 2), 0, lua_msg_cb, lua_ptr[p].ptr);
        p += 3;
        break;
@@ -143,7 +187,18 @@
      case lq_fwd:
        tmp_msg_id = &lua_ptr[p + 2].msg_id;
        tgl_do_forward_messages (TLS, lua_ptr[p + 1].peer_id, 1, (void *)&tmp_msg_id, 0, lua_one_msg_cb, lua_ptr[p].ptr);
-@@ -1363,6 +1456,73 @@
+@@ -1347,6 +1471,10 @@
+       tgl_do_send_location (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].dnum, lua_ptr[p + 3].dnum, 0, lua_msg_cb, lua_ptr[p].ptr);
+       p += 4;
+       break;
++    case lq_post_location:
++      tgl_do_send_location (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].dnum, lua_ptr[p + 3].dnum, 256, lua_msg_cb, lua_ptr[p].ptr);
++      p += 4;
++      break;
+     case lq_channel_invite_user:
+       tgl_do_channel_invite_user (TLS, lua_ptr[p + 1].peer_id, lua_ptr[p + 2].peer_id, lua_empty_cb, lua_ptr[p].ptr);
+       p += 3;
+@@ -1363,6 +1491,73 @@
        tgl_do_channel_get_members (TLS, lua_ptr[p + 1].peer_id, 100, 0, 0, lua_contact_list_cb, lua_ptr[p].ptr);
        p += 2;
        break;
@@ -217,7 +272,7 @@
    /*
    lq_delete_msg,
    lq_restore_msg,
-@@ -1436,6 +1596,12 @@
+@@ -1436,6 +1631,12 @@
    {"load_document", lq_load_document, { lfp_msg, lfp_none }},
    {"load_document_thumb", lq_load_document_thumb, { lfp_msg, lfp_none }},
    {"reply_msg", lq_reply, { lfp_msg, lfp_string, lfp_none }},
@@ -230,7 +285,17 @@
    {"fwd_msg", lq_fwd, { lfp_peer, lfp_msg, lfp_none }},
    {"fwd_media", lq_fwd_media, { lfp_peer, lfp_msg, lfp_none }},
    {"chat_info", lq_chat_info, { lfp_chat, lfp_none }},
-@@ -1468,6 +1634,25 @@
+@@ -1460,7 +1661,8 @@
+   {"send_contact", lq_send_contact, { lfp_peer, lfp_string, lfp_string, lfp_string, lfp_none }},
+   {"status_online", lq_status_online, { lfp_none }},
+   {"status_offline", lq_status_offline, { lfp_none }},
+-  {"send_location", lq_send_location, { lfp_peer, lfp_double, lfp_double, lfp_none }},  
++  {"send_location", lq_send_location, { lfp_peer, lfp_double, lfp_double, lfp_none }},    
++  {"post_location", lq_post_location, { lfp_peer, lfp_double, lfp_double, lfp_none }},  
+   {"ext_function", lq_extf, { lfp_string, lfp_none }},
+   {"import_chat_link", lq_import_chat_link, { lfp_string, lfp_none }},
+   {"export_chat_link", lq_export_chat_link, { lfp_chat, lfp_none }},
+@@ -1468,6 +1670,31 @@
    {"channel_kick_user", lq_channel_kick_user, { lfp_channel, lfp_user, lfp_none }},
    {"channel_get_admins", lq_channel_get_admins, { lfp_channel, lfp_none }},
    {"channel_get_users", lq_channel_get_users, { lfp_channel, lfp_none }},
@@ -253,6 +318,12 @@
 +  {"channel_leave", lq_channel_leave, { lfp_channel, lfp_none }},
 +  {"channel_join", lq_channel_join, { lfp_channel, lfp_none }},
 +  {"get_channel_list", lq_channel_list, { lfp_none }},
++  {"post_audio", lq_post_audio, { lfp_peer, lfp_string, lfp_none }},
++  {"post_document", lq_post_document, { lfp_peer, lfp_string, lfp_none }},
++  {"post_file", lq_post_file, { lfp_peer, lfp_string, lfp_none }},
++  {"post_photo", lq_post_photo, { lfp_peer, lfp_string, lfp_none }},
++  {"post_text", lq_post_text, { lfp_peer, lfp_string, lfp_none }},
++  {"post_video", lq_post_video, { lfp_peer, lfp_string, lfp_none }},
    { 0, 0, { lfp_none}}
  };
  
