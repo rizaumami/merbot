@@ -9,7 +9,7 @@ do
   end
 
   -- Get commands for that plugin
-  local function plugin_help(name,number,requester)
+  local function plugin_help(name, number, requester)
     local plugin = ''
     if number then
       local i = 0
@@ -49,7 +49,7 @@ do
               text = text..plugin.usage.moderator..'\n'
             end
           end
-        elseif ku == 'owner' then -- usage for moderator
+        elseif ku == 'owner' then -- usage for owner
           if requester == 'owner' or requester == 'admin' or requester == 'sudo' then
             if (type(plugin.usage.owner) == 'table') then
               for k,v in pairs(plugin.usage.owner) do
@@ -83,9 +83,8 @@ do
           text = text..usage..'\n'
         end
       end
-      --text = text..'=========================\n'
     elseif has_usage_data(plugin) then -- Is not empty
-      text = text..plugin.usage --..'\n=========================\n'
+      text = text..plugin.usage
     end
     return text
   end
@@ -112,32 +111,35 @@ do
   end
 
 
-  -- !help all command
-  local function help_all(requester)
-    local ret = ''
-    for name in pairsByKeys(plugins) do
-      if plugins[name].hidden then
-        name = nil
-      else
-        ret = ret .. plugin_help(name, nil, requester)
-      end
-    end
-    return ret
-  end
+--  -- !help all command
+--  local function help_all(requester)
+--    local ret = ''
+--    for name in pairsByKeys(plugins) do
+--      if plugins[name].hidden then
+--        name = nil
+--      else
+--        ret = ret .. plugin_help(name, nil, requester)
+--      end
+--    end
+--    return ret
+--  end
 
   --------------------------------------------------------------------------------
 
   local function run(msg, matches)
 
-    if not is_chat_msg(msg) and not is_admin(msg.from.peer_id) then return nil end
+    local uid = msg.from.peer_id
+    local gid = msg.to.peer_id
 
-    if is_sudo(msg.from.peer_id) then
+    if not is_chat_msg(msg) and not is_admin(uid) then return nil end
+
+    if is_sudo(uid) then
       requester = 'sudo'
-    elseif is_admin(msg.from.peer_id) then
+    elseif is_admin(uid) then
       requester = 'admin'
-    elseif is_mod(msg, msg.to.peer_id, msg.from.peer_id) then
+    elseif is_owner(msg, gid, uid) then
       requester = 'owner'
-    elseif is_mod(msg, msg.to.peer_id, msg.from.peer_id) then
+    elseif is_mod(msg, gid, uid) then
       requester = 'moderator'
     else
       requester = 'user'
@@ -156,7 +158,9 @@ do
         text = plugin_help(matches[1], nil, requester)
       end
       if not text then
-        text = telegram_help(msg)
+        reply_msg(msg.id, 'No help entry for "'..matches[1]..'".\n'
+            ..'Please visit @thefinemanual for the complete list.', ok_cb, true)
+        return
       end
       send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
     end
