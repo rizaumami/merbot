@@ -188,17 +188,19 @@ do
     local msg = extra.msg
     local usr = extra.usr
     local data = load_data(_config.administration[gid])
-    if not is_sudo(uid) and is_privileged(msg, gid, uid) then
+    if is_privileged(msg, gid, uid) then
       reply_msg(msg.id, usr..' is too privileged to be banned.', ok_cb, true)
-    elseif is_banned(gid, uid) then
-      reply_msg(msg.id, usr..' is already banned.', ok_cb, true)
     else
-      local hash = 'banned:'..gid
-      redis:sadd(hash, uid)
-      kick_user(msg, gid, uid)
-      data.banned[uid] = usr
-      save_data(data, 'data/'..gid..'/'..gid..'.lua')
-      reply_msg(msg.id, usr..' has been banned.', ok_cb, true)
+      if is_banned(gid, uid) then
+        reply_msg(msg.id, usr..' is already banned.', ok_cb, true)
+      else
+        local hash = 'banned:'..gid
+        redis:sadd(hash, uid)
+        kick_user(msg, gid, uid)
+        data.banned[uid] = usr
+        save_data(data, 'data/'..gid..'/'..gid..'.lua')
+        reply_msg(msg.id, usr..' has been banned.', ok_cb, true)
+      end
     end
   end
 
@@ -616,18 +618,16 @@ do
     end
   end
 
-  local function load_group_photo(msg, chat_id)
+  local function load_group_photo(msg, gid)
+    local g_type = msg.to.peer_type
     local dl_dir = '.telegram-cli/downloads'
+    local cmd = 'load_%s_photo %s#id%s'
+    local command = cmd:format(g_type, g_type, gid)
     os.execute('mv '..dl_dir..' '..dl_dir..'-bak && mkdir '..dl_dir)
-    if msg.to.peer_type == 'channel' then
-      os.execute(tgexec.."\'load_channel_photo channel#id"..chat_id.."\'")
-    else
-      os.execute(tgexec.."\'load_chat_photo chat#id"..chat_id.."\'")
-    end
+    os.execute(tgclie:format(command))
     local g_photo = scandir(dl_dir)
-    --vardump(g_photo)
     if g_photo[3] and g_photo[3]:match('jpg') then
-      os.rename(dl_dir..'/'..g_photo[3], 'data/'..chat_id..'/'..chat_id..'.jpg')
+      os.rename(dl_dir..'/'..g_photo[3], 'data/'..gid..'/'..gid..'.jpg')
       os.execute('rm -r '..dl_dir..' && mv '..dl_dir..'-bak '..dl_dir)
     end
   end
@@ -2061,16 +2061,16 @@ do
         '<a href="https://telegram.me/thefinemanual/27">Moderators List</a>'
       },
       user = {
-        '<code> !about</code>',
+        '<code>!about</code>',
         'Read group description',
         '',
-        '<code> !rules</code>',
+        '<code>!rules</code>',
         'Read group rules',
         '',
-        '<code> !link get</code>',
+        '<code>!link get</code>',
         'Print invite link',
         '',
-        '<code> !kickme</code>',
+        '<code>!kickme</code>',
         'Kick yourself out of this group.'
       },
     },

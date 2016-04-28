@@ -10,6 +10,7 @@ mimetype = (loadfile "./libs/mimetype.lua")()
 redis = (loadfile "./libs/redis.lua")()
 
 http.TIMEOUT = 10
+tgclie = './tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De %q'
 
 function get_receiver(msg)
   if msg.to.peer_type == 'user' then
