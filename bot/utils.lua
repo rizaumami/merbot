@@ -649,18 +649,20 @@ end
 -- So, here is a simple workaround; send message through Telegram official API.
 -- You need to provide your API bots TOKEN in config.lua.
 function send_api_msg(msg, receiver, text, disable_web_page_preview, markdown)
-  local url_api = 'https://api.telegram.org/bot'.._config.bot_api.key
-      ..'/sendMessage?chat_id='..receiver..'&text='..URL.escape(text)
-  if disable_web_page_preview == true then
-    url_api = url_api..'&disable_web_page_preview=true'
-  end
-  if markdown == 'md' then
-    url_api = url_api..'&parse_mode=Markdown'
-  elseif markdown == 'html' then
-    url_api = url_api..'&parse_mode=HTML'
-  end
-  local dat, res = https.request(url_api)
-  if res == 400 then
-    reply_msg(msg.id, 'Error 400.\nWhat ever that means...', ok_cb, true)
+  local web_preview = '&disable_web_page_preview='..(tostring(disable_web_page_preview) or '')
+  local markdown = '&parse_mode='..(markdown or '')
+  local url = 'https://api.telegram.org/bot'.._config.bot_api.key..'/sendMessage'
+  local response = {}
+
+  local res, code = https.request{
+    url = url..'?chat_id='..receiver..markdown..web_preview..'&text='..URL.escape(text),
+    method = "POST",
+    sink = ltn12.sink.table(response),
+  }
+
+  if code == 400 then
+    local taberr = table.concat(response)
+    local jerr = json:decode(taberr)
+    reply_msg(msg.id, jerr.description, ok_cb, true)
   end
 end
