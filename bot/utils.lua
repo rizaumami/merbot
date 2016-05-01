@@ -663,6 +663,11 @@ function send_api_msg(msg, receiver, text, disable_web_page_preview, markdown)
   if code == 400 then
     local taberr = table.concat(response)
     local jerr = json:decode(taberr)
-    reply_msg(msg.id, jerr.description, ok_cb, true)
+    if jerr.description:match('chat not found') then
+      reply_msg(msg.id, 'Please start or message @'.._config.bot_api.uname
+          ..' privately first, then repeat the request.', ok_cb, true)
+    else
+      reply_msg(msg.id, jerr.description, ok_cb, true)
+    end
   end
 end
