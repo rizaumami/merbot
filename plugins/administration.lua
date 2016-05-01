@@ -1672,7 +1672,7 @@ do
                 ..'*-* Spam protection = `'..data.antispam..'`\n'
                 ..'*-* Sticker policy = `'..data.sticker..'`\n'
                 ..'*-* Welcome message = `'..data.welcome.to..'`\n'
-          send_api_msg(msg, get_receiver_api(msg), text, true, 'md')
+          send_api_msg(msg, get_receiver_api(msg), text, true, 'markdown')
         end
 
         -- Invite user by {id|username|name|reply}
@@ -1820,7 +1820,7 @@ do
         else
           gplist = '*Groups:*\n' .. gplist
         end
-        send_api_msg(msg, get_receiver_api(msg), gplist, true, 'md')
+        send_api_msg(msg, get_receiver_api(msg), gplist, true, 'markdown')
       end
 
       -- print merbot version
