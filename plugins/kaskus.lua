@@ -359,8 +359,9 @@ do
     ["reksa-dana"] = "737_Reksa Dana",
   }
 
+  local url = 'http://m.kaskus.co.id'
+
   local function get_kaskus_thread(msg, sub_id, sub_name)
-    local url = 'http://m.kaskus.co.id'
     local res, kaskus = http.request(url..'/forum/'..sub_id)
     local kasforum = '<b>'..sub_name..'</b>\n\n'
     i = 0
@@ -379,6 +380,23 @@ do
     local kastrit = kasforum:gsub(' thread_', '<a href="'..url..'/thread/')
     local kastrit = kastrit:gsub(' <span', '</a>')
     send_api_msg(msg, get_receiver_api(msg), kastrit, true, 'html')
+  end
+
+  local function get_hot_thread(msg)
+    local hurl = url..'/forum'
+    local hot, code = http.request(hurl)
+    local hotrit = '<b>Kaskus Hot Thread</b>\n\n'
+    local hotblock = hot:match('<h2>Hot Threads</h2>.-</div>')
+    i = 0
+    for hotgrab in hotblock:gmatch('<a href="/thread.-</a>') do
+      i = i+1
+      local hate = hotgrab:gsub('href="', 'href="'..url)
+      local hotitle = hate:match('hot_thread">.+</a>')
+      local hotitle = hotitle:gsub('<.->', '')
+      local hotlink = hate:match('^.-med=')
+      hotrit = hotrit..'<b>'..i..'</b>. '..hotlink..hotitle..'</a>\n'
+    end
+    send_api_msg(msg, get_receiver_api(msg), hotrit, true, 'html')
   end
 
   local function get_kaskus_thread_id(msg, forum)
@@ -403,23 +421,28 @@ do
   end
 
   local function run(msg, matches)
-    local forum_id = 'Gagal menemukan subforum <b>'..matches[2]..'</b>.\n'
-        ..'Berikut daftar subforum dengan kata kunci: <b>'..matches[2]..'</b>\n'
-    i = 0
-    for k,v in pairs(kaskus_forums) do
-      if k:match(tostring(matches[2])) or v:match(tostring('^'..matches[2]..'_')) then
-        i = i+1
-        sub_id = v:gsub('_.+$', '')
-        sub_name = v:gsub('^.-_', '')
-        forum_id = forum_id..'<b>'..i..'</b>. <a href="http://m.kaskus.co.id/forum/'..sub_id..'">'..sub_id..' - '..sub_name..'</a>\n'
-      end
+    if matches[1] == 'ht' or matches[1] == 'hotthread' then
+      get_hot_thread(msg)
     end
-    if i == 0 then
-      reply_msg(msg.id, 'Invalid Forum specified.', ok_cb, true)
-    elseif i == 1 then
-      get_kaskus_thread(msg, sub_id, sub_name)
-    elseif i > 1 then
-      send_api_msg(msg, get_receiver_api(msg), forum_id, true, 'html')
+    if matches[2] then
+      local forum_id = 'Gagal menemukan subforum <b>'..matches[2]..'</b>.\n'
+          ..'Berikut daftar subforum dengan kata kunci: <b>'..matches[2]..'</b>\n'
+      i = 0
+      for k,v in pairs(kaskus_forums) do
+        if k:match(tostring(matches[2])) or v:match(tostring('^'..matches[2]..'_')) then
+          i = i+1
+          sub_id = v:gsub('_.+$', '')
+          sub_name = v:gsub('^.-_', '')
+          forum_id = forum_id..'<b>'..i..'</b>. <a href="http://m.kaskus.co.id/forum/'..sub_id..'">'..sub_id..' - '..sub_name..'</a>\n'
+        end
+      end
+      if i == 0 then
+        reply_msg(msg.id, 'Invalid Forum specified.', ok_cb, true)
+      elseif i == 1 then
+        get_kaskus_thread(msg, sub_id, sub_name)
+      elseif i > 1 then
+        send_api_msg(msg, get_receiver_api(msg), forum_id, true, 'html')
+      end
     end
   end
 
@@ -435,6 +458,8 @@ do
       'Menampilkan (sub)forum Kaskus berdasar nama (sub)forum',
     },
     patterns = {
+      '^!kaskus (ht)$',
+      '^!kaskus (hotthread)$',
       '^!(kaskus) (%g+)$',
       '^!(kaskus) (%d+)$'
     },
