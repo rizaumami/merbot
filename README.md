@@ -3,7 +3,7 @@
 <p align="center">**A Telegram Group Administration Bot**
 
 
-<img src="https://raw.githubusercontent.com/wiki/rizaumami/merbot/_images/merbot.png" width="512" alt="Merbot illustration" title="Merbot illustration" align="center">
+<p align="center"><img src="https://raw.githubusercontent.com/wiki/rizaumami/merbot/_images/merbot.png" width="512" alt="Merbot illustration" title="Merbot illustration">
 
 **Merbot** is a dedicated Telegram group administration bot based on [telegram-bot](https://github.com/yagop/telegram-bot).
 
