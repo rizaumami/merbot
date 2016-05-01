@@ -368,8 +368,11 @@ do
       if not grabbedlink:match('<b class') then
         if i < 10 then
           i = i+1
-          kaslink = grabbedlink:gsub(' style.- ', '>')
-          kasforum = kasforum..'<b>'..i..'</b>. '..kaslink..'\n'
+          local kaslink = grabbedlink:gsub(' style.- ', '>')
+          local thitle = kaslink:match('>.+<span')
+          local thitle = thitle:gsub('<.->', '')
+          local thlink = kaslink:match('^.-"')
+          kasforum = kasforum..'<b>'..i..'</b>. '..thlink..thitle..'\n'
         end
       end
     end
