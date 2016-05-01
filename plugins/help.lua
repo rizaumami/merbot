@@ -162,6 +162,10 @@ do
             ..'Please visit @thefinemanual for the complete list.', ok_cb, true)
         return
       end
+      if text == 'text' then
+        reply_msg(msg.id, 'The plugins is not for your privilege.', ok_cb, true)
+        return
+      end
       send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
     end
 
