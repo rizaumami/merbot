@@ -190,7 +190,7 @@ function create_config()
   local bot_api_uname = io.read()
   local bot_api_uname = bot_api_uname:gsub('@', '')
   local bot_api_uid = bot_api_key:match('^%d+')
-  
+
   -- A simple config with basic plugins and ourselves as privileged user
   _config = {
     administration = {},
@@ -208,8 +208,7 @@ function create_config()
       'google',
       'help',
       'id',
-      'logger',
-      'pattern',
+      'patterns',
       'plugins',
       'reddit',
       'rss',
@@ -249,6 +248,11 @@ end
 
 function on_our_id (id)
   our_id = id
+  local config = loadfile('./data/config.lua')()
+  if not config.sudo_users[our_id] then
+    config.sudo_users = {[our_id] = our_id}
+    serialize_to_file(config, './data/config.lua')
+  end
 end
 
 function on_user_update (user, what)
