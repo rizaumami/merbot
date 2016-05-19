@@ -204,15 +204,28 @@ function create_config()
     disabled_channels = {},
     disabled_plugin_on_chat = {},
     enabled_plugins = {
+      '9gag',
       'administration',
+      'calculator',
+      'currency',
+      'forecast',
+      'gmaps',
       'google',
+      'hackernews',
       'help',
       'id',
+      'imdb',
+      'isup',
       'patterns',
       'plugins',
       'reddit',
       'rss',
-      'sudo'
+      'salat',
+      'sudo',
+      'time',
+      'urbandictionary',
+      'webshot',
+      'xkcd'
     },
     globally_banned = {},
     mkgroup = {founded = '', founder = '', title = '', gtype = '', uid = ''},
@@ -249,8 +262,8 @@ end
 function on_our_id (id)
   our_id = id
   local config = loadfile('./data/config.lua')()
-  if not config.sudo_users[our_id] then
-    config.sudo_users = {[our_id] = our_id}
+  if config and not config.sudo_users[our_id] then
+    config.sudo_users[our_id] = our_id
     serialize_to_file(config, './data/config.lua')
   end
 end
