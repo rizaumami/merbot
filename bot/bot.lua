@@ -195,6 +195,29 @@ function create_config()
   _config = {
     administration = {},
     administrators = {},
+    api_key = {
+      -- https://datamarket.azure.com/dataset/bing/search
+      bing = '',
+      -- http://console.developers.google.com
+      google = '',
+      -- https://cse.google.com/cse
+      google_cse = '',
+      -- http://openweathermap.org/appid
+      owm = '',
+      -- http://last.fm/api
+      lastfm = '',
+      -- http://api.biblia.com
+      biblia = '',
+      -- http://thecatapi.com/docs.html
+      thecatapi = '',
+      -- http://api.nasa.gov
+      nasa_api = '',
+      -- http://tech.yandex.com/keys/get
+      yandex = '',
+      -- http://developer.simsimi.com/signUp
+      simsimi = '',
+      simsimi_trial = true,
+    },
     autoleave = false,
     bot_api = {
       key = bot_api_key,
@@ -204,28 +227,15 @@ function create_config()
     disabled_channels = {},
     disabled_plugin_on_chat = {},
     enabled_plugins = {
-      '9gag',
       'administration',
-      'calculator',
-      'currency',
-      'forecast',
-      'gmaps',
-      'google',
-      'hackernews',
+      'bing',
       'help',
       'id',
-      'imdb',
-      'isup',
-      'patterns',
+      'pattern',
       'plugins',
       'reddit',
       'rss',
-      'salat',
-      'sudo',
-      'time',
-      'urbandictionary',
-      'webshot',
-      'xkcd'
+      'sudo'
     },
     globally_banned = {},
     mkgroup = {founded = '', founder = '', title = '', gtype = '', uid = ''},
@@ -261,11 +271,6 @@ end
 
 function on_our_id (id)
   our_id = id
-  local config = loadfile('./data/config.lua')()
-  if config and not config.sudo_users[our_id] then
-    config.sudo_users[our_id] = our_id
-    serialize_to_file(config, './data/config.lua')
-  end
 end
 
 function on_user_update (user, what)
