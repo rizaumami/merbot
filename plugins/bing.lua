@@ -36,7 +36,7 @@ do
       reply_msg(msg.id, 'No Bing results for: '..terms, ok_cb, true)
     else
       local reslist = {}
-      for i = 1, limit do
+      for i = 1, #jresult do
         local result = jresult[i]
         reslist[i] = '<b>'..i..'</b>. '
             ..'<a href="'..result.Url..'">'..result.Title..'</a>\n'
