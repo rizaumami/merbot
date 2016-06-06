@@ -132,6 +132,12 @@ do
       save_config()
       reply_msg(msg.id, matches[2]..' API key has been saved.', ok_cb, true)
     end
+
+    if matches[1] == 'setlang' then
+      _config.lang = matches[2]
+      save_config()
+      reply_msg(msg.id, 'Set bot language to '..matches[2], ok_cb, true)
+    end
   end
 
   --------------------------------------------------------------------------------
@@ -183,9 +189,9 @@ do
       '^!(join)$',
       '^!(join) (.*)$',
       '^!(api set) (%g+) (.*)$','!^(apiset) (%g+) (.*)$', '^!(setapi) (%g+) (.*)$',
+      '^!(setlang) (%g+)$'
     },
     run = run
   }
 
 end
-

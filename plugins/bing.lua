@@ -21,7 +21,6 @@ do
       limit = 8
       greceiver = msg.from.peer_id
     end
-    print(burl)
     local resbody = {}
     local bang, bing, bung = https.request{
         url = burl..'&$top='..limit,
