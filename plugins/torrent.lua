@@ -2,7 +2,7 @@ do
 
   local function search_kickass(msg, query)
     local url = 'https://kat.cr/json.php?q='..URL.escape(query)
-
+    local limit = 5
     local resp = {}
 
     local b,c = https.request {
@@ -20,7 +20,10 @@ do
       reply_msg(msg.id, 'No torrent results for: '..terms, ok_cb, true)
     else
       local katcrlist = {}
-      for i = 1, #jresult do
+      if #jresult < 5 then
+        limit = #jresult
+      end
+      for i = 1, limit do
         local torrent = jresult[i]
         local link = torrent.torrentLink:gsub('%?title=.+', '')
 

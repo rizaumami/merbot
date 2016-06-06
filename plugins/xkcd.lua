@@ -44,8 +44,9 @@ do
       url, title, alt = get_xkcd(matches[1])
     end
     file_path = download_to_file(url)
-    send_photo(receiver, file_path, send_title, {receiver, title, alt})
-    return false
+    local cmd = 'send_photo %s %s %s'
+    local command = cmd:format(get_receiver(msg), file_path, title..'\n'..alt)
+    os.execute(tgclie:format(command))
   end
 
   return {

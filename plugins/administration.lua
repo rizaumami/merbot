@@ -1,11 +1,8 @@
 do
 
   local bot_repo = 'https://git.io/v4Oi0'
-  local tgexec = "./tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De "
   local NUM_MSG_MAX = 4  -- Max number of messages per TIME_CHECK seconds
   local TIME_CHECK = 4
-
-
 
   local function is_banned(chat_id, user_id)
     local hash = 'banned:'..chat_id

@@ -9,11 +9,10 @@ do
       lang = _config.lang or 'en'
     end
 
-    print(lang, source_lang, target_lang)
     local url = 'https://translate.yandex.net/api/v1.5/tr.json/translate?key='.._config.api_key.yandex..'&lang='..lang..'&text='..URL.escape(text)
-    print(url)
     local str, res= https.request(url)
     local jstr = json:decode(str)
+
     if jstr.code == 200 then
       reply_msg(msg.id, jstr.text[1], ok_cb, true)
     else
