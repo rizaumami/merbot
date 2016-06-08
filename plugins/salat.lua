@@ -12,6 +12,22 @@ do
     [7] = 'Fixed Isha'
   }
 
+  function totwentyfour(twelvehour)
+    local hour, minute, meridiem = string.match(twelvehour, '^(.-):(.-) (.-)$')
+    local hour = tonumber(hour)
+    if (meridiem == 'am') and (hour == 12) then
+      hour = 0
+    elseif (meridiem == 'pm') and (hour < 12) then
+      hour = hour + 12
+    end
+
+    if hour < 10 then
+      hour = '0'..hour
+    end
+
+    return (hour..':'..minute)
+  end
+
   function run(msg, matches)
     local area = matches[1]
     local method = 5
@@ -49,12 +65,12 @@ do
         ..'<a href="'..salat.link..'">'..salat_area..'</a>\n'
         ..salat.items[1].date_for..'\n\n'
         ..'Qibla : <code>'..salat.qibla_direction..'°\n'
-        ..'Fajr     : '..salat.items[1].fajr..'\n'
-        ..'Sunrise  : '..salat.items[1].shurooq..'\n'
-        ..'Dhuhr    : '..salat.items[1].dhuhr..'\n'
-        ..'Asr      : '..salat.items[1].asr..'\n'
-        ..'Maghrib  : '..salat.items[1].maghrib..'\n'
-        ..'Isha     : '..salat.items[1].isha..'</code>'..notif, true, 'html')
+        ..'Fajr     : '..totwentyfour(salat.items[1].fajr)..'\n'
+        ..'Sunrise  : '..totwentyfour(salat.items[1].shurooq)..'\n'
+        ..'Dhuhr    : '..totwentyfour(salat.items[1].dhuhr)..'\n'
+        ..'Asr      : '..totwentyfour(salat.items[1].asr)..'\n'
+        ..'Maghrib  : '..totwentyfour(salat.items[1].maghrib)..'\n'
+        ..'Isha     : '..totwentyfour(salat.items[1].isha)..'</code>'..notif, true, 'html')
   end
 
   return {

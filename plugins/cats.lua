@@ -1,10 +1,9 @@
 do
 
 	function run(msg, matches)
-		local cats = {}
 		local url = 'http://thecatapi.com/api/images/get?format=html&type=jpg&api_key=OTM1NjY'
-
 		local str, res = http.request(url)
+
 		if res ~= 200 then
 			reply_msg(msg.id, 'Connection error.', ok_cb, true)
 			return

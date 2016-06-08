@@ -1,7 +1,5 @@
 do
 
-	local dilbert = {}
-
 	local function run(msg, matches)
 		local input = os.date('%F')
 
