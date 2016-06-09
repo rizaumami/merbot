@@ -14,7 +14,7 @@ function on_msg_receive (msg)
     return
   end
 
-  vardump(msg)
+  -- vardump(msg)
   msg = pre_process_service_msg(msg)
   if msg_valid(msg) then
     msg = pre_process_msg(msg)
@@ -227,15 +227,34 @@ function create_config()
     disabled_channels = {},
     disabled_plugin_on_chat = {},
     enabled_plugins = {
+      '9gag',
       'administration',
       'bing',
+      'calculator',
+      'cats',
+      'currency',
+      'dilbert',
+      'dogify',
+      'forecast',
+      'gmaps',
+      'hackernews',
       'help',
       'id',
-      'pattern',
+      'imdb',
+      'isup',
+      'patterns',
       'plugins',
       'reddit',
       'rss',
-      'sudo'
+      'salat',
+      'stats',
+      'sudo',
+      'time',
+      'torrent',
+      'urbandictionary',
+      'webshot',
+      'whois',
+      'xkcd',
     },
     globally_banned = {},
     mkgroup = {founded = '', founder = '', title = '', gtype = '', uid = ''},
