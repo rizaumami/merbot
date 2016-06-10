@@ -134,6 +134,6 @@ else
     printf '\e[1;31m%s\n\e[0;39;49m' '  tg binary not found' "  Run $0 install"
     exit 1
   fi
-
+  tgcli_config
   ./tg/bin/telegram-cli -k ./tg/tg-server-pub --disable-link-preview -s ./bot/bot.lua -l 1 -E -c ./data/tg-cli.config -p default "$@"
 fi
