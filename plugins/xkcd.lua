@@ -2,24 +2,31 @@ do
 
   function get_last_id(msg)
     local res,code  = https.request('http://xkcd.com/info.0.json')
+
     if code ~= 200 then
       reply_msg(msg.id, 'HTTP ERROR', ok_cb, true)
     end
+
     local data = json:decode(res)
+
     return data.num
   end
 
   function get_xkcd(msg, id)
     local res,code  = http.request('http://xkcd.com/'..id..'/info.0.json')
+
     if code ~= 200 then
       reply_msg(msg.id, 'HTTP ERROR', ok_cb, true)
     end
+
     local data = json:decode(res)
     local link_image = data.img
+
     if link_image:sub(0,2) == '//' then
       link_image = msg.text:sub(3,-1)
     end
-    return link_image, data.title, data.alt
+
+    return link_image, data.num, data.title, data.alt
   end
 
 
@@ -37,16 +44,16 @@ do
   end
 
   function run(msg, matches)
-    local receiver = get_receiver(msg)
     if matches[1] == '!xkcd' then
-      url, title, alt = get_xkcd_random(msg)
+      url, num, title, alt = get_xkcd_random(msg)
     else
-      url, title, alt = get_xkcd(matches[1])
+      url, num, title, alt = get_xkcd(msg, matches[1])
     end
-    file_path = download_to_file(url)
-    local cmd = 'send_photo %s %s %s'
-    local command = cmd:format(get_receiver(msg), file_path, title..'\n'..alt)
-    os.execute(tgclie:format(command))
+
+    local relevantxkcd = '<a href="' .. url .. '">xkcd #' .. num .. '</a>\n\n'
+        .. '<b>' .. title .. '</b>\n' .. alt .. '\n\n'
+
+    send_api_msg(msg, get_receiver_api(msg), relevantxkcd, false, 'html')
   end
 
   return {
