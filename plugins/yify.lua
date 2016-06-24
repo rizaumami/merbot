@@ -1,7 +1,7 @@
 do
 
   local function search_yify(msg, query)
-    local url = 'https://yts.ag/api/v2/list_movies.json?limit=1&query_term='..URL.escape(query)
+    local url = 'https://yts.ag/api/v2/list_movies.json?limit=1&query_term=' .. URL.escape(query)
     local resp = {}
 
     local b,c = https.request {
@@ -18,16 +18,17 @@ do
       reply_msg(msg.id, 'No torrent results for: ' .. query, ok_cb, true)
     else
       local yify = jresult.data.movies[1]
-      local yts720 = yify.torrents[1]
-      local yts1080 = yify.torrents[2]
+      local yts = yify.torrents
+      local yifylist = {}
+      for i=1, #yts do
+        yifylist[i] = '<b>' .. yts[i].quality .. '</b>: <a href="' .. yts[i].url .. '">.torrent</a>\n'
+            .. 'Seeds: <code>' .. yts[i].seeds .. '</code> | ' .. 'Peers: <code>' .. yts[i].peers .. '</code> | ' .. 'Size: <code>' .. yts[i].size .. '</code>\n\n'
+      end
+      local torrlist = table.concat(yifylist)
       local title = '<a href="' .. yify.large_cover_image .. '">' .. yify.title_long .. '</a>'
       local output = title .. '\n\n'
           .. '<code>' .. yify.year .. ' | ' .. yify.rating .. '/10 | ' .. yify.runtime .. '</code> min\n\n'
-          .. '<b>720p</b> : <a href="' .. yts720.url .. '">.torrent</a>\n'
-          .. 'Seeds: <code>' .. yts720.seeds .. '</code> | ' .. 'Peers: <code>' .. yts720.peers .. '</code> | ' .. 'Size: <code>' .. yts720.size .. '</code>\n\n'
-          .. '<b>1080p</b> : <a href="' .. yts1080.url .. '">.torrent</a>\n'
-          .. 'Seeds: <code>' .. yts1080.seeds .. '</code> | ' .. 'Peers: <code>' .. yts1080.peers .. '</code> | ' .. 'Size: <code>' .. yts1080.size .. '</code>\n\n'
-          .. yify.synopsis .. '<a href="' .. yify.url .. '"> More on yts.ag ...</a>'
+          .. torrlist .. yify.synopsis:sub(1, 2000) .. '<a href="' .. yify.url .. '"> More on yts.ag ...</a>'
       send_api_msg(msg, get_receiver_api(msg), output, false, 'html')
     end
   end
