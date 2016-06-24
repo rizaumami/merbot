@@ -124,6 +124,7 @@ do
 
   local function get_ayah(msg, surah, ayah, verse, lang)
     local gq = 'http://api.globalquran.com/ayah/'
+    local gq_lang = nil
 
     if lang then
       translation = get_trans(lang)
@@ -151,12 +152,14 @@ do
       local res_lang, code_lang = http.request(gq_lang)
       local jlang = json:decode(res_lang)
       verse_trans = jlang.quran[translation][verse_num].verse
+    else
+      verse_trans = ''
     end
 
     local surah_num = jayah.quran['quran-simple'][verse_num].surah
     local ayah_num = jayah.quran['quran-simple'][verse_num].ayah
     local gq_output = jayah.quran['quran-simple'][verse_num].verse .. '\n'
-        .. (verse_trans or '').. '\n' .. '(' .. surah_name[surah_num] .. ':' .. ayah_num .. ')'
+        .. verse_trans .. '\n' .. '(' .. surah_name[surah_num] .. ':' .. ayah_num .. ')'
 
     reply_msg(msg.id, gq_output, ok_cb, true)
   end
