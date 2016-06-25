@@ -35,39 +35,51 @@ do
     local ibacor = 'http://ibacor.com/api/gsm-arena?view=product&slug='
     local res, code = http.request(ibacor .. slug)
     local gsm = json:decode(res)
+    local phdata = {}
 
     if gsm == nil or next(gsm.data) == nil then
       reply_msg(msg.id, 'No phones found!', ok_cb, true)
       return
     end
     if not gsm.data.platform then
-      gsm.data.platform = {os = '', chipset = '', cpu = '', gpu = ''}
+      gsm.data.platform = {}
     end
-    if not gsm.data.platform.chipset then
-      gsm.data.platform.chipset = ''
+    if gsm.data.launch.status == 'Discontinued' then
+      launch = gsm.data.launch.status .. '. Was announced in ' .. gsm.data.launch.announced
+    else
+      launch = gsm.data.launch.status
     end
-    if not gsm.data.platform.gpu then
-      gsm.data.platform.gpu = ''
+    if gsm.data.platform.os then
+      phdata[1] = '<b>OS</b>: ' .. gsm.data.platform.os .. '\n'
+    end
+    if gsm.data.platform.chipset then
+      phdata[2] = '<b>Chipset</b>: ' .. gsm.data.platform.chipset .. '\n'
+    end
+    if gsm.data.platform.cpu then
+      phdata[3] = '<b>CPU</b>: ' .. gsm.data.platform.cpu .. '\n'
+    end
+    if gsm.data.platform.gpu then
+      phdata[4] = '<b>GPU</b>: ' .. gsm.data.platform.gpu .. '\n'
+    end
+    if gsm.data.camera.primary then
+      phdata[5] = gsm.data.camera.primary:gsub(',.*$', '') .. ', ' .. (gsm.data.camera.video or '') .. '\n'
+    end
+    if gsm.data.memory.internal then
+      phdata[6] = '<b>RAM</b>: ' .. gsm.data.memory.internal .. '\n'
     end
 
+    local gadata = table.concat(phdata)
     local title = '<b>' .. gsm.title .. '</b><a href="' .. gsm.img .. '">.</a>\n\n'
     local dimensions = gsm.data.body.dimensions:gsub('%(.-%)', '')
     local display = gsm.data.display.size:gsub(' .*$', '"') .. ', '
         .. gsm.data.display.resolution:gsub('%(.-%)', '')
-    local camera = gsm.data.camera.primary:gsub(',.*$', '') .. ', '
-        .. gsm.data.camera.video
-    local output = title .. '<b>Status</b>: ' .. gsm.data.launch.status .. '\n'
+    local output = title .. '<b>Status</b>: ' .. launch .. '\n'
         .. '<b>Dimensions</b>: ' .. dimensions .. '\n'
-        .. '<b>Weight</b>: ' .. gsm.data.body.weight .. '\n'
+        .. '<b>Weight</b>: ' .. gsm.data.body.weight:gsub('%(.-%)', '') .. '\n'
         .. '<b>SIM</b>: ' .. gsm.data.body.sim .. '\n'
         .. '<b>Display</b>: ' .. display .. '\n'
-        .. '<b>OS</b>: ' .. gsm.data.platform.os .. '\n'
-        .. '<b>Chipset</b>: ' .. gsm.data.platform.chipset .. '\n'
-        .. '<b>CPU</b>: ' .. gsm.data.platform.cpu .. '\n'
-        .. '<b>GPU</b>: ' .. gsm.data.platform.gpu .. '\n'
+        .. gadata
         .. '<b>MC</b>: ' .. gsm.data.memory.card_slot .. '\n'
-        .. '<b>RAM</b>: ' .. gsm.data.memory.internal .. '\n'
-        .. '<b>Camera</b>: ' .. camera .. '\n'
         .. '<b>Battery</b>: ' .. gsm.data.battery._empty_:gsub('battery', '') .. '\n'
         .. '<a href="' .. phone .. '">More on gsmarena.com ...</a>'
 
