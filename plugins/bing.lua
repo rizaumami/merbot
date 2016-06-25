@@ -8,23 +8,17 @@ do
   local mime = require('mime')
 
   local function bingo(msg, burl, terms)
-    local burl = burl:format(URL.escape("'"..terms.."'"))
+    local burl = burl:format(URL.escape("'" .. terms .. "'"))
     local limit = 5
 
-    if is_chat_msg(msg) then
-      if msg.to.peer_type == 'channel' then
-        greceiver = '-100'..msg.to.peer_id
-      else
-        greceiver = '-'..msg.to.peer_id
-      end
-    else
+    if not is_chat_msg(msg) then
       limit = 8
-      greceiver = msg.from.peer_id
     end
+
     local resbody = {}
     local bang, bing, bung = https.request{
-        url = burl..'&$top='..limit,
-        headers = { ["Authorization"] = "Basic "..mime.b64(":".._config.api_key.bing) },
+        url = burl .. '&$top=' .. limit,
+        headers = { ["Authorization"] = "Basic " .. mime.b64(":" .. _config.api_key.bing) },
         sink = ltn12.sink.table(resbody),
     }
 
@@ -32,17 +26,17 @@ do
     local jresult = dat.d.results
 
     if next(jresult) == nil then
-      reply_msg(msg.id, 'No Bing results for: '..terms, ok_cb, true)
+      reply_msg(msg.id, 'No Bing results for: ' .. terms, ok_cb, true)
     else
       local reslist = {}
       for i = 1, #jresult do
         local result = jresult[i]
-        reslist[i] = '<b>'..i..'</b>. '
-            ..'<a href="'..result.Url..'">'..result.Title..'</a>\n'
+        reslist[i] = '<b>' .. i .. '</b>. '
+            ..'<a href="' .. result.Url .. '">' .. result.Title .. '</a>\n'
       end
       local reslist = table.concat(reslist)
-      local header = '<b>Bing results for</b> <i>'..terms..'</i> <b>:</b>\n'
-      send_api_msg(msg, greceiver, header..reslist, true, 'html')
+      local header = '<b>Bing results for</b> <i>' .. terms .. '</i> <b>:</b>\n'
+      send_api_msg(msg, get_receiver_api(msg), header .. reslist, true, 'html')
     end
   end
 
@@ -55,8 +49,8 @@ do
 
     if not _config.api_key or not _config.api_key.bing then
       local text = '<b>Missing</b> Bing API key in config.lua.\n\n'
-          ..'Get it from https://datamarket.azure.com/dataset/bing/search \n\n'
-          ..'Set the key using <code>setapi bing [api_key]</code>'
+          .. 'Get it from https://datamarket.azure.com/dataset/bing/search \n\n'
+          .. 'Set the key using <code>setapi bing [api_key]</code>'
       send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
       return
     end
@@ -67,9 +61,9 @@ do
     local burl = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Query=%s&$format=json"
 
     if matches[1]:match('nsfw') then
-      burl = burl..'&Adult=%%27Off%%27'
+      burl = burl .. '&Adult=%%27Off%%27'
     else
-      burl = burl..'&Adult=%%27Strict%%27'
+      burl = burl .. '&Adult=%%27Strict%%27'
     end
 
     if msg.reply_id then
@@ -83,7 +77,7 @@ do
 
   return {
     description = 'Returns 5 (if group) or 8 (if private message) Bing results.\n'
-        ..'Safe search is enabled by default, use <code>!bnsfw</code> or <code>!bingnsfw</code> to disable it.',
+        .. 'Safe search is enabled by default, use <code>!bnsfw</code> or <code>!bingnsfw</code> to disable it.',
     usage = {
       '<code>!bing [terms]</code>',
       '<code>!b [terms]</code>',
