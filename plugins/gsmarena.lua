@@ -8,12 +8,12 @@ do
   local mime = require('mime')
 
   local function get_galink(msg, query)
-    local burl = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Query=%s&$format=json&Adult=%%27Strict%%27&$top=1"
-    local burl = burl:format(URL.escape("'site:gsmarena.com full phone specification " .. query .. "'"))
+    local burl = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Query=%s&$format=json&$top=1"
+    local burl = burl:format(URL.escape("'site:gsmarena.com intitle:" .. query .. "'"))
     local resbody = {}
     local bang, bing, bung = https.request{
         url = burl,
-        headers = { ["Authorization"] = "Basic "..mime.b64(":".._config.api_key.bing) },
+        headers = { ["Authorization"] = "Basic " .. mime.b64(":" .. _config.api_key.bing) },
         sink = ltn12.sink.table(resbody),
     }
 
