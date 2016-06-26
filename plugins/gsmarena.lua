@@ -37,7 +37,7 @@ do
     local gsm = json:decode(res)
     local phdata = {}
 
-    if gsm == nil or next(gsm.data) == nil then
+    if gsm == nil or gsm.status == 'error' or next(gsm.data) == nil then
       reply_msg(msg.id, 'No phones found!', ok_cb, true)
       return
     end
