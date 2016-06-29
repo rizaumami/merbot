@@ -1,6 +1,7 @@
 do
 
   local base_api = 'http://muslimsalat.com'
+  -- http://muslimsalat.com/panel/signup.php
   local api_key = '?key=e2de2d3ed5c3b37b9d3bd6faeafa7891'
   local calculation = {
     [1] = 'Egyptian General Authority of Survey',
@@ -12,6 +13,27 @@ do
     [7] = 'Fixed Isha'
   }
 
+  local function get_time(lat, lng)
+    local api = 'https://maps.googleapis.com/maps/api/timezone/json?'
+    local timestamp = os.time(os.date('!*t'))
+    local parameters = 'location=' .. URL.escape(lat) .. ',' .. URL.escape(lng)
+        .. '&timestamp=' .. URL.escape(timestamp)
+    local res,code = https.request(api .. parameters)
+
+    if code ~= 200 then
+      return nil
+    end
+
+    local data = json:decode(res)
+
+    if (data.status == 'ZERO_RESULTS') then
+      return nil
+    end
+    if (data.status == 'OK') then
+      return timestamp + data.rawOffset + data.dstOffset
+    end
+  end
+
   function totwentyfour(twelvehour)
     local hour, minute, meridiem = string.match(twelvehour, '^(.-):(.-) (.-)$')
     local hour = tonumber(hour)
@@ -22,55 +44,59 @@ do
     end
 
     if hour < 10 then
-      hour = '0'..hour
+      hour = '0' .. hour
     end
 
-    return (hour..':'..minute)
+    return (hour .. ':' .. minute)
   end
 
   function run(msg, matches)
     local area = matches[1]
     local method = 5
     local notif = ''
-    local url = base_api..'/'..URL.escape(area)..'.json'
+    local url = base_api .. '/' .. URL.escape(area) .. '.json'
 
     if matches[2] and matches[1]:match('%d') then
       local c_method = tonumber(matches[1])
+
       if c_method == 0 or c_method > 7 then
         reply_msg(msg.id, 'Calculation method is out of range.\n'
-            ..'Consult !help salat.', ok_cb, true)
+            .. 'Consult !help salat.', ok_cb, true)
         return
       else
         method = c_method
-        url = base_api..'/'..URL.escape(matches[2])..'.json'
-        notif = '\n\nMethod: '..calculation[method]
+        url = base_api .. '/' .. URL.escape(matches[2]) .. '.json'
+        notif = '\n\nMethod: ' .. calculation[method]
         area = matches[2]
       end
     end
 
-    local res, code = http.request(url..'/'..method..api_key)
+    local res, code = http.request(url .. '/' .. method .. api_key)
+
     if code ~= 200 then
-      reply_msg(msg.id, 'Error: '..code, ok_cb, true)
+      reply_msg(msg.id, 'Error: ' .. code, ok_cb, true)
       return
     end
+
     local salat = json:decode(res)
+    local localTime = get_time(salat.latitude, salat.longitude)
 
     if salat.title == '' then
-      salat_area = area..', '..salat.country
+      salat_area = area .. ', ' .. salat.country
     else
       salat_area = salat.title
     end
 
     send_api_msg(msg, get_receiver_api(msg), '<b>Salat time</b>\n\n'
-        ..'<a href="'..salat.link..'">'..salat_area..'</a>\n'
-        ..salat.items[1].date_for..'\n\n'
-        ..'Qibla : <code>'..salat.qibla_direction..'°\n'
-        ..'Fajr     : '..totwentyfour(salat.items[1].fajr)..'\n'
-        ..'Sunrise  : '..totwentyfour(salat.items[1].shurooq)..'\n'
-        ..'Dhuhr    : '..totwentyfour(salat.items[1].dhuhr)..'\n'
-        ..'Asr      : '..totwentyfour(salat.items[1].asr)..'\n'
-        ..'Maghrib  : '..totwentyfour(salat.items[1].maghrib)..'\n'
-        ..'Isha     : '..totwentyfour(salat.items[1].isha)..'</code>'..notif, true, 'html')
+        .. '<a href="' .. salat.link .. '">' .. salat_area .. '</a>\n\n'
+        .. '<code>Time    : ' .. os.date('%T', localTime) .. '\n'
+        .. 'Qibla   : ' .. salat.qibla_direction .. '°\n\n'
+        .. 'Fajr    : ' .. totwentyfour(salat.items[1].fajr) .. '\n'
+        .. 'Sunrise : ' .. totwentyfour(salat.items[1].shurooq) .. '\n'
+        .. 'Dhuhr   : ' .. totwentyfour(salat.items[1].dhuhr) .. '\n'
+        .. 'Asr     : ' .. totwentyfour(salat.items[1].asr) .. '\n'
+        .. 'Maghrib : ' .. totwentyfour(salat.items[1].maghrib) .. '\n'
+        .. 'Isha    : ' .. totwentyfour(salat.items[1].isha) .. '</code>' .. notif, true, 'html')
   end
 
   return {

@@ -62,7 +62,8 @@ do
       phdata[4] = '<b>GPU</b>: ' .. gsm.data.platform.gpu .. '\n'
     end
     if gsm.data.camera.primary then
-      phdata[5] = '<b>Camera</b>: ' .. gsm.data.camera.primary:gsub(',.*$', '') .. ', ' .. (gsm.data.camera.video or '') .. '\n'
+      local phcam = '<b>Camera</b>: ' .. gsm.data.camera.primary:gsub(',.*$', '') .. ', ' .. (gsm.data.camera.video or '') .. '\n'
+      phdata[5] = phcam:gsub(', check quality', '')
     end
     if gsm.data.memory.internal then
       phdata[6] = '<b>RAM</b>: ' .. gsm.data.memory.internal .. '\n'
