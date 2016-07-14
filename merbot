@@ -45,7 +45,7 @@ install_rocks() {
     printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
   exit $RET
   fi
-  for i in luasec luasocket oauth redis-lua lua-cjson fakeredis xml feedparser serpent; do
+  for i in luasec luasocket oauth redis-lua lua-cjson fakeredis xml feedparser serpent multipart-post; do
     ./.luarocks/bin/luarocks install "$i"
     RET=$?
     if [ $RET -ne 0 ]; then
@@ -76,6 +76,31 @@ exec /bin/sh $(pwd)/merbot
   Start merbot with     : sudo start merbot
   See merbot status with: sudo status merbot
   Stop merbot with      : sudo stop merbot
+
+'
+}
+
+merbotapi_upstart() {
+  printf '%s\n' "
+description 'Merbot APIs upstart script.'
+
+respawn
+respawn limit 15 5
+
+start on runlevel [2345]
+stop on shutdown
+
+setuid $(whoami)
+exec /usr/bin/lua $(pwd)/botapi.lua
+" | sudo tee /etc/init/merbotapi.conf > /dev/null
+
+  [[ -f /etc/init/merbotapi.conf ]] && printf '%s\n' '
+
+  Upstart script installed to /etc/init/merbotapi.conf.
+  Now you can:
+  Start merbot api with     : sudo start merbotapi
+  See merbot api status with: sudo status merbotapi
+  Stop merbot api with      : sudo stop merbotapi
 
 '
 }
@@ -124,6 +149,7 @@ elif [[ "$1" = "update" ]]; then
   update
 elif [[ "$1" = "upstart" ]]; then
   merbot_upstart
+  merbotapi_upstart
 else
   if [[ ! -f ./tg/telegram.h ]]; then
     printf '\e[1;31m%s\n\e[0;39;49m' '  tg not found' "  Run $0 install"
@@ -135,5 +161,6 @@ else
     exit 1
   fi
   tgcli_config
+  rm ./telegram-cli/state
   ./tg/bin/telegram-cli -k ./tg/tg-server-pub --disable-link-preview -s ./bot/bot.lua -l 1 -E -c ./data/tg-cli.config -p default "$@"
 fi

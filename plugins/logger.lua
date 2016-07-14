@@ -11,14 +11,16 @@ do
 
   local function pre_process(msg)
     local gid = tonumber(msg.to.peer_id)
+
     if _config.administration[gid] and is_chat_msg(msg) then
       local message = serpent.dump(msg, {comment=false})
       local message = message:match('do local _=(.*);return _;end')
       local message = message:gsub('phone="%d+"', '')
-      local logfile = io.open('data/'..gid..'/'..gid..'.log', 'a')
-      logfile:write(message..'\n')
+      local logfile = io.open('data/' .. gid .. '/' .. gid .. '.log', 'a')
+      logfile:write(message .. '\n')
       logfile:close()
     end
+
     return msg
   end
 
@@ -33,12 +35,12 @@ do
 
     if is_owner(msg, loggid, uid) then
       if matches[1] == 'get' then
-        send_document(receiver, './data/'..loggid..'/'..loggid..'.log', ok_cb, false)
+        send_document(receiver, './data/' .. loggid .. '/' .. loggid .. '.log', ok_cb, false)
       elseif matches[1] == 'pm' then
-        send_document('user#id'..uid, './data/'..loggid..'/'..loggid..'.log', ok_cb, false)
+        send_document('user#id' .. uid, './data/' .. loggid .. '/' .. loggid .. '.log', ok_cb, false)
       end
     else
-      reply_msg(msg.id, 'You have no privilege to get '..loggid..' log.', ok_cb, true)
+      reply_msg(msg.id, 'You have no privilege to get ' .. loggid .. ' log.', ok_cb, true)
     end
   end
 

@@ -6,7 +6,6 @@ Set the key by: !setapi bing [bing_api_key] or manually inserted into config.lua
 do
 
   local mime = require('mime')
-
   local function bingo(msg, burl, terms)
     local burl = burl:format(URL.escape("'" .. terms .. "'"))
     local limit = 5
@@ -21,42 +20,40 @@ do
         headers = { ["Authorization"] = "Basic " .. mime.b64(":" .. _config.api_key.bing) },
         sink = ltn12.sink.table(resbody),
     }
-
     local dat = json:decode(table.concat(resbody))
     local jresult = dat.d.results
 
     if next(jresult) == nil then
-      reply_msg(msg.id, 'No Bing results for: ' .. terms, ok_cb, true)
+      send_message(msg, '<b>No Bing results for</b>: ' .. terms, 'html')
     else
       local reslist = {}
       for i = 1, #jresult do
         local result = jresult[i]
         reslist[i] = '<b>' .. i .. '</b>. '
-            ..'<a href="' .. result.Url .. '">' .. result.Title .. '</a>\n'
+            .. '<a href="' .. result.Url .. '">' .. result.Title .. '</a>'
       end
-      local reslist = table.concat(reslist)
+
+      local reslist = table.concat(reslist, '\n')
       local header = '<b>Bing results for</b> <i>' .. terms .. '</i> <b>:</b>\n'
-      send_api_msg(msg, get_receiver_api(msg), header .. reslist, true, 'html')
+
+      bot_sendMessage(get_receiver_api(msg), header .. reslist, true, msg.id, 'html')
     end
   end
 
   local function bing_by_reply(extra, success, result)
     local terms = result.text
+
     bingo(extra.msg, extra.burl, terms)
   end
 
   local function run(msg, matches)
-
     if not _config.api_key or not _config.api_key.bing then
       local text = '<b>Missing</b> Bing API key in config.lua.\n\n'
           .. 'Get it from https://datamarket.azure.com/dataset/bing/search \n\n'
           .. 'Set the key using <code>setapi bing [api_key]</code>'
-      send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
+      bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
       return
     end
-
-    -- comment this line if you want this plugin to works in private message.
-    if not is_chat_msg(msg) and not is_admin(msg.from.peer_id) then return nil end
 
     local burl = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Query=%s&$format=json"
 
@@ -69,7 +66,11 @@ do
     if msg.reply_id then
       get_message(msg.reply_id, bing_by_reply, {msg=msg, burl=burl})
     else
-      bingo(msg, burl, matches[2])
+      if msg.reply_to_message then
+        bingo(msg, burl, msg.reply_to_message.text)
+      else
+        bingo(msg, burl, matches[2])
+      end
     end
   end
 
@@ -97,11 +98,9 @@ do
     },
     patterns = {
       '^!(b)$', '^!(bing)$',
-      '^!g(nsfw)$', '^!bing(nsfw)$',
-      '^%.([b|B]ing)$',
+      '^!b(nsfw)$', '^!bing(nsfw)$',
       '^!(b) (.*)$', '^!(bing) (.*)$',
       '^!b(nsfw) (.*)$', '^!bing(nsfw) (.*)$',
-      '^%.([b|B]ing) (.*)$'
     },
     run = run
   }

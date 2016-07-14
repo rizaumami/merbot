@@ -11,8 +11,10 @@ do
   -- Get commands for that plugin
   local function plugin_help(name, number, requester)
     local plugin = ''
+
     if number then
       local i = 0
+
       for name in pairsByKeys(plugins) do
         if plugins[name].hidden then
           name = nil
@@ -29,62 +31,63 @@ do
     end
 
     local text = ''
+
     if (type(plugin.usage) == 'table') then
       for ku,usage in pairs(plugin.usage) do
         if ku == 'user' then -- usage for user
           if (type(plugin.usage.user) == 'table') then
             for k,v in pairs(plugin.usage.user) do
-              text = text..v..'\n'
+              text = text .. v .. '\n'
             end
           elseif has_usage_data(plugin) then -- Is not empty
-            text = text..plugin.usage.user..'\n'
+            text = text .. plugin.usage.user .. '\n'
           end
         elseif ku == 'moderator' then -- usage for moderator
           if requester == 'moderator' or requester == 'owner' or requester == 'admin' or requester == 'sudo' then
             if (type(plugin.usage.moderator) == 'table') then
               for k,v in pairs(plugin.usage.moderator) do
-                text = text..v..'\n'
+                text = text .. v .. '\n'
               end
             elseif has_usage_data(plugin) then -- Is not empty
-              text = text..plugin.usage.moderator..'\n'
+              text = text .. plugin.usage.moderator .. '\n'
             end
           end
         elseif ku == 'owner' then -- usage for owner
           if requester == 'owner' or requester == 'admin' or requester == 'sudo' then
             if (type(plugin.usage.owner) == 'table') then
               for k,v in pairs(plugin.usage.owner) do
-                text = text..v..'\n'
+                text = text .. v .. '\n'
               end
             elseif has_usage_data(plugin) then -- Is not empty
-              text = text..plugin.usage.owner..'\n'
+              text = text .. plugin.usage.owner .. '\n'
             end
           end
         elseif ku == 'admin' then -- usage for admin
           if requester == 'admin' or requester == 'sudo' then
             if (type(plugin.usage.admin) == 'table') then
               for k,v in pairs(plugin.usage.admin) do
-                text = text..v..'\n'
+                text = text .. v .. '\n'
               end
             elseif has_usage_data(plugin) then -- Is not empty
-              text = text..plugin.usage.admin..'\n'
+              text = text .. plugin.usage.admin .. '\n'
             end
           end
         elseif ku == 'sudo' then -- usage for sudo
           if requester == 'sudo' then
             if (type(plugin.usage.sudo) == 'table') then
               for k,v in pairs(plugin.usage.sudo) do
-                text = text..v..'\n'
+                text = text .. v .. '\n'
               end
             elseif has_usage_data(plugin) then -- Is not empty
-              text = text..plugin.usage.sudo..'\n'
+              text = text .. plugin.usage.sudo .. '\n'
             end
           end
         else
-          text = text..usage..'\n'
+          text = text .. usage .. '\n'
         end
       end
     elseif has_usage_data(plugin) then -- Is not empty
-      text = text..plugin.usage
+      text = text .. plugin.usage
     end
     return text
   end
@@ -100,16 +103,16 @@ do
         name = nil
       else
       i = i + 1
-      text = text..'<b>'..i..'</b>. '..name..'\n'
+      text = text .. '<b>' .. i .. '</b>. ' .. name .. '\n'
       end
     end
-    text = text..'\n'..'There are <b>'..i..'</b> plugins help available.\n'
-           ..'<b>-</b> <code>!help [plugin name]</code> for more info.\n'
-           ..'<b>-</b> <code>!help [plugin number]</code> for more info.\n'
-           ..'<b>-</b> <code>!help all</code> to show all info.'
-    send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
-  end
+    text = text .. '\n' .. 'There are <b>' .. i .. '</b> plugins help available.\n'
+           .. '<b>-</b> <code>!help [plugin name]</code> for more info.\n'
+           .. '<b>-</b> <code>!help [plugin number]</code> for more info.\n'
+           .. '<b>-</b> <code>!help all</code> to show all info.'
 
+    bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+  end
 
 --  -- !help all command
 --  local function help_all(requester)
@@ -127,11 +130,8 @@ do
   --------------------------------------------------------------------------------
 
   local function run(msg, matches)
-
     local uid = msg.from.peer_id
     local gid = msg.to.peer_id
-
-    if not is_chat_msg(msg) and not is_admin(uid) then return nil end
 
     if is_sudo(uid) then
       requester = 'sudo'
@@ -148,27 +148,28 @@ do
     if msg.text == '!help' then
       return telegram_help(msg)
     elseif matches[1] == 'all' then
-      reply_msg(msg.id, 'Please read @thefinemanual', ok_cb, true)
+      send_message(msg, 'Please read @thefinemanual', 'html')
       --return help_all(requester)
     else
       local text = ''
+
       if tonumber(matches[1])  then
         text = plugin_help(nil, matches[1], requester)
       else
         text = plugin_help(matches[1], nil, requester)
       end
       if not text then
-        reply_msg(msg.id, 'No help entry for "'..matches[1]..'".\n'
-            ..'Please visit @thefinemanual for the complete list.', ok_cb, true)
+        send_message(msg, 'No help entry for "' .. matches[1] .. '".\n'
+            .. 'Please visit @thefinemanual for the complete list.', 'html')
         return
       end
       if text == 'text' then
-        reply_msg(msg.id, 'The plugins is not for your privilege.', ok_cb, true)
+        send_message(msg, 'The plugins is not for your privilege.', 'html')
         return
       end
-      send_api_msg(msg, get_receiver_api(msg), text, true, 'html')
-    end
 
+      bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+    end
   end
 
   --------------------------------------------------------------------------------

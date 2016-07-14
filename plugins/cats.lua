@@ -1,18 +1,18 @@
 do
 
-	function run(msg, matches)
-		local url = 'http://thecatapi.com/api/images/get?format=html&type=jpg&api_key=OTM1NjY'
-		local str, res = http.request(url)
+  function run(msg, matches)
+    local url = 'http://thecatapi.com/api/images/get?format=html&type=jpg&api_key=' .. _config.api_key.thecatapi
+    local str, res = http.request(url)
 
-		if res ~= 200 then
-			reply_msg(msg.id, 'Connection error.', ok_cb, true)
-			return
-		end
+    if res ~= 200 then
+      send_message(msg, '<b>Connection error</b>', 'html')
+      return
+    end
 
-		str = str:match('<img src="(.-)">')
+    local str = str:match('<img src="(.-)">')
 
-		send_api_msg(msg, get_receiver_api(msg), '<a href="'..str..'">Cat!</a>', false, 'html')
-	end
+    bot_sendMessage(get_receiver_api(msg), '<a href="' .. str .. '">Cat!</a>', false, msg.id, 'html')
+  end
 
   return {
     description = 'Returns a cat!',

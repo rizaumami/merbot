@@ -1,9 +1,14 @@
 do
 
   local function run(msg, matches)
-    local coords = get_coords(msg, matches[2])
+    local coords = get_coords(msg, matches[1])
+
     if coords then
-      send_location(get_receiver(msg), coords.lat, coords.lon, ok_cb, true)
+      if msg.from.api then
+        bot_sendLocation(get_receiver_api(msg), coords.lat, coords.lon, true, msg.id)
+      else
+        send_location(get_receiver(msg), coords.lat, coords.lon, ok_cb, true)
+      end
     end
   end
 
@@ -14,9 +19,11 @@ do
       'Returns Google Maps of [query]',
     },
     patterns = {
-      '^!(location) (.*)$',
-      '^!(loc) (.*)$',
+      '^!gmaps (.*)$',
+      '^!location (.*)$',
+      '^!loc (.*)$',
     },
     run = run
   }
+
 end

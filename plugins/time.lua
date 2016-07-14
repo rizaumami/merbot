@@ -22,16 +22,19 @@ do
 
     -- Get a timestamp (server time is relevant here)
     local timestamp = utctime()
-    local parameters = 'location='..URL.escape(lat)..','..URL.escape(lng)
-        ..'&timestamp='..URL.escape(timestamp)
+    local parameters = 'location=' .. URL.escape(lat) .. ',' .. URL.escape(lng)
+         .. '&timestamp=' .. URL.escape(timestamp)
+
     if api_key ~=nil then
-      parameters = parameters..'&key='..api_key
+      parameters = parameters .. '&key=' .. api_key
     end
 
-    local res,code = https.request(api..parameters)
+    local res,code = https.request(api .. parameters)
+
     if code ~= 200 then
       return nil
     end
+
     local data = json:decode(res)
 
     if (data.status == 'ZERO_RESULTS') then
@@ -39,8 +42,7 @@ do
     end
     if (data.status == 'OK') then
       -- Construct what we want
-      -- The local time in the location is:
-      -- timestamp + rawOffset + dstOffset
+      -- The local time in the location is: timestamp + rawOffset + dstOffset
       local localTime = timestamp + data.rawOffset + data.dstOffset
       return localTime, data.timeZoneId
     end
@@ -49,19 +51,22 @@ do
 
   local function getformattedLocalTime(msg, area)
     if area == nil then
-      reply_msg(msg.id, 'The time in nowhere is never.', ok_cb, true)
+      send_message(msg, 'The time in nowhere is never.', 'html')
     end
 
     local coordinats, code = get_coords(msg, area)
+
+    if not coordinats then
+      send_message(msg, 'It seems that in "<b>' .. area .. '</b>" they do not have a concept of time.', 'html')
+      return
+    end
+
     local lat = coordinats.lat
     local long = coordinats.lon
-    if lat == nil and long == nil then
-      reply_msg(msg.id, 'It seems that in "'..area..'" they do not have a concept of time.', ok_cb, true)
-    end
     local localTime, timeZoneId = get_time(lat, long)
 
-    reply_msg(msg.id, 'The local time in '..area..' ('..timeZoneId..') is:\n'
-        ..os.date(dateFormat,localTime), ok_cb, true)
+    send_message(msg, 'The local time in <b>' .. area .. ' (' .. timeZoneId .. ')</b> is:\n'
+         ..  '<b>'  ..  os.date(dateFormat,localTime)  ..  '</b>', 'html')
   end
 
   local function run(msg, matches)

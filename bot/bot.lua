@@ -1,6 +1,6 @@
-package.path = package.path..';.luarocks/share/lua/5.2/?.lua'
-  ..';.luarocks/share/lua/5.2/?/init.lua'
-package.cpath = package.cpath..';.luarocks/lib/lua/5.2/?.so'
+package.path = package.path .. ';.luarocks/share/lua/5.2/?.lua'
+  .. ';.luarocks/share/lua/5.2/?/init.lua'
+package.cpath = package.cpath .. ';.luarocks/lib/lua/5.2/?.so'
 
 require('./bot/utils')
 
@@ -14,7 +14,7 @@ function on_msg_receive (msg)
     return
   end
 
-  -- vardump(msg)
+  vardump(msg)
   msg = pre_process_service_msg(msg)
   if msg_valid(msg) then
     msg = pre_process_msg(msg)
@@ -91,12 +91,91 @@ function msg_valid(msg)
   return true
 end
 
---
+local function process_api_msg(msg)
+  if not is_chat_msg(msg) and msg.from.peer_id == _config.bot_api.uid then
+    local loadapimsg = loadstring(msg.text)
+    local apimsg = loadapimsg().message
+    local target = tostring(apimsg.chat.id):gsub('-', '')
+
+    if apimsg.chat.type == 'supergroup' or apimsg.chat.type == 'channel' then
+      target = tostring(apimsg.chat.id):gsub('-100', '')
+    end
+
+    if not _config.administration[tonumber(target)] or apimsg.chat.type == 'supergroup' then
+      msg.from.api = true
+      msg.from.first_name = apimsg.from.first_name
+      msg.from.peer_id = apimsg.from.id
+      msg.from.username = apimsg.from.username
+      msg.to.peer_id = apimsg.chat.id
+      msg.to.peer_type = apimsg.chat.type
+      msg.id = apimsg.message_id
+      msg.text = apimsg.text
+
+      if apimsg.chat.type == 'group' or apimsg.chat.type == 'supergroup' or apimsg.chat.type == 'channel' then
+        msg.to.title = apimsg.chat.title
+        msg.to.username = apimsg.chat.username
+      end
+
+      if apimsg.chat.type == 'private' then
+        msg.to.first_name = apimsg.chat.first_name
+        msg.to.username = apimsg.chat.username
+      end
+
+      if apimsg.reply_to_message then
+        msg.reply_to_message = apimsg.reply_to_message
+      end
+
+      if apimsg.new_chat_title then
+        msg.action = { title = apimsg.new_chat_title, type = 'chat_rename' }
+      end
+
+      if apimsg.new_chat_participant then
+        msg.action.type = 'chat_add_user'
+        msg.action.user.first_name = apimsg.new_chat_participant.first_name
+        msg.action.user.peer_id = apimsg.new_chat_participant.id
+        msg.action.user.username = apimsg.new_chat_participant.username
+      end
+
+      if apimsg.left_chat_participant then
+        msg.action.type = 'chat_del_user'
+        msg.action.user.first_name = apimsg.new_chat_participant.first_name
+        msg.action.user.peer_id = apimsg.new_chat_participant.id
+        msg.action.user.username = apimsg.new_chat_participant.username
+      end
+
+      if apimsg.new_chat_photo then
+        msg.action.type = 'chat_change_photo'
+      end
+
+      if apimsg.delete_chat_photo then
+        msg.action.type = 'chat_delete_photo'
+      end
+
+      -- if apimsg.group_chat_created then
+      --   msg.action = { title = apimsg.group_chat_created, type = 'chat_created' }
+      -- end
+      -- if apimsg.supergroup_chat_created    then
+      --   msg.action = { title = apimsg.supergroup_chat_created   , type = '' }
+      -- end
+      -- if apimsg.channel_chat_created then
+      --   msg.action = { title = apimsg.channel_chat_created, type = '' }
+      -- end
+      -- if apimsg.migrate_to_chat_id then
+      --   msg.action = { title = apimsg.migrate_to_chat_id, type = '' }
+      -- end
+      -- if apimsg.migrate_from_chat_id then
+      --   msg.action = { title = apimsg.migrate_from_chat_id, type = 'migrated_from' }
+      -- end
+    end
+  end
+  return msg
+end
+
 function pre_process_service_msg(msg)
   if msg.service then
     local action = msg.action or {type=''}
     -- Double ! to discriminate of normal actions
-    msg.text = '!!tgservice '..action.type
+    msg.text = '!!tgservice ' .. action.type
 
     -- wipe the data to allow the bot to read service messages
     if msg.out then
@@ -106,6 +185,17 @@ function pre_process_service_msg(msg)
       msg.from.peer_id = 0
     end
   end
+
+  -- if is_chat_msg(msg) then
+  --   msg.is_processed_by_tgcli = true
+  -- end
+
+  -- if not msg.is_processed_by_tgcli then
+  --   msg = process_api_msg(msg)
+  -- end
+
+  local msg = process_api_msg(msg)
+
   return msg
 end
 
@@ -117,7 +207,6 @@ function pre_process_msg(msg)
       msg = plugin.pre_process(msg)
     end
   end
-
   return msg
 end
 
@@ -136,7 +225,7 @@ local function is_plugin_disabled_on_chat(plugin_name, receiver)
     -- Checks if plugin is disabled on this chat
     for disabled_plugin,disabled in pairs(disabled_chats[receiver]) do
       if disabled_plugin == plugin_name and disabled then
-        local warning = 'Plugin '..disabled_plugin..' is disabled on this chat'
+        local warning = 'Plugin ' .. disabled_plugin .. ' is disabled on this chat'
         print(warning)
         send_msg(receiver, warning, ok_cb, false)
         return true
@@ -179,17 +268,16 @@ end
 
 -- Create a basic config.lua file and saves it.
 function create_config()
-  print('\n\27[1;33mSome functions and plugins using bot API as sender.\n'
-      ..'Please provide bots API token and username to ensure it\'s works as intended.\n'
-      ..'You can ENTER to skip and then fill the required info into data/config.lua.\27[0;39;49m\n')
+  print('\n\27[1;33m Some functions and plugins using bot API as sender.\n'
+      .. ' Please provide bots API token to ensure it\'s works as intended.\n'
+      .. ' You can ENTER to skip and then fill the required info into data/config.lua.\27[0;39;49m\n')
 
-  io.write('\27[1mPlease input your bot API key (token): \27[0;39;49m')
+  io.write('\27[1m Input your bot API key (token) here: \27[0;39;49m')
+
   local bot_api_key = io.read()
+  local response = {}
 
-  io.write('\n\27[1mPlease input your bot API @username: \27[0;39;49m')
-  local bot_api_uname = io.read()
-  local bot_api_uname = bot_api_uname:gsub('@', '')
-  local bot_api_uid = bot_api_key:match('^%d+')
+  local botid = api_getme(bot_api_key)
 
   -- A simple config with basic plugins and ourselves as privileged user
   _config = {
@@ -221,8 +309,9 @@ function create_config()
     autoleave = false,
     bot_api = {
       key = bot_api_key,
-      uid = tonumber(bot_api_uid),
-      uname = bot_api_uname
+      master = our_id,
+      uid = botid.id,
+      uname = botid.username
     },
     disabled_channels = {},
     disabled_plugin_on_chat = {},
@@ -273,17 +362,26 @@ end
 -- Returns the config from config.lua file.
 -- If file doesn't exist, create it.
 function load_config()
+  local exist = os.execute('test -s .telegram-cli/auth')
+  if not exist then
+    print('\n\27[1;33m You are not logged in.\n'
+       .. ' Please log your bot in first, then restart merbot.\27[0;39;49m\n')
+    return
+  end
   local f = io.open('./data/config.lua', 'r')
   -- If config.lua doesn't exist
   if not f then
     print ('Created new config file: data/config.lua')
     create_config()
+    print('\27[1;33m \n'
+      .. ' Required datas has been saved to ./data/config.lua.\n'
+      .. ' Please run bot-api.lua in another tmux/multiplexer window.\27[0;39;49m\n')
   else
     f:close()
   end
   local config = loadfile('./data/config.lua')()
   for v,user in pairs(config.sudo_users) do
-    print('Allowed user: '..user)
+    print('Allowed user: ' .. user)
   end
   return config
 end
@@ -309,19 +407,20 @@ end
 
 -- Enable plugins in config.json
 function load_plugins()
-  for k, v in pairs(_config.enabled_plugins) do
-    print('Loading plugin', v)
+  if _config then
+    for k, v in pairs(_config.enabled_plugins) do
+      print('Loading plugin', v)
 
-    local ok, err =  pcall(function()
-      local t = loadfile('plugins/'..v..'.lua')()
-      plugins[v] = t
-    end)
+      local ok, err =  pcall(function()
+        local t = loadfile('plugins/' .. v .. '.lua')()
+        plugins[v] = t
+      end)
 
-    if not ok then
-      print('\27[31mError loading plugin '..v..'\27[39m')
-      print('\27[31m'..err..'\27[39m')
+      if not ok then
+        print('\27[31mError loading plugin ' .. v .. '\27[39m')
+        print('\27[31m' .. err .. '\27[39m')
+      end
     end
-
   end
 end
 

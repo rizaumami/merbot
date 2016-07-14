@@ -1,23 +1,24 @@
 do
 
   local function search_kickass(msg, query)
-    local url = 'https://kat.cr/json.php?q='..URL.escape(query)
+    local url = 'https://kat.cr/json.php?q=' .. URL.escape(query)
     local limit = 5
     local resp = {}
-
     local b,c = https.request {
       url = url,
       protocol = 'tlsv1',
       sink = ltn12.sink.table(resp)
     }
-
-    resp = table.concat(resp)
-
+    local resp = table.concat(resp)
     local data = json:decode(resp)
     local jresult = data.list
 
     if next(jresult) == nil then
-      reply_msg(msg.id, 'No torrent results for: '..terms, ok_cb, true)
+      if msg.from.api then
+        bot_sendMessage(get_receiver_api(msg), 'No torrent results for: ' .. query, true, msg.id, 'html')
+      else
+        reply_msg(msg.id, 'No torrent results for: ' .. query, ok_cb, true)
+      end
     else
       local katcrlist = {}
       if #jresult < 5 then
@@ -37,14 +38,16 @@ do
 
         local size = tostring(torrent.size / divider)
 
-        katcrlist[i] = '<b>'..i..'</b>. <a href="'..link..'">'..torrent.title..'</a>\n'
-            ..'Seeds: <code>'..torrent.seeds..'</code> | '
-            ..'Leechs: <code>'..torrent.leechs..'</code> | '
-            ..'Size: <code>'..string.format("%.2f", size)..'</code>'..unit..'\n\n'
+        katcrlist[i] = '<b>' .. i .. '</b>. <a href="' .. link .. '">' .. torrent.title .. '</a>\n'
+             .. 'Seeds: <code>' .. torrent.seeds .. '</code> | '
+             .. 'Leechs: <code>' .. torrent.leechs .. '</code> | '
+             .. 'Size: <code>' .. string.format("%.2f", size) .. '</code>' .. unit
       end
-      local torlist = table.concat(katcrlist)
-      local header = '<b>'..query..'</b> results: <code>'..data.total_results..'</code> torrents\n\n'
-      send_api_msg(msg, get_receiver_api(msg), header..torlist, true, 'html')
+
+      local torlist = table.concat(katcrlist, '\n\n')
+      local header = '<b>' .. query .. '</b> results: <code>' .. data.total_results .. '</code> torrents\n\n'
+
+      bot_sendMessage(get_receiver_api(msg), header .. torlist, true, msg.id, 'html')
     end
   end
 

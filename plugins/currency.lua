@@ -3,8 +3,8 @@ do
   local function get_word(s, i)
     s = s or ''
     i = i or 1
-
     local t = {}
+
     for w in s:gmatch('%g+') do
       table.insert(t, w)
     end
@@ -14,8 +14,9 @@ do
 
   local function run(msg, matches)
     local input = msg.text:upper()
+
     if not input:match('%a%a%a TO %a%a%a') then
-      reply_msg(msg.id, 'Example: !cash 5 USD to IDR', ok_cb, true)
+      send_message(msg, '<b>Example:</b> <code>!cash 5 USD to IDR</code>', 'html')
       return
     end
 
@@ -27,31 +28,37 @@ do
     local url = 'https://www.google.com/finance/converter'
 
     if from ~= to then
-      local url = url..'?from='..from..'&to='..to..'&a='..amount
+      local url = url .. '?from=' .. from .. '&to=' .. to .. '&a=' .. amount
       local str, res = https.request(url)
+
       if res ~= 200 then
-        reply_msg(msg.id, 'Connection error.', ok_cb, true)
+        send_message(msg, '<b>Connection error</b>', 'html')
         return
       end
+
       str = str:match('<span class=bld>(.*) %u+</span>')
+
       if not str then
-        reply_msg(msg.id, 'Connection error.', ok_cb, true)
+        send_message(msg, '<b>Connection error</b>', 'html')
         return
       end
+
       result = string.format('%.2f', str)
     end
 
     while true do
       result, k = string.gsub(result, "^(-?%d+)(%d%d%d)", '%1 %2')
+
       if (k==0) then
         break
       end
     end
 
-    local output = amount..' '..from..' = '..result..' '..to..'\n\n'
-    local output = output..'Source: Google Finance\n'..os.date('%F %T %Z')
+    local header = amount .. ' ' .. from .. ' = ' .. result .. ' ' .. to .. '\n\n'
+    local headerapi = '<b>' .. amount .. ' ' .. from .. ' = ' .. result .. ' ' .. to .. '</b>\n\n'
+    local source = 'Source: Google Finance\n<code>' .. os.date('%F %T %Z') .. '</code>'
 
-    reply_msg(msg.id, output, ok_cb, true)
+    send_message(msg, headerapi .. source, 'html')
   end
 
 --------------------------------------------------------------------------------
@@ -60,10 +67,13 @@ do
     description = 'Returns (Google Finance) exchange rates for various currencies.',
     usage = {
       '<code>!cash [amount] [from] to [to]</code>',
-      'Example: !cash 5 USD to EUR',
+      'Example:',
+      '  *  <code>!cash 5 USD to EUR</code>',
+      '  *  <code>!currency 1 usd to idr</code>',
     },
     patterns = {
-      '^!(cash) (.*)$',
+      '^!cash (.*)$',
+      '^!currency (.*)$',
     },
     run = run
   }

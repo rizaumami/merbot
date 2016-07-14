@@ -1,43 +1,63 @@
 do
 
   local function run(msg, matches)
-    local url = 'http://www.omdbapi.com/?plot=full&t=' .. URL.escape(matches[1])
-    local jstr, res = http.request(url)
-    local jdat = json:decode(jstr)
+    local omdbapi = 'http://www.omdbapi.com/?plot=full&r=json'
+    local movietitle = matches[1]
 
-    if res ~= 200 or jdat.Response ~= 'True' then
-      reply_msg(msg.id, 'Movie not found!', ok_cb, true)
+    if matches[1]:match(' %d%d%d%d$') then
+      local movieyear = matches[1]:match('%d%d%d%d$')
+      movietitle = matches[1]:match('^.+ ')
+      omdbapi = omdbapi .. '&y=' .. movieyear
+    end
+
+    local success, code = http.request(omdbapi .. '&t=' .. URL.escape(movietitle))
+
+    if success then
+      jomdb = json:decode(success)
+    end
+
+    if jomdb.Response == 'False' then
+      send_message(msg, '<b>' .. jomdb.Error .. '</b>', 'html')
       return
     end
 
-    local omdb = '<a href="' .. jdat.Poster .. '">' .. jdat.Title .. '</a>\n\n'
-        .. '<b>Year</b>: ' .. jdat.Year .. '\n'
-        .. '<b>Rated</b>: ' .. jdat.Rated .. '\n'
-        .. '<b>Runtime</b>: ' .. jdat.Runtime .. '\n'
-        .. '<b>Genre</b>: ' .. jdat.Genre .. '\n'
-        .. '<b>Director</b>: ' .. jdat.Director .. '\n'
-        .. '<b>Writer</b>: ' .. jdat.Writer .. '\n'
-        .. '<b>Actors</b>: ' .. jdat.Actors .. '\n'
-        .. '<b>Country</b>: ' .. jdat.Country .. '\n'
-        .. '<b>Awards</b>: ' .. jdat.Awards .. '\n'
-        .. '<b>Plot</b>: ' .. jdat.Plot .. '\n\n'
-        .. '<a href="http://imdb.com/title/' .. jdat.imdbID .. '">IMDB</a>:\n'
-        .. '<b>Metascore</b>: ' .. jdat.Metascore .. '\n'
-        .. '<b>Rating</b>: ' .. jdat.imdbRating .. '\n'
-        .. '<b>Votes</b>: ' .. jdat.imdbVotes .. '\n\n'
+    if not jomdb then
+      send_message(msg, '<b>' .. json:decode(code) .. '</b>', 'html')
+      return
+    end
 
-    send_api_msg(msg, get_receiver_api(msg), omdb, false, 'html')
+    local omdb = '<b>' .. jomdb.Title .. '</b>\n\n'
+        .. '<b>Year</b><a href="' .. jomdb.Poster .. '">:</a> ' .. jomdb.Year .. '\n'
+        .. '<b>Rated</b>: ' .. jomdb.Rated .. '\n'
+        .. '<b>Runtime</b>: ' .. jomdb.Runtime .. '\n'
+        .. '<b>Genre</b>: ' .. jomdb.Genre .. '\n'
+        .. '<b>Director</b>: ' .. jomdb.Director .. '\n'
+        .. '<b>Writer</b>: ' .. jomdb.Writer .. '\n'
+        .. '<b>Actors</b>: ' .. jomdb.Actors .. '\n'
+        .. '<b>Country</b>: ' .. jomdb.Country .. '\n'
+        .. '<b>Awards</b>: ' .. jomdb.Awards .. '\n'
+        .. '<b>Plot</b>: ' .. jomdb.Plot .. '\n\n'
+        .. '<a href="http://imdb.com/title/' .. jomdb.imdbID .. '">IMDB</a>:\n'
+        .. '<b>Metascore</b>: ' .. jomdb.Metascore .. '\n'
+        .. '<b>Rating</b>: ' .. jomdb.imdbRating .. '\n'
+        .. '<b>Votes</b>: ' .. jomdb.imdbVotes .. '\n\n'
+
+    bot_sendMessage(get_receiver_api(msg), omdb, false, msg.id, 'html')
   end
 
   return {
     description = 'The Open Movie Database plugin for Telegram.',
     usage = {
       '<code>!imdb [movie]</code>',
+      '<code>!omdb [movie]</code>',
       'Returns IMDb entry for <code>[movie]</code>',
+      '',
+      '<code>!imdb [movie] [year]</code>',
+      '<code>!omdb [movie] [year]</code>',
+      'Returns IMDb entry for <code>[movie]</code> that was released in <code>[year]</code>',
     },
     patterns = {
-      '^!imdb (.+)',
-      '^!omdb (.+)'
+      '^![io]mdb (.+)$',
     },
     run = run
   }

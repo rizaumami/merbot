@@ -25,17 +25,21 @@ do
   end
 
   local function get_kbbi(msg, lema)
-    local webkbbi = 'http://kbbi.web.id/'..lema..'/ajax_0'
+    local webkbbi = 'http://kbbi.web.id/' .. lema .. '/ajax_0'
     local res, code = http.request(webkbbi)
 
     if res == '' then
-      reply_msg(msg.id, 'Tidak ada arti kata "'..lema..'" di http://kbbi.web.id', ok_cb, true)
+      if msg.from.api then
+        bot_sendMessage(get_receiver_api(msg), 'Tidak ada arti kata "<b>' .. lema .. '</b>" di http://kbbi.web.id', true, msg.id, 'html')
+      else
+        reply_msg(msg.id, 'Tidak ada arti kata "' .. lema .. '" di http://kbbi.web.id', ok_cb, true)
+      end
       return
     end
 
     local grabbedlema = res:match('{"x":1,"w":.-}')
     local jlema = json:decode(grabbedlema)
-    local title = '<a href="http://kbbi.web.id/'..lema..'">'..cleanup_tag(jlema.w)..'</a>\n\n'
+    local title = '<a href="http://kbbi.web.id/' .. lema .. '">' .. cleanup_tag(jlema.w) .. '</a>\n\n'
 
     if jlema.d:match('<br/>') then
       local description = jlema.d:match('^.-<br/>')
@@ -44,7 +48,7 @@ do
       kbbi_desc = cleanup_tag(jlema.d)
     end
 
-    send_api_msg(msg, get_receiver_api(msg), title..kbbi_desc, true, 'html')
+    bot_sendMessage(get_receiver_api(msg), title .. kbbi_desc, true, msg.id, 'html')
   end
 
   local function run(msg, matches)

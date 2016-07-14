@@ -12,9 +12,8 @@ do
     local long = coords.lon
     local address = coords.formatted_address
     local url = 'https://api.forecast.io/forecast/'
-    local api_key = 'ce7ec7b47577827ddc1e7ed073bc93ee/'
     local units = '?units=si'
-    local url = url..api_key..URL.escape(lat)..','..URL.escape(long)..units
+    local url = url .. _config.api_key.forecast .. '/' .. URL.escape(lat) .. ',' .. URL.escape(long) .. units
 
     local res, code = https.request(url)
     if code ~= 200 then
@@ -23,12 +22,13 @@ do
     local jcast = json:decode(res)
     local todate = os.date('%A, %F', jcast.currently.time)
 
-    local forecast = '<b>Weather for: '..address..'</b>\n'..todate..'\n\n'
-    local forecast = forecast..'<b>Right now</b>\n'..jcast.currently.summary
-        ..' - Feels like '..round(jcast.currently.apparentTemperature)..'°C\n\n'
-    local forecast = forecast..'<b>Next 24 hours</b>\n'..jcast.hourly.summary..'\n\n'
-    local forecast = forecast..'<b>Next 7 days</b>\n'..jcast.daily.summary
-    send_api_msg(msg, get_receiver_api(msg), forecast, true, 'html')
+    local forecast = '<b>Weather for: ' .. address .. '</b>\n' .. todate .. '\n\n'
+    local forecast = forecast .. '<b>Right now</b>\n' .. jcast.currently.summary
+        .. ' - Feels like ' .. round(jcast.currently.apparentTemperature) .. '°C\n\n'
+    local forecast = forecast .. '<b>Next 24 hours</b>\n' .. jcast.hourly.summary .. '\n\n'
+    local forecast = forecast .. '<b>Next 7 days</b>\n' .. jcast.daily.summary
+
+    bot_sendMessage(get_receiver_api(msg), forecast, true, msg.id, 'html')
   end
 
   local function run(msg, matches)
@@ -44,6 +44,7 @@ do
     },
     patterns = {
       '^!cast (.*)$',
+      '^!forecast (.*)$',
       '^!weather (.*)$'
     },
     run = run

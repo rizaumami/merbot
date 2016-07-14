@@ -1,8 +1,6 @@
 do
 
   local base_api = 'http://muslimsalat.com'
-  -- http://muslimsalat.com/panel/signup.php
-  local api_key = '?key=e2de2d3ed5c3b37b9d3bd6faeafa7891'
   local calculation = {
     [1] = 'Egyptian General Authority of Survey',
     [2] = 'University Of Islamic Sciences, Karachi (Shafi)',
@@ -60,21 +58,30 @@ do
       local c_method = tonumber(matches[1])
 
       if c_method == 0 or c_method > 7 then
-        reply_msg(msg.id, 'Calculation method is out of range.\n'
-            .. 'Consult !help salat.', ok_cb, true)
+        local text = 'Calculation method is out of range.\n'
+                .. 'Consult !help salat.'
+        if msg.from.api then
+          bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+        else
+          reply_msg(msg.id, text, ok_cb, true)
+        end
         return
       else
         method = c_method
         url = base_api .. '/' .. URL.escape(matches[2]) .. '.json'
-        notif = '\n\nMethod: ' .. calculation[method]
+        notif = '\n\n<b>Method:</b> ' .. calculation[method]
         area = matches[2]
       end
     end
 
-    local res, code = http.request(url .. '/' .. method .. api_key)
+    local res, code = http.request(url .. '/' .. method .. '?key=' .. _config.api_key.muslimsalat)
 
     if code ~= 200 then
-      reply_msg(msg.id, 'Error: ' .. code, ok_cb, true)
+      if msg.from.api then
+        bot_sendMessage(get_receiver_api(msg), '<b>Error</b>: <code>' .. code .. '</code>', true, msg.id, 'html')
+      else
+         reply_msg(msg.id, 'Error: ' .. code, ok_cb, true)
+      end
       return
     end
 
@@ -87,7 +94,7 @@ do
       salat_area = salat.title
     end
 
-    send_api_msg(msg, get_receiver_api(msg), '<b>Salat time</b>\n\n'
+    local is_salat_time = '<b>Salat time</b>\n\n'
         .. '<a href="' .. salat.link .. '">' .. salat_area .. '</a>\n\n'
         .. '<code>Time    : ' .. os.date('%T', localTime) .. '\n'
         .. 'Qibla   : ' .. salat.qibla_direction .. '°\n\n'
@@ -96,7 +103,9 @@ do
         .. 'Dhuhr   : ' .. totwentyfour(salat.items[1].dhuhr) .. '\n'
         .. 'Asr     : ' .. totwentyfour(salat.items[1].asr) .. '\n'
         .. 'Maghrib : ' .. totwentyfour(salat.items[1].maghrib) .. '\n'
-        .. 'Isha    : ' .. totwentyfour(salat.items[1].isha) .. '</code>' .. notif, true, 'html')
+        .. 'Isha    : ' .. totwentyfour(salat.items[1].isha) .. '</code>' .. notif
+
+    bot_sendMessage(get_receiver_api(msg), is_salat_time, true, msg.id, 'html')
   end
 
   return {

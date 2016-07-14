@@ -4,50 +4,59 @@ https = require "ssl.https"
 ltn12 = require "ltn12"
 serpent = require "serpent"
 feedparser = require "feedparser"
+multipart = require 'multipart-post'
 
 json = (loadfile "./libs/JSON.lua")()
 mimetype = (loadfile "./libs/mimetype.lua")()
 redis = (loadfile "./libs/redis.lua")()
 
 http.TIMEOUT = 10
-tgclie = './tg/bin/telegram-cli -c ./data/tg-cli.config -p default -De %q'
+tgclie = './tg/bin/telegram-cli -k ./tg/tg-server-pub -c ./data/tg-cli.config -p default -De %q'
 
 function get_receiver(msg)
   if msg.to.peer_type == 'user' then
-    return 'user#id'..msg.from.peer_id
+    return 'user#id' .. msg.from.peer_id
   end
   if msg.to.peer_type == 'chat' then
-    return 'chat#id'..msg.to.peer_id
+    return 'chat#id' .. msg.to.peer_id
   end
   if msg.to.peer_type == 'encr_chat' then
     return msg.to.print_name
   end
   if msg.to.peer_type == 'channel' then
-    return 'channel#id'..msg.to.peer_id
+    return 'channel#id' .. msg.to.peer_id
   end
 end
 
 function get_receiver_api(msg)
-  if msg.to.peer_type == 'user' then
+  if msg.to.peer_type == 'user' or msg.to.peer_type == 'private'  then
     return msg.from.peer_id
   end
-  if msg.to.peer_type == 'chat' then
-    return '-'..msg.to.peer_id
+  if msg.to.peer_type == 'chat' or msg.to.peer_type == 'group' then
+    if not msg.from.api then
+      return '-' .. msg.to.peer_id
+    else
+      return msg.to.peer_id
+    end
   end
 --TODO testing needed
 -- if msg.to.peer_type == 'encr_chat' then
 --   return msg.to.print_name
 -- end
-  if msg.to.peer_type == 'channel' then
-    return '-100'..msg.to.peer_id
+  if msg.to.peer_type == 'channel' or msg.to.peer_type == 'supergroup' then
+    if not msg.from.api then
+      return '-100' .. msg.to.peer_id
+    else
+      return msg.to.peer_id
+    end
   end
 end
 
 function is_chat_msg(msg)
-  if msg.to.peer_type == 'chat' or msg.to.peer_type == 'channel' then
-    return true
-  else
+  if msg.to.peer_type == 'private' or msg.to.peer_type == 'user' then
     return false
+  else
+    return true
   end
 end
 
@@ -63,7 +72,7 @@ function string.random(length)
   local str = '';
   for i = 1, length do
     math.random(97, 122)
-    str = str..string.char(math.random(97, 122));
+    str = str .. string.char(math.random(97, 122));
   end
   return str;
 end
@@ -95,7 +104,7 @@ function get_http_file_name(url, headers)
     extension = mimetype.get_mime_extension(content_type)
   end
   if extension then
-    file_name = file_name..'.'..extension
+    file_name = file_name .. '.' .. extension
   end
 
   local disposition = headers['content-disposition']
@@ -111,7 +120,7 @@ end
 -- If file_name isn't provided, will get the text after the last "/" for
 -- filename and content-type for extension
 function download_to_file(url, file_name)
-  print('url to download: '..url)
+  print('url to download: ' .. url)
 
   local respbody = {}
   local options = {
@@ -138,8 +147,8 @@ function download_to_file(url, file_name)
 
   file_name = file_name or get_http_file_name(url, headers)
 
-  local file_path = '/tmp/'..file_name
-  print('Saved to: '..file_path)
+  local file_path = '/tmp/' .. file_name
+  print('Saved to: ' .. file_path)
 
   file = io.open(file_path, "w+")
   file:write(table.concat(respbody))
@@ -155,7 +164,7 @@ end
 -- http://stackoverflow.com/a/11130774/3163199
 function scandir(directory)
   local i, t, popen = 0, {}, io.popen
-  for filename in popen('ls -a "'..directory..'"'):lines() do
+  for filename in popen('ls -a "' .. directory .. '"'):lines() do
     i = i + 1
     t[i] = filename
   end
@@ -168,6 +177,15 @@ function run_command(str)
   local result = cmd:read('*all')
   cmd:close()
   return result
+end
+
+function is_administrate(msg, gid)
+  local var = true
+  if not _config.administration[gid] then
+    var = false
+    send_message(msg, '<b>I do not administrate this group</b>', 'html')
+  end
+  return var
 end
 
 -- User has privileges
@@ -230,6 +248,27 @@ function is_mod(msg, chat_id, user_id)
     var = true
   end
   return var
+end
+
+-- Returns bot api properties (as getMe method)
+function api_getme(bot_api_key)
+  local response = {}
+  local getme  = https.request{
+    url = 'https://api.telegram.org/bot' .. bot_api_key .. '/getMe',
+    method = "POST",
+    sink = ltn12.sink.table(response),
+  }
+  local body = table.concat(response or {"no response"})
+  local jbody = json:decode(body)
+
+  if jbody.ok then
+    botid = jbody.result
+  else
+    print('Error: ' .. jbody.error_code .. ', ' .. jbody.description)
+    botid = {id = '', username = ''}
+  end
+
+  return botid
 end
 
 -- Returns the name of the sender
@@ -297,6 +336,23 @@ function string:starts(text)
   return text == self:sub(1, string.len(text))
 end
 
+-- which bot messages sent by
+function send_message(msg, text, markdown)
+  if msg.from.api then
+    if msg.reply_to_message then
+      msg.id = msg.reply_to_message
+    end
+    bot_sendMessage(get_receiver_api(msg), text, true, msg.id, markdown)
+  else
+    if msg.reply_id then
+      msg.id = msg.reply_id
+    end
+    -- this will strip all html tags
+    local text = text:gsub('<.->', '')
+    reply_msg(msg.id, text, ok_cb, true)
+  end
+end
+
 -- Send image to user and delete it when finished.
 -- cb_function and cb_extra are optionals callback
 function _send_photo(receiver, file_path, cb_function, cb_extra)
@@ -321,7 +377,7 @@ function send_photo_from_url(receiver, url, cb_function, cb_extra)
     local text = 'Error downloading the image'
     send_msg(receiver, text, cb_function, cb_extra)
   else
-    print('File path: '..file_path)
+    print('File path: ' .. file_path)
     _send_photo(receiver, file_path, cb_function, cb_extra)
   end
 end
@@ -336,7 +392,7 @@ function send_photo_from_url_callback(cb_extra, success, result)
     local text = 'Error downloading the image'
     send_msg(receiver, text, ok_cb, false)
   else
-    print('File path: '..file_path)
+    print('File path: ' .. file_path)
     _send_photo(receiver, file_path, ok_cb, false)
   end
 end
@@ -363,7 +419,7 @@ function send_photos_from_url_callback(cb_extra, success, result)
   -- The previously image to remove
   if remove_path ~= nil then
     os.remove(remove_path)
-    print('Deleted: '..remove_path)
+    print('Deleted: ' .. remove_path)
   end
 
   -- Nil or empty, exit case (no more urls)
@@ -393,7 +449,7 @@ function rmtmp_cb(cb_extra, success, result)
 
   if file_path ~= nil then
     os.remove(file_path)
-    print('Deleted: '..file_path)
+    print('Deleted: ' .. file_path)
   end
   -- Finally call the callback
   cb_function(cb_extra, success, result)
@@ -415,7 +471,7 @@ end
 -- cb_function and cb_extra are optionals callback
 function send_document_from_url(receiver, url, cb_function, cb_extra)
   local file_path = download_to_file(url, false)
-  print('File path: '..file_path)
+  print('File path: ' .. file_path)
   _send_document(receiver, file_path, cb_function, cb_extra)
 end
 
@@ -429,9 +485,9 @@ function format_http_params(params, is_get)
     if v then -- nil value
       if first then
         first = false
-        str = str..k..'='..v
+        str = str .. k .. '=' .. v
       else
-        str = str..'&'..k..'='..v
+        str = str .. '&' .. k .. '=' .. v
       end
     end
   end
@@ -443,8 +499,7 @@ end
 function warns_user_not_allowed(plugin, msg)
   if not user_allowed(plugin, msg) then
     local text = 'This plugin requires privileged user'
-    local receiver = get_receiver(msg)
-    send_msg(receiver, text, ok_cb, false)
+    reply_msg(msg.id, text, ok_cb, true)
     return true
   else
     return false
@@ -469,7 +524,6 @@ function user_allowed(plugin, msg)
   return true
 end
 
-
 function send_order_msg(destination, msgs)
   local cb_extra = {
     destination = destination,
@@ -484,7 +538,7 @@ function send_order_msg_callback(cb_extra, success, result)
   local file_path = cb_extra.file_path
   if file_path ~= nil then
     os.remove(file_path)
-    print('Deleted: '..file_path)
+    print('Deleted: ' .. file_path)
   end
   if type(msgs) == 'string' then
     send_large_msg(destination, msgs)
@@ -604,6 +658,15 @@ function unescape_html(str)
   return new
 end
 
+function markdown_escape(text)
+  text = text:gsub('_', '\\_')
+  text = text:gsub('%[', '\\[')
+  text = text:gsub('%]', '\\]')
+  text = text:gsub('%*', '\\*')
+  text = text:gsub('`', '\\`')
+  return text
+end
+
 function pairsByKeys(t, f)
   local a = {}
   for n in pairs(t) do
@@ -624,7 +687,7 @@ end
 
 -- Gets coordinates for a location.
 function get_coords(msg, input)
-  local url = 'https://maps.googleapis.com/maps/api/geocode/json?address='..URL.escape(input)
+  local url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' .. URL.escape(input)
 
   local jstr, res = http.request(url)
   if res ~= 200 then
@@ -648,26 +711,83 @@ end
 -- Text formatting is server side. And (until now) only for API bots.
 -- So, here is a simple workaround; send message through Telegram official API.
 -- You need to provide your API bots TOKEN in config.lua.
-function send_api_msg(msg, receiver, text, disable_web_page_preview, markdown)
-  local web_preview = '&disable_web_page_preview='..(tostring(disable_web_page_preview) or '')
-  local markdown = '&parse_mode='..(markdown or '')
-  local url = 'https://api.telegram.org/bot'.._config.bot_api.key..'/sendMessage'
-  local response = {}
-
-  local res, code = https.request{
-    url = url..'?chat_id='..receiver..markdown..web_preview..'&text='..URL.escape(text),
-    method = "POST",
-    sink = ltn12.sink.table(response),
-  }
-
-  if code == 400 then
-    local taberr = table.concat(response)
-    local jerr = json:decode(taberr)
-    if jerr.description:match('chat not found') then
-      reply_msg(msg.id, 'Please start or message @'.._config.bot_api.uname
-          ..' privately first, then repeat the request.', ok_cb, true)
-    else
-      reply_msg(msg.id, jerr.description, ok_cb, true)
-    end
+local function bot(method, parameters, file)
+  local parameters = parameters or {}
+  for k,v in pairs(parameters) do
+    parameters[k] = tostring(v)
   end
+  if file and next(file) ~= nil then
+    local file_type, file_name = next(file)
+    local file_file = io.open(file_name, 'r')
+    local file_data = {
+      filename = file_name,
+      data = file_file:read('*a')
+    }
+    file_file:close()
+    parameters[file_type] = file_data
+  end
+  if next(parameters) == nil then
+    parameters = {''}
+  end
+
+  if parameters.reply_to_message_id and #parameters.reply_to_message_id > 30 then
+    parameters.reply_to_message_id = nil
+  end
+
+  local response = {}
+  local body, boundary = multipart.encode(parameters)
+  local success = https.request{
+    url = 'https://api.telegram.org/bot' .. _config.bot_api.key .. '/' .. method,
+    method = 'POST',
+    headers = {
+      ["Content-Type"] =  "multipart/form-data; boundary=" .. boundary,
+      ["Content-Length"] = #body,
+    },
+    source = ltn12.source.string(body),
+    sink = ltn12.sink.table(response)
+  }
+  local data = table.concat(response)
+  local jdata = json:decode(data)
+  if not jdata.ok then
+    vardump(jdata)
+  end
+end
+
+function bot_sendMessage(chat_id, text, disable_web_page_preview, reply_to_message_id, parse_mode)
+  return bot('sendMessage', {
+    chat_id = chat_id,
+    text = text,
+    disable_web_page_preview = disable_web_page_preview,
+    reply_to_message_id = reply_to_message_id,
+    parse_mode = parse_mode or nil
+  } )
+end
+
+function bot_sendPhoto(chat_id, photo, caption, disable_notification, reply_to_message_id)
+  return bot('sendPhoto', {
+    chat_id = chat_id,
+    caption = caption,
+    disable_notification = disable_notification,
+    reply_to_message_id = reply_to_message_id,
+  }, {photo = photo} )
+end
+
+function bot_sendLocation(chat_id, latitude, longitude, disable_notification, reply_to_message_id)
+  return bot('sendLocation', {
+    chat_id = chat_id,
+    latitude = latitude,
+    longitude = longitude,
+    disable_notification = disable_notification,
+    reply_to_message_id = reply_to_message_id,
+  })
+end
+
+function bot_sendDocument(chat_id, document, caption, disable_notification, reply_to_message_id)
+  return bot('sendDocument', {
+    chat_id = chat_id,
+    document = document,
+    caption = caption,
+    disable_notification = disable_notification,
+    reply_to_message_id = reply_to_message_id,
+  }, {document = document})
 end

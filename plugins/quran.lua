@@ -1,125 +1,172 @@
 do
 
-  -- http://globalquran.com/contribute/signup.php
-  local api_key = '?key=e2de2d3ed5c3b37b9d3bd6faeafa7891'
+  local surah_name = {
+    [1] = "Al-Fatihah",
+    [2] = "Al-Baqarah",
+    [3] = "Ali-Imran",
+    [4] = "An-Nisaa'",
+    [5] = "Al-Maaidah",
+    [6] = "Al-An'aam",
+    [7] = "Al-A'raaf",
+    [8] = "Al-Anfaal",
+    [9] = "At-Taubah",
+    [10] = "Yunus",
+    [11] = "Huud",
+    [12] = "Yusuf",
+    [13] = "Ar-Ra'd",
+    [14] = "Ibrahim",
+    [15] = "Al-Hijr",
+    [16] = "An-Nahl",
+    [17] = "Al-Israa'",
+    [18] = "Al-Kahfi",
+    [19] = "Maryam",
+    [20] = "Thaahaa",
+    [21] = "Al-Anbiyaa'",
+    [22] = "Al-Hajj",
+    [23] = "Al-Mukminuun",
+    [24] = "An-Nuur",
+    [25] = "Al-Furqaan",
+    [26] = "Ash-Shu'araa",
+    [27] = "An-Naml",
+    [28] = "Al-Qashash",
+    [29] = "Al-Ankabuut",
+    [30] = "Ar-Ruum",
+    [31] = "Luqman",
+    [32] = "As-Sajdah",
+    [33] = "Al-Ahzaab",
+    [34] = "Saba'",
+    [35] = "Faathir",
+    [36] = "Yasiin",
+    [37] = "As-Shaaffaat",
+    [38] = "Shaad",
+    [39] = "Az-Zumar",
+    [40] = "Al-Ghaafir",
+    [41] = "Fushshilat",
+    [42] = "Asy-Syuura",
+    [43] = "Az-Zukhruf",
+    [44] = "Ad-Dukhaan",
+    [45] = "Al-Jaatsiyah",
+    [46] = "Al-Ahqaaf",
+    [47] = "Muhammad",
+    [48] = "Al-Fath",
+    [49] = "Al-Hujuraat",
+    [50] = "Qaaf",
+    [51] = "Adz-Dzaariyat",
+    [52] = "Ath-Thur",
+    [53] = "An-Najm",
+    [54] = "Al-Qamar",
+    [55] = "Ar-Rahmaan",
+    [56] = "Al-Waaqi'ah",
+    [57] = "Al-Hadiid",
+    [58] = "Al-Mujaadilah",
+    [59] = "Al-Hasyr",
+    [60] = "Al-Mumtahanah",
+    [61] = "Ash-Shaff",
+    [62] = "Al-Jumu'ah",
+    [63] = "Al-Munaafiquun",
+    [64] = "At-Taghaabuun",
+    [65] = "Ath-Thaalaq",
+    [66] = "At-Tahrim",
+    [67] = "Al-Mulk",
+    [68] = "Al-Qalam",
+    [69] = "Al-Haaqqah",
+    [70] = "Al-Ma'aarij",
+    [71] = "Nuuh",
+    [72] = "Al-Jin",
+    [73] = "Al-Muzzammil",
+    [74] = "Al-Muddatstsir",
+    [75] = "Al-Qiyaamah",
+    [76] = "Al-Insaan",
+    [77] = "Al-Mursalaat",
+    [78] = "An-Naba'",
+    [79] = "An-Naazi'aat",
+    [80] = "'Abasa",
+    [81] = "At-Takwir",
+    [82] = "Al-Infithaar",
+    [83] = "Al-Mutaffifin",
+    [84] = "Al-Insyiqaaq",
+    [85] = "Al-Buruuj",
+    [86] = "Ath-Thaariq",
+    [87] = "Al-A'laa",
+    [88] = "Al-Ghaashiyah",
+    [89] = "Al-Fajr",
+    [90] = "Al-Balad",
+    [91] = "Asy-Syams",
+    [92] = "Al-Lail",
+    [93] = "Ad-Dhuhaa",
+    [94] = "Alam Nasyrah",
+    [95] = "At-Tiin",
+    [96] = "Al-'Alaq",
+    [97] = "Al-Qadr",
+    [98] = "Al-Bayyinah",
+    [99] = "Al-Zalzalah",
+    [100] = "Al-'Aadiyaat",
+    [101] = "Al-Qaari'ah",
+    [102] = "At-Takaatsur",
+    [103] = "Al-'Ashr",
+    [104] = "Al-Humazah",
+    [105] = "Al-Fiil",
+    [106] = "Quraisy",
+    [107] = "Al-Maa'uun",
+    [108] = "Al-Kautsar",
+    [109] = "Al-Kaafiruun",
+    [110] = "An-Nashr",
+    [111] = "Al-Lahab",
+    [112] = "Al-Ikhlaas",
+    [113] = "Al-Falaq",
+    [114] = "An-Naas"
+  }
 
-  local surah_name = { "Al-Fatihah", "Al-Baqarah", "Ali-Imran", "An-Nisaa'",
-    "Al-Maaidah", "Al-An'aam", "Al-A'raaf", "Al-Anfaal", "At-Taubah", "Yunus",
-    "Huud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Israa'",
-    "Al-Kahfi", "Maryam", "Thaahaa", "Al-Anbiyaa'", "Al-Hajj", "Al-Mukminuun",
-    "An-Nuur", "Al-Furqaan", "Ash-Shu'araa", "An-Naml", "Al-Qashash",
-    "Al-Ankabuut", "Ar-Ruum", "Luqman", "As-Sajdah", "Al-Ahzaab", "Saba'",
-    "Faathir", "Yasiin", "As-Shaaffaat", "Shaad", "Az-Zumar", "Al-Ghaafir",
-    "Fushshilat", "Asy-Syuura", "Az-Zukhruf", "Ad-Dukhaan", "Al-Jaatsiyah",
-    "Al-Ahqaaf", "Muhammad", "Al-Fath", "Al-Hujuraat", "Qaaf", "Adz-Dzaariyat",
-    "Ath-Thur", "An-Najm", "Al-Qamar", "Ar-Rahmaan", "Al-Waaqi'ah", "Al-Hadiid",
-    "Al-Mujaadilah", "Al-Hasyr", "Al-Mumtahanah", "Ash-Shaff", "Al-Jumu'ah",
-    "Al-Munaafiquun", "At-Taghaabuun", "Ath-Thaalaq", "At-Tahrim", "Al-Mulk",
-    "Al-Qalam", "Al-Haaqqah", "Al-Ma'aarij", "Nuuh", "Al-Jin", "Al-Muzzammil",
-    "Al-Muddatstsir", "Al-Qiyaamah", "Al-Insaan", "Al-Mursalaat", "An-Naba'",
-    "An-Naazi'aat", "'Abasa", "At-Takwir", "Al-Infithaar", "Al-Mutaffifin",
-    "Al-Insyiqaaq", "Al-Buruuj", "Ath-Thaariq", "Al-A'laa", "Al-Ghaashiyah",
-    "Al-Fajr", "Al-Balad", "Asy-Syams", "Al-Lail", "Ad-Dhuhaa", "Alam Nasyrah",
-    "At-Tiin", "Al-'Alaq", "Al-Qadr", "Al-Bayyinah", "Al-Zalzalah",
-    "Al-'Aadiyaat", "Al-Qaari'ah", "At-Takaatsur", "Al-'Ashr", "Al-Humazah",
-    "Al-Fiil", "Quraisy", "Al-Maa'uun", "Al-Kautsar", "Al-Kaafiruun", "An-Nashr",
-    "Al-Lahab", "Al-Ikhlaas", "Al-Falaq", "An-Naas"}
+  local language = {
+    ['ar'] = "ar.muyassar",
+    ['az'] = "az.musayev",
+    ['bg'] = "bg.theophanov",
+    ['bn'] = "bn.bengali",
+    ['bs'] = "bs.mlivo",
+    ['cs'] = "cs.hrbek",
+    ['de'] = "de.aburida",
+    ['dv'] = "dv.divehi",
+    ['en'] = "en.yusufali",
+    ['es'] = "es.cortes",
+    ['fa'] = "fa.makarem",
+    ['fr'] = "fr.hamidullah",
+    ['ha'] = "ha.gumi",
+    ['hi'] = "hi.hindi",
+    ['id'] = "id.indonesian",
+    ['it'] = "it.piccardo",
+    ['ja'] = "ja.japanese",
+    ['ko'] = "ko.korean",
+    ['ku'] = "ku.asan",
+    ['ml'] = "ml.abdulhameed",
+    ['ms'] = "ms.basmeih",
+    ['nl'] = "nl.keyzer",
+    ['no'] = "no.berg",
+    ['pl'] = "pl.bielawskiego",
+    ['pt'] = "pt.elhayek",
+    ['ro'] = "ro.grigore",
+    ['ru'] = "ru.kuliev",
+    ['sd'] = "sd.amroti",
+    ['so'] = "so.abduh",
+    ['sq'] = "sq.ahmeti",
+    ['sv'] = "sv.bernstrom",
+    ['sw'] = "sw.barwani",
+    ['ta'] = "ta.tamil",
+    ['tg'] = "tg.ayati",
+    ['th'] = "th.thai",
+    ['tr'] = "tr.ozturk",
+    ['tt'] = "tt.nugman",
+    ['ug'] = "ug.saleh",
+    ['ur'] = "ur.ahmedali",
+    ['uz'] = "uz.sodik",
+    ['zh'] = "zh.majian"
+  }
 
   local function get_verse_num(verse)
-    for i=1,6666 do
+    for i=1, 6666 do
       if verse.quran['quran-simple'][tostring(i)] then
         return tostring(i)
       end
     end
-  end
-
-  local function get_trans(lang)
-    if lang == 'ar' then
-      trans = "ar.muyassar"
-    elseif lang == 'az' then
-      trans = "az.musayev"
-    elseif lang == 'bg' then
-      trans = "bg.theophanov"
-    elseif lang == 'bn' then
-      trans = "bn.bengali"
-    elseif lang == 'bs' then
-      trans = "bs.mlivo"
-    elseif lang == 'cs' then
-      trans = "cs.hrbek"
-    elseif lang == 'de' then
-      trans = "de.aburida"
-    elseif lang == 'dv' then
-      trans = "dv.divehi"
-    elseif lang == 'en' then
-      trans = "en.yusufali"
-    elseif lang == 'es' then
-      trans = "es.cortes"
-    elseif lang == 'fa' then
-      trans = "fa.makarem"
-    elseif lang == 'fr' then
-      trans = "fr.hamidullah"
-    elseif lang == 'ha' then
-      trans = "ha.gumi"
-    elseif lang == 'hi' then
-      trans = "hi.hindi"
-    elseif lang == 'id' then
-      trans = "id.indonesian"
-    elseif lang == 'it' then
-      trans = "it.piccardo"
-    elseif lang == 'ja' then
-      trans = "ja.japanese"
-    elseif lang == 'ko' then
-      trans = "ko.korean"
-    elseif lang == 'ku' then
-      trans = "ku.asan"
-    elseif lang == 'ml' then
-      trans = "ml.abdulhameed"
-    elseif lang == 'ms' then
-      trans = "ms.basmeih"
-    elseif lang == 'nl' then
-      trans = "nl.keyzer"
-    elseif lang == 'no' then
-      trans = "no.berg"
-    elseif lang == 'pl' then
-      trans = "pl.bielawskiego"
-    elseif lang == 'pt' then
-      trans = "pt.elhayek"
-    elseif lang == 'ro' then
-      trans = "ro.grigore"
-    elseif lang == 'ru' then
-      trans = "ru.kuliev"
-    elseif lang == 'sd' then
-      trans = "sd.amroti"
-    elseif lang == 'so' then
-      trans = "so.abduh"
-    elseif lang == 'sq' then
-      trans = "sq.ahmeti"
-    elseif lang == 'sv' then
-      trans = "sv.bernstrom"
-    elseif lang == 'sw' then
-      trans = "sw.barwani"
-    elseif lang == 'ta' then
-      trans = "ta.tamil"
-    elseif lang == 'tg' then
-      trans = "tg.ayati"
-    elseif lang == 'th' then
-      trans = "th.thai"
-    elseif lang == 'tr' then
-      trans = "tr.ozturk"
-    elseif lang == 'tt' then
-      trans = "tt.nugman"
-    elseif lang == 'ug' then
-      trans = "ug.saleh"
-    elseif lang == 'ur' then
-      trans = "ur.ahmedali"
-    elseif lang == 'uz' then
-      trans = "uz.sodik"
-    elseif lang == 'zh' then
-      trans = "zh.majian"
-    else
-      trans = lang
-    end
-    return trans
   end
 
   local function get_ayah(msg, surah, ayah, verse, lang)
@@ -127,41 +174,50 @@ do
     local gq_lang = nil
 
     if lang then
-      translation = get_trans(lang)
+      if language[tostring(lang)] then
+        translation = language[tostring(lang)]
+      else
+        translation = lang
+      end
     end
 
     if verse then
-      gq_ayah = gq .. verse .. '/quran-simple' .. api_key
+      gq_ayah = gq .. verse .. '/quran-simple?key=' .. _config.api_key.globalquran
       if lang then
-        gq_lang = gq .. verse .. '/' .. translation .. api_key
+        gq_lang = gq .. verse .. '/' .. translation .. '?key=' .. _config.api_key.globalquran
       end
     end
 
     if surah and ayah then
-      gq_ayah = gq .. surah .. ':' .. ayah .. '/quran-simple' .. api_key
+      gq_ayah = gq .. surah .. ':' .. ayah .. '/quran-simple?key=' .. _config.api_key.globalquran
       if lang then
-        gq_lang = gq .. surah .. ':' .. ayah .. '/' .. translation .. api_key
+        gq_lang = gq .. surah .. ':' .. ayah .. '/' .. translation .. '?key=' .. _config.api_key.globalquran
       end
     end
 
+    local verse_trans = ''
     local res_ayah, code_ayah = http.request(gq_ayah)
     local jayah = json:decode(res_ayah)
     local verse_num = get_verse_num(jayah)
 
+
     if gq_lang then
       local res_lang, code_lang = http.request(gq_lang)
       local jlang = json:decode(res_lang)
-      verse_trans = jlang.quran[translation][verse_num].verse
-    else
-      verse_trans = ''
+      if next(jlang.quran) == nil then
+        send_message(msg, '<b>Unknown language.</b>\nPlease consult http://api.globalquran.com/quran for full list of the supported languages.', 'html')
+        return
+      else
+        verse_trans = jlang.quran[translation][verse_num].verse
+      end
     end
 
     local surah_num = jayah.quran['quran-simple'][verse_num].surah
     local ayah_num = jayah.quran['quran-simple'][verse_num].ayah
-    local gq_output = jayah.quran['quran-simple'][verse_num].verse .. '\n'
-        .. verse_trans .. '\n' .. '(' .. surah_name[surah_num] .. ':' .. ayah_num .. ')'
+    local gq_output = jayah.quran['quran-simple'][verse_num].verse .. '\n\n'
+        .. verse_trans .. ' (<b>' .. surah_name[surah_num] .. ':' .. ayah_num .. '</b>)'
 
-    reply_msg(msg.id, gq_output, ok_cb, true)
+    send_message(msg, gq_output, 'html')
   end
 
   function run(msg, matches)

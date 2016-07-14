@@ -5,7 +5,7 @@ do
   local TIME_CHECK = 4
 
   local function is_banned(chat_id, user_id)
-    local hash = 'banned:'..chat_id
+    local hash = 'banned:' .. chat_id
     local banned = redis:sismember(hash, user_id)
     return banned or false
   end
@@ -14,15 +14,6 @@ do
     local hash = 'globanned'
     local banned = redis:sismember(hash, user_id)
     return banned or false
-  end
-
-  local function is_administrate(msg, gid)
-    local var = true
-    if not _config.administration[gid] then
-      var = false
-      reply_msg(msg.id, 'I do not administrate this group.', ok_cb, true)
-    end
-    return var
   end
 
   local function is_privileged(msg, gid, uid)
@@ -36,7 +27,7 @@ do
   local function get_sudolist(msg)
     local sudoers = 'List of sudoers:\n\n'
     for k,v in pairs(_config.sudo_users) do
-      sudoers = sudoers..'- '..v..' - '..k..'\n'
+      sudoers = sudoers .. '- ' .. v .. ' - ' .. k .. '\n'
     end
     reply_msg(msg.id, sudoers, ok_cb, true)
   end
@@ -49,7 +40,7 @@ do
       else
         local message = 'List of administrators:\n\n'
         for k,v in pairs(_config.administrators) do
-          message = message..'- '..v..' - '..k..'\n'
+          message = message .. '- ' .. v .. ' - ' .. k .. '\n'
         end
         reply_msg(msg.id, message, ok_cb, true)
       end
@@ -77,9 +68,9 @@ do
       if next(data.owners) == nil then
         reply_msg(msg.id, 'There are currently no listed owners.', ok_cb, true)
       else
-        local message = group..' owner(s):\n\n'
+        local message = group .. ' owner(s):\n\n'
         for k,v in pairs(data.owners) do
-          message = message..'- '..v..' - '..k..'\n'
+          message = message .. '- ' .. v .. ' - ' .. k .. '\n'
         end
         reply_msg(msg.id, message, ok_cb, true)
       end
@@ -94,8 +85,8 @@ do
         reply_msg(msg.id, 'There are currently no listed owners.', ok_cb, true)
       else
         data.owners = {}
-        save_data(data, 'data/'..gid..'/'..gid..'.lua')
-        reply_msg(msg.id, 'All of '..group..' owners has been demoted.', ok_cb, true)
+        save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
+        reply_msg(msg.id, 'All of ' .. group .. ' owners has been demoted.', ok_cb, true)
       end
     end
   end
@@ -107,9 +98,9 @@ do
       if next(data.moderators) == nil then
         reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
       else
-        local message = 'Moderators for '..data.name..':\n\n'
+        local message = 'Moderators for ' .. data.name .. ':\n\n'
         for k,v in pairs(data.moderators) do
-          message = message..'- '..v..' ['..k..'] \n'
+          message = message .. '- ' .. v .. ' [' .. k .. '] \n'
         end
         reply_msg(msg.id, message, ok_cb, true)
       end
@@ -123,8 +114,8 @@ do
         reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
       else
         data.moderators = {}
-        save_data(data, 'data/'..gid..'/'..gid..'.lua')
-        reply_msg(msg.id, 'All of '..data.name..' moderators has been demoted.', ok_cb, true)
+        save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
+        reply_msg(msg.id, 'All of ' .. data.name .. ' moderators has been demoted.', ok_cb, true)
       end
     end
   end
@@ -142,7 +133,7 @@ do
     for k,v in pairsByKeys(member_list) do
       data.members[v.peer_id] = v.username or ''
     end
-    save_data(data, 'data/'..gid..'/'..gid..'.lua')
+    save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
   end
 
   -- kick user
@@ -150,33 +141,33 @@ do
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
     -- check if user was kicked in the last TIME_CHECK seconds
-    if not redis:get('kicked:'..gid..':'..uid) or false then
+    if not redis:get('kicked:' .. gid .. ':' .. uid) or false then
       if is_privileged(msg, gid, uid) then
-        reply_msg(msg.id, uid..' is too privileged to be kicked.', ok_cb, true)
+        reply_msg(msg.id, uid .. ' is too privileged to be kicked.', ok_cb, true)
       else
         if msg.to.peer_type == 'channel' then
-          channel_kick_user('channel#id'..gid, 'user#id'..uid, ok_cb, true)
+          channel_kick_user('channel#id' .. gid, 'user#id' .. uid, ok_cb, true)
         else
-          chat_del_user('chat#id'..gid, 'user#id'..uid, ok_cb, true)
+          chat_del_user('chat#id' .. gid, 'user#id' .. uid, ok_cb, true)
         end
       end
     end
     -- set for TIME_CHECK seconds that user have been kicked
-    redis:setex('kicked:'..gid..':'..uid, TIME_CHECK, 'true')
+    redis:setex('kicked:' .. gid .. ':' .. uid, TIME_CHECK, 'true')
   end
 
   local function invite_user(msg, gid, uid)
     local data = load_data(_config.administration[gid])
     local g_type = data.group_type
     if is_globally_banned(uid) then
-      reply_msg(msg.id, 'Invitation canceled.\nID '..uid..' is globally banned.', ok_cb, true)
+      reply_msg(msg.id, 'Invitation canceled.\nID ' .. uid .. ' is globally banned.', ok_cb, true)
     elseif is_banned(gid, uid) then
-      reply_msg(msg.id, 'Invitation canceled.\nID '..uid..' is banned.', ok_cb, true)
+      reply_msg(msg.id, 'Invitation canceled.\nID ' .. uid .. ' is banned.', ok_cb, true)
     else
       if g_type == 'channel' then
-        channel_invite_user(g_type..'#id'..gid, 'user#id'..uid, ok_cb, true)
+        channel_invite_user(g_type .. '#id' .. gid, 'user#id' .. uid, ok_cb, true)
       else
-        chat_add_user(g_type..'#id'..gid, 'user#id'..uid, ok_cb, true)
+        chat_add_user(g_type .. '#id' .. gid, 'user#id' .. uid, ok_cb, true)
       end
     end
   end
@@ -186,17 +177,17 @@ do
     local usr = extra.usr
     local data = load_data(_config.administration[gid])
     if is_privileged(msg, gid, uid) then
-      reply_msg(msg.id, usr..' is too privileged to be banned.', ok_cb, true)
+      reply_msg(msg.id, usr .. ' is too privileged to be banned.', ok_cb, true)
     else
       if is_banned(gid, uid) then
-        reply_msg(msg.id, usr..' is already banned.', ok_cb, true)
+        reply_msg(msg.id, usr .. ' is already banned.', ok_cb, true)
       else
-        local hash = 'banned:'..gid
+        local hash = 'banned:' .. gid
         redis:sadd(hash, uid)
         kick_user(msg, gid, uid)
         data.banned[uid] = usr
-        save_data(data, 'data/'..gid..'/'..gid..'.lua')
-        reply_msg(msg.id, usr..' has been banned.', ok_cb, true)
+        save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
+        reply_msg(msg.id, usr .. ' has been banned.', ok_cb, true)
       end
     end
   end
@@ -204,29 +195,29 @@ do
   local function global_ban_user(extra, gid, uid)
     local msg = extra.msg
     if is_privileged(msg, gid, uid) then
-      reply_msg(msg.id, uid..' is too privileged to be globally banned.', ok_cb, true)
+      reply_msg(msg.id, uid .. ' is too privileged to be globally banned.', ok_cb, true)
     elseif is_globally_banned(uid) then
-      reply_msg(msg.id, extra.usr..' is already globally banned.', ok_cb, true)
+      reply_msg(msg.id, extra.usr .. ' is already globally banned.', ok_cb, true)
     else
       local hash = 'globanned'
       redis:sadd(hash, uid)
       kick_user(extra.msg, gid, uid)
       _config.globally_banned[uid] = extra.usr
       save_config()
-      reply_msg(extra.msg.id, extra.usr..' has been globally banned.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' has been globally banned.', ok_cb, true)
     end
   end
 
   local function unban_user(extra, gid, uid)
     if is_banned(gid, uid) then
-      local hash = 'banned:'..gid
+      local hash = 'banned:' .. gid
       local data = load_data(_config.administration[gid])
       redis:srem(hash, uid)
       data.banned[uid] = nil
-      save_data(data, 'data/'..gid..'/'..gid..'.lua')
-      reply_msg(extra.msg.id, extra.usr..' has been unbanned.', ok_cb, true)
+      save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
+      reply_msg(extra.msg.id, extra.usr .. ' has been unbanned.', ok_cb, true)
     else
-      reply_msg(extra.msg.id, extra.usr..' is not banned.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is not banned.', ok_cb, true)
     end
   end
 
@@ -236,9 +227,9 @@ do
       redis:srem(hash, user_id)
       _config.globally_banned[user_id] = nil
       save_config()
-      reply_msg(extra.msg.id, extra.usr..' has been globally unbanned.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' has been globally unbanned.', ok_cb, true)
     else
-      reply_msg(extra.msg.id, extra.usr..' is not globally banned.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is not globally banned.', ok_cb, true)
     end
   end
 
@@ -246,10 +237,10 @@ do
     local hash = 'whitelist'
     local is_whitelisted = redis:sismember(hash, user_id)
     if is_whitelisted then
-      reply_msg(extra.msg.id, extra.usr..' is already whitelisted.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is already whitelisted.', ok_cb, true)
     else
       redis:sadd(hash, user_id)
-      reply_msg(extra.msg.id, extra.usr..' added to whitelist.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' added to whitelist.', ok_cb, true)
     end
   end
 
@@ -257,10 +248,10 @@ do
     local hash = 'whitelist'
     local is_whitelisted = redis:sismember('whitelist', user_id)
     if not is_whitelisted then
-      reply_msg(extra.msg.id, extra.usr..' is not whitelisted.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is not whitelisted.', ok_cb, true)
     else
       redis:srem(hash, user_id)
-      reply_msg(extra.msg.id, extra.usr..' removed from whitelist', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' removed from whitelist', ok_cb, true)
     end
   end
 
@@ -269,11 +260,11 @@ do
     local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
     if data.moderators ~= nil and data.moderators[uid] then
-      reply_msg(extra.msg.id, uid..' is already a moderator.', ok_cb, true)
+      reply_msg(extra.msg.id, uid .. ' is already a moderator.', ok_cb, true)
     else
       data.moderators[uid] = extra.usr
-      save_data(data, 'data/'..gid..'/'..gid..'.lua')
-      reply_msg(extra.msg.id, extra.usr..' is now a moderator.', ok_cb, true)
+      save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
+      reply_msg(extra.msg.id, extra.usr .. ' is now a moderator.', ok_cb, true)
     end
   end
 
@@ -282,13 +273,13 @@ do
     local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
     if not data.moderators[uid] then
-      reply_msg(extra.msg.id, uid..' is not a moderator.', ok_cb, true)
+      reply_msg(extra.msg.id, uid .. ' is not a moderator.', ok_cb, true)
     elseif uid == extra.msg.from.peer_id then
-      reply_msg(extra.msg.id, 'You can\'t demote yourself.', ok_cb, true)
+      reply_msg(extra.msg.id, "You can't demote yourself.", ok_cb, true)
     else
       data.moderators[uid] = nil
-      save_data(data, 'data/'..gid..'/'..gid..'.lua')
-      reply_msg(extra.msg.id, extra.usr..' is no longer a moderator.', ok_cb, true)
+      save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
+      reply_msg(extra.msg.id, extra.usr .. ' is no longer a moderator.', ok_cb, true)
     end
   end
 
@@ -297,11 +288,11 @@ do
     local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
     if data.owners[uid] then
-      reply_msg(extra.msg.id, uid..' is already the group owner.', ok_cb, true)
+      reply_msg(extra.msg.id, uid .. ' is already the group owner.', ok_cb, true)
     else
       data.owners[uid] = extra.usr
-      save_data(data, 'data/'..gid..'/'..gid..'.lua')
-      reply_msg(extra.msg.id, extra.usr..' is now the group owner.', ok_cb, true)
+      save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
+      reply_msg(extra.msg.id, extra.usr .. ' is now the group owner.', ok_cb, true)
     end
   end
 
@@ -310,70 +301,70 @@ do
     local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
     if not data.owners[uid] then
-      reply_msg(extra.msg.id, uid..' is not the group owner.', ok_cb, true)
+      reply_msg(extra.msg.id, uid .. ' is not the group owner.', ok_cb, true)
     elseif uid == extra.msg.from.peer_id then
-      reply_msg(extra.msg.id, 'You can\'t demote yourself.', ok_cb, true)
+      reply_msg(extra.msg.id, "You can't demote yourself.", ok_cb, true)
     else
       data.owners[uid] = nil
-      save_data(data, 'data/'..gid..'/'..gid..'.lua')
-      reply_msg(extra.msg.id, extra.usr..' is no longer the group owner.', ok_cb, true)
+      save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
+      reply_msg(extra.msg.id, extra.usr .. ' is no longer the group owner.', ok_cb, true)
     end
   end
 
   local function promote_admin(extra, user_id)
     local uid = tonumber(user_id)
     if _config.administrators[uid] then
-      reply_msg(extra.msg.id, extra.usr..' is already an administrator.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is already an administrator.', ok_cb, true)
     else
-      channel_set_admin(get_receiver(extra.msg), 'user#id'..uid, ok_cb, true)
+      channel_set_admin(get_receiver(extra.msg), 'user#id' .. uid, ok_cb, true)
       _config.administrators[uid] = extra.usr
       save_config()
-      reply_msg(extra.msg.id, extra.usr..' is now an administrator.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is now an administrator.', ok_cb, true)
     end
   end
 
   local function demote_admin(extra, user_id)
     local uid = tonumber(user_id)
     if not _config.administrators[uid] then
-      reply_msg(extra.msg.id, extra.usr..' is not an administrator.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is not an administrator.', ok_cb, true)
     elseif uid == extra.msg.from.peer_id then
-      reply_msg(extra.msg.id, 'You can\'t demote yourself.', ok_cb, true)
+      reply_msg(extra.msg.id, "You can't demote yourself.", ok_cb, true)
     else
-      channel_del_admin(get_receiver(extra.msg), 'user#id'..uid, ok_cb, true)
+      channel_del_admin(get_receiver(extra.msg), 'user#id' .. uid, ok_cb, true)
       _config.administrators[uid] = nil
       save_config()
-      reply_msg(extra.msg.id, extra.usr..' is no longer an administrator.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is no longer an administrator.', ok_cb, true)
     end
   end
 
   local function visudo(extra, user_id)
     local uid = tonumber(user_id)
     if _config.sudo_users[uid] then
-      reply_msg(extra.msg.id, extra.usr..' is already a sudoer.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is already a sudoer.', ok_cb, true)
     else
       _config.sudo_users[uid] = extra.usr
       save_config()
-      reply_msg(extra.msg.id, extra.usr..' is now a sudoer.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is now a sudoer.', ok_cb, true)
     end
   end
 
   local function desudo(extra, user_id)
     local uid = tonumber(user_id)
     if not _config.sudo_users[uid] then
-      reply_msg(extra.msg.id, extra.usr..' is not a sudoer.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is not a sudoer.', ok_cb, true)
     elseif uid == extra.msg.from.peer_id then
-      reply_msg(extra.msg.id, 'You can\'t demote yourself.', ok_cb, true)
+      reply_msg(extra.msg.id, "You can't demote yourself.", ok_cb, true)
     else
       _config.sudo_users[uid] = nil
       save_config()
-      reply_msg(extra.msg.id, extra.usr..' is no longer a sudoer.', ok_cb, true)
+      reply_msg(extra.msg.id, extra.usr .. ' is no longer a sudoer.', ok_cb, true)
     end
   end
 
   local function get_redis_ban_records()
     for gid,cfg in pairs(_config.administration) do
       local data = load_data(_config.administration[gid])
-      local banlist = redis:smembers('banned:'..gid)
+      local banlist = redis:smembers('banned:' .. gid)
       if not data.banned then
         data.banned = {}
       end
@@ -393,7 +384,7 @@ do
   end
 
   local function create_group_data(msg, chat_id, user_id)
-    local l_name = '@'..msg.from.username or msg.from.first_name
+    local l_name = '@' .. msg.from.username or msg.from.first_name
     if msg.action then
       t_name = _config.mkgroup.founder
     end
@@ -418,7 +409,7 @@ do
         public = true,
         set = {
           name = msg.to.title,
-          photo = 'data/'..chat_id..'/'..chat_id..'.jpg',
+          photo = 'data/' .. chat_id .. '/' .. chat_id .. '.jpg',
         },
         sticker = 'ok',
         username = msg.to.username or '',
@@ -426,14 +417,14 @@ do
           to = 'group',
         },
     }
-    save_data(gpdata, 'data/'..chat_id..'/'..chat_id..'.lua')
+    save_data(gpdata, 'data/' .. chat_id .. '/' .. chat_id .. '.lua')
   end
 
   -- [pro|de]mote|admin[prom|dem]|[global|un]ban|kick|[un]whitelist by reply
   local function action_by_reply(extra, success, result)
     local gid = tonumber(extra.to.peer_id)
     local uid = tonumber(result.from.peer_id)
-    local usr = '@'..result.from.username or result.from.first_name
+    local usr = '@' .. result.from.username or result.from.first_name
     local cmd = extra.text
     if is_chat_msg(extra) then
       if cmd == '!kick' then
@@ -493,7 +484,7 @@ do
       local msg = extra.msg
       local uid = result.peer_id
       local cmd = extra.matches[1]
-      local usr = '@'..result.username or result.first_name
+      local usr = '@' .. result.username or result.first_name
       if is_chat_msg(msg) then
         gid = msg.to.peer_id
       else
@@ -548,10 +539,10 @@ do
         unwhitelisting({msg=msg, usr=usr}, gid, uid)
       end
     else
-      reply_msg(extra.msg.id, '@'..extra.matches[3]..' is not member of this group.', ok_cb, true)
+      reply_msg(extra.msg.id, '@' .. extra.matches[3] .. ' is not member of this group.', ok_cb, true)
     end
     if success == 0 then
-      reply_msg(extra.msg.id, 'Failed to invite @'..extra.matches[3]..' into this group.\nCheck if the username is correct.', ok_cb, true)
+      reply_msg(extra.msg.id, 'Failed to invite @' .. extra.matches[3] .. ' into this group.\nCheck if the username is correct.', ok_cb, true)
     end
   end
 
@@ -560,10 +551,14 @@ do
     local data = load_data(_config.administration[chat_id])
     if data.antispam == 'kick' then
       kick_user(extra.msg, chat_id, user_id)
-      reply_msg(extra.msg.id, extra.usr..' is '..splooder)
+      reply_msg(extra.msg.id, extra.usr .. ' is ' .. extra.stype)
     elseif data.antispam == 'ban' then
       ban_user({msg=extra.msg, usr=extra.usr}, chat_id, user_id)
-      reply_msg(extra.msg.id, extra.usr..' is '..splooder..'. Banned')
+      reply_msg(extra.msg.id, extra.usr .. ' is ' .. extra.stype .. '. Banned')
+    end
+    if not is_chat_msg(extra.msg) then
+      send_msg(get_receiver(extra.msg), extra.usr .. ' is ' .. extra.stype .. '. Blocked.', ok_cb, true)
+      block_user('user#id' .. user_id, ok_cb, false)
     end
     msg = nil
   end
@@ -584,9 +579,9 @@ do
   -- set chat|channel invite link
   local function set_group_link(extra, file, mute)
     if extra.msg.to.peer_type == 'channel' then
-      export_channel_link('channel#id'..extra.gid, set_group_link_cb, {msg=extra.msg, file=file, mute=mute})
+      export_channel_link('channel#id' .. extra.gid, set_group_link_cb, {msg=extra.msg, file=file, mute=mute})
     else
-      export_chat_link('chat#id'..extra.gid, set_group_link_cb, {msg=extra.msg, file=file, mute=mute})
+      export_chat_link('chat#id' .. extra.gid, set_group_link_cb, {msg=extra.msg, file=file, mute=mute})
     end
   end
 
@@ -595,22 +590,22 @@ do
     local data = extra.data
     local msg = extra.msg
     if success then
-      local filepath = 'data/'..msg.to.peer_id..'/'..msg.to.peer_id
+      local filepath = 'data/' .. msg.to.peer_id .. '/' .. msg.to.peer_id
       print('File downloaded to:', result)
-      os.rename(result, filepath..'.jpg')
-      print('File moved to:', filepath..'.jpg')
+      os.rename(result, filepath .. '.jpg')
+      print('File moved to:', filepath .. '.jpg')
       if msg.to.peer_type == 'channel' then
-        channel_set_photo(get_receiver(msg), filepath..'.jpg', ok_cb, false)
+        channel_set_photo(get_receiver(msg), filepath .. '.jpg', ok_cb, false)
       else
-        chat_set_photo(get_receiver(msg), filepath..'.jpg', ok_cb, false)
+        chat_set_photo(get_receiver(msg), filepath .. '.jpg', ok_cb, false)
       end
-      data.set.photo = filepath..'.jpg'
-      save_data(data, filepath..'.lua')
+      data.set.photo = filepath .. '.jpg'
+      save_data(data, filepath .. '.lua')
       data.lock.photo = 'yes'
-      save_data(data, filepath..'.lua')
+      save_data(data, filepath .. '.lua')
       reply_msg(msg.id, 'Photo saved!', ok_cb, false)
     else
-      print('Error downloading: '..msg.id)
+      print('Error downloading: ' .. msg.id)
       reply_msg(msg.id, 'Error downloading this photo, please try again.', ok_cb, false)
     end
   end
@@ -620,35 +615,35 @@ do
     local dl_dir = '.telegram-cli/downloads'
     local cmd = 'load_%s_photo %s#id%s'
     local command = cmd:format(g_type, g_type, gid)
-    os.execute('mv '..dl_dir..' '..dl_dir..'-bak && mkdir '..dl_dir)
+    os.execute('mv ' .. dl_dir .. ' ' .. dl_dir .. '-bak && mkdir ' .. dl_dir)
     os.execute(tgclie:format(command))
     local g_photo = scandir(dl_dir)
     if g_photo[3] and g_photo[3]:match('jpg') then
-      os.rename(dl_dir..'/'..g_photo[3], 'data/'..gid..'/'..gid..'.jpg')
-      os.execute('rm -r '..dl_dir..' && mv '..dl_dir..'-bak '..dl_dir)
+      os.rename(dl_dir .. '/' .. g_photo[3], 'data/' .. gid .. '/' .. gid .. '.jpg')
+      os.execute('rm -r ' .. dl_dir .. ' && mv ' .. dl_dir .. '-bak ' .. dl_dir)
     end
   end
 
   local function add_group(msg, chat_id, user_id)
     local gid = tonumber(chat_id)
     local group = msg.to.title or gid
-    local cfg = 'data/'..gid..'/'..gid..'.lua'
+    local cfg = 'data/' .. gid .. '/' .. gid .. '.lua'
     if _config.administration[gid] then
-      reply_msg(msg.id, 'I am already administrating '..group, ok_cb, true)
+      reply_msg(msg.id, 'I am already administrating ' .. group, ok_cb, true)
     else
-      os.execute('mkdir -p data/'..gid)
+      os.execute('mkdir -p data/' .. gid)
       _config.administration[gid] = cfg
       save_config()
       create_group_data(msg, gid, user_id)
       set_group_link({msg=msg, gid=gid}, cfg, true)
       if msg.to.peer_type == 'channel' then
-        channel_get_users('channel#id'..gid, update_members_list, msg)
+        channel_get_users('channel#id' .. gid, update_members_list, msg)
       else
-        chat_info('chat#id'..gid, update_members_list, msg)
+        chat_info('chat#id' .. gid, update_members_list, msg)
       end
       get_redis_ban_records()
       load_group_photo(msg, gid)
-      reply_msg(msg.id, 'I am now administrating '..group, ok_cb, true)
+      reply_msg(msg.id, 'I am now administrating ' .. group, ok_cb, true)
     end
   end
 
@@ -658,20 +653,20 @@ do
     if is_administrate(msg, gid) then
       _config.administration[gid] = nil
       save_config()
-      os.execute('rm -r data/'..gid)
-      reply_msg(msg.id, 'I am no longer administrating '..group, ok_cb, true)
+      os.execute('rm -r data/' .. gid)
+      reply_msg(msg.id, 'I am no longer administrating ' .. group, ok_cb, true)
     end
   end
 
   local function get_config(msg, gid)
     if gid then
-      local cfg_cp = '/tmp/'..gid..'.lua'
-      os.execute('cp data/'..gid..'/'..gid..'.lua '..cfg_cp)
+      local cfg_cp = '/tmp/' .. gid .. '.lua'
+      os.execute('cp data/' .. gid .. '/' .. gid .. '.lua ' .. cfg_cp)
       send_document(get_receiver(msg), cfg_cp, rmtmp_cb, {file_path=cfg_cp})
     else
       local cfg_cp = '/tmp/config.lua'
-      os.execute('cp data/config.lua '..cfg_cp)
-      send_document('user#id'..msg.from.peer_id, cfg_cp, rmtmp_cb, {file_path=cfg_cp})
+      os.execute('cp data/config.lua ' .. cfg_cp)
+      send_document('user#id' .. msg.from.peer_id, cfg_cp, rmtmp_cb, {file_path=cfg_cp})
     end
   end
 
@@ -688,10 +683,10 @@ do
       _config.mkgroup = {founded = rightnow, founder = uname, title = title, gtype = g_type, uid = msg.from.peer_id}
       save_config()
       create_group_chat(msg.from.print_name, title, ok_cb, false)
-      reply_msg(msg.id, 'Group '..title..' has been created.', ok_cb, true)
+      reply_msg(msg.id, 'Group ' .. title .. ' has been created.', ok_cb, true)
     else
       reply_msg(msg.id, 'I limit myself to create a group per hours.\n'
-          ..'Please try again in next one hour.', ok_cb, true)
+           .. 'Please try again in next one hour.', ok_cb, true)
     end
   end
 
@@ -701,12 +696,12 @@ do
     for gid,v in pairs(data) do
       local g_type = load_data(data[gid]).group_type
       if g_type == 'chat' then
-        bc_rcvr = '-'..gid
+        bc_rcvr = '-' .. gid
       elseif g_type == 'channel' then
-        bc_rcvr = '-100'..gid
+        bc_rcvr = '-100' .. gid
       end
-      --send_large_msg(g_type..'#id'..gid, bc_msg)
-      send_api_msg(msg, bc_rcvr, bc_msg, true, 'html')
+      --send_large_msg(g_type .. '#id' .. gid, bc_msg)
+      bot_sendMessage(bc_rcvr, bc_msg, false, nil, nil)
     end
   end
 
@@ -732,7 +727,7 @@ do
       if msg.text:match('([\216-\219][\128-\191])') and _config.administration[gid] then
         if uid > 0 and not is_mod(msg, gid, uid) then
           local data = load_data(_config.administration[gid])
-          local arabic_hash = 'mer_arabic:'..gid
+          local arabic_hash = 'mer_arabic:' .. gid
           local is_arabic_offender = redis:sismember(arabic_hash, uid)
           if data.lock.arabic == 'warn' then
             if is_arabic_offender then
@@ -742,7 +737,7 @@ do
             if not is_arabic_offender then
               redis:sadd(arabic_hash, uid)
               reply_msg(msg.id, 'Please do not post in arabic.\n'
-                  ..'Obey the rules or you\'ll be kicked.', ok_cb, true)
+                   .. 'Obey the rules or you will be kicked.', ok_cb, true)
             end
           end
           if data.lock.arabic == 'kick' then
@@ -761,7 +756,7 @@ do
           local _nc, non_chars = msg.text:gsub('%A', '')
           -- If sums of non characters is bigger than characters
           if non_chars > chars then
-            local username = '@'..msg.from.username or msg.from.first_name
+            local username = '@' .. msg.from.username or msg.from.first_name
             trigger_anti_spam({msg=msg, stype='spamming', usr=username}, gid, uid)
           end
         end
@@ -788,17 +783,17 @@ do
       -- Check if user or chat is whitelisted
       local allowed = redis:sismember('whitelist', uid) or false
       if not allowed then
-        print('>>> User '..uid..' not whitelisted')
+        print('>>> User ' .. uid .. ' not whitelisted')
         if is_chat_msg(msg) then
           allowed = redis:sismember('whitelist', gid) or false
           if not allowed then
-            print('>>> Chat '..gid..' not whitelisted')
+            print('>>> Chat ' .. gid .. ' not whitelisted')
           else
-            print('>>> Chat '..gid..' whitelisted :)')
+            print('>>> Chat ' .. gid .. ' whitelisted :)')
           end
         end
       else
-        print('>>> User '..uid..' allowed :)')
+        print('>>> User ' .. uid .. ' allowed :)')
       end
       if not allowed then
         msg.text = ''
@@ -812,11 +807,11 @@ do
         if msg.action.type == 'chat_add_user' or msg.action.type == 'chat_add_user_link' then
           if msg.action.link_issuer then
             userid = uid
-            new_member = (msg.from.first_name or '')..' '..(msg.from.last_name or '')
+            new_member = (msg.from.first_name or '') .. ' ' .. (msg.from.last_name or '')
             greet_uname = msg.from.username or ''
           else
             userid = msg.action.user.peer_id
-            new_member = (msg.action.user.first_name or '')..' '..(msg.action.user.last_name or '')
+            new_member = (msg.action.user.first_name or '') .. ' ' .. (msg.action.user.last_name or '')
             greet_uname = msg.action.user.username or ''
           end
           -- Kick if newcomer is a banned user
@@ -851,35 +846,35 @@ do
             local group_about = ''
             local group_rules = ''
             if greet_uname:match('^%g+$') then
-              greet_uname = '@'..greet_uname..' AKA '
+              greet_uname = '@' .. greet_uname .. ' AKA '
             else
               greet_uname = ''
             end
             if data.description then
-              group_about = '\n<b>Description</b>:\n'..data.description..'\n'
+              group_about = '\n<b>Description</b>:\n' .. data.description .. '\n'
             end
             if data.rules then
-              group_rules = '\n<b>Rules</b>:\n'..data.rules..'\n'
+              group_rules = '\n<b>Rules</b>:\n' .. data.rules .. '\n'
             end
             -- Which welcome message to be send
             if data.welcome.msg then
-              welcomes = data.welcome.msg..'\n'
+              welcomes = data.welcome.msg .. '\n'
             -- If no custom welcome message defined, use this default
             else
-              welcomes = 'Welcome '..greet_uname..'<b>'..new_member..'</b> <code>['..userid..']</code>\nYou are in group <b>'..msg.to.title..'</b>\n'
+              welcomes = 'Welcome ' .. greet_uname .. '<b>' .. new_member .. '</b> <code>[' .. userid .. ']</code>\nYou are in group <b>' .. msg.to.title .. '</b>\n'
             end
             if data.welcome.to == 'group' then
               receiver_api = get_receiver_api(msg)
             elseif data.welcome.to == 'private' then
-              receiver_api = 'user#id'..userid
+              receiver_api = 'user#id' .. userid
             end
-            send_api_msg(msg, receiver_api, welcomes..group_about..group_rules..'\n', true, 'html')
+            bot_sendMessage(get_receiver_api(msg), welcomes .. group_about .. group_rules .. '\n', false, msg.id, 'html')
           end
           -- Update group's members table
           if msg.to.peer_type == 'channel' then
-            channel_get_users('channel#id'..gid, update_members_list, msg)
+            channel_get_users('channel#id' .. gid, update_members_list, msg)
           else
-            chat_info('chat#id'..gid, update_members_list, msg)
+            chat_info('chat#id' .. gid, update_members_list, msg)
           end
         end
 
@@ -916,11 +911,11 @@ do
         -- If user leave, update group's members table
         if msg.action.type == 'chat_del_user' then
           if msg.to.peer_type == 'channel' then
-            channel_get_users('channel#id'..gid, update_members_list, msg)
+            channel_get_users('channel#id' .. gid, update_members_list, msg)
           else
-            chat_info('chat#id'..gid, update_members_list, msg)
+            chat_info('chat#id' .. gid, update_members_list, msg)
           end
-          --return 'Bye '..new_member..'!'
+          --return 'Bye ' .. new_member .. '!'
         end
       end
 
@@ -930,7 +925,7 @@ do
           if msg.to.peer_type == 'channel' then
             channel_leave(receiver, ok_cb, false)
           else
-            chat_del_user(receiver, 'user#id'..our_id, ok_cb, true)
+            chat_del_user(receiver, 'user#id' .. our_id, ok_cb, true)
           end
         end
       end
@@ -941,9 +936,9 @@ do
         local founder = _config.mkgroup.uid
         local g_type = _config.mkgroup.gtype
         if g_type == 'channel' then
-          chat_upgrade('chat#id'..gid, ok_cb, false)
+          chat_upgrade('chat#id' .. gid, ok_cb, false)
         elseif g_type == 'realm' then
-          local cfg = 'data/'..gid..'/'..gid..'.lua'
+          local cfg = 'data/' .. gid .. '/' .. gid .. '.lua'
           _config.realm = {[gid] = cfg, rgid = gid, rname = title}
           save_config()
         end
@@ -953,18 +948,18 @@ do
       -- Promote supergroup founder to be the group admin
       if msg.action.type == 'migrated_from' then
         local founder = _config.mkgroup.uid
-        channel_set_admin(get_receiver(msg), 'user#id'..founder, ok_cb, true)
+        channel_set_admin(get_receiver(msg), 'user#id' .. founder, ok_cb, true)
       end
     end
 
     -- Anti flood
-    local post_count = 'floodc:'..uid..':'..gid
+    local post_count = 'floodc:' .. uid .. ':' .. gid
     redis:incr(post_count)
     if msg.from.peer_type == 'user' and not is_mod(msg, gid, uid) then
-      local post_count = 'user:'..uid..':floodc'
+      local post_count = 'user:' .. uid .. ':floodc'
       local msgs = tonumber(redis:get(post_count) or 0)
       if msgs > NUM_MSG_MAX then
-        local username = '@'..msg.from.username or msg.from.first_name
+        local username = '@' .. msg.from.username or msg.from.first_name
         trigger_anti_spam({msg=msg, stype='flooding', usr=username}, gid, uid)
       end
       redis:setex(post_count, TIME_CHECK, msgs+1)
@@ -973,7 +968,7 @@ do
     if msg.media and _config.administration[gid] then
       local data = load_data(_config.administration[gid])
       if not msg.text then
-        msg.text = '['..msg.media.type..']'
+        msg.text = '[' .. msg.media.type .. ']'
       end
       -- Bot is waiting user to upload a new group photo
       if is_mod(msg, gid, uid) and msg.media.type == 'photo' then
@@ -983,7 +978,7 @@ do
       end
       -- If user is sending sticker
       if msg.media.caption == 'sticker.webp' then
-        local sticker_hash = 'mer_sticker:'..gid..':'..uid
+        local sticker_hash = 'mer_sticker:' .. gid .. ':' .. uid
         local is_sticker_offender = redis:get(sticker_hash)
         if data.sticker == 'warn' then
           if is_sticker_offender then
@@ -993,7 +988,7 @@ do
           if not is_sticker_offender then
             redis:set(sticker_hash, true)
             reply_msg(msg.id, 'DO NOT send sticker into this group!\n'
-                ..'This is a WARNING, next time you will be kicked!', ok_cb, true)
+                 .. 'This is a WARNING, next time you will be kicked!', ok_cb, true)
           end
         end
         if data.sticker == 'kick' then
@@ -1012,7 +1007,7 @@ do
 
     local gid = msg.to.peer_id
     local uid = msg.from.peer_id
-    local chat_db = 'data/'..gid..'/'..gid..'.lua'
+    local chat_db = 'data/' .. gid .. '/' .. gid .. '.lua'
     local receiver = get_receiver(msg)
 
     if is_chat_msg(msg) then -- if in a chat group
@@ -1134,21 +1129,21 @@ do
           end
           if _config.realm[gid] then
             reply_msg(msg.id, 'Realm is already set.\nIf you want to replace it:\n'
-                ..'(1) !removerealm to delete the old realm\n'
-                ..'(2) !addrealm to add an existing group ass a realm, or\n'
-                ..'(3) !mkrealm to create and set new realm.', ok_cb, true)
+                 .. '(1) !removerealm to delete the old realm\n'
+                 .. '(2) !addrealm to add an existing group ass a realm, or\n'
+                 .. '(3) !mkrealm to create and set new realm.', ok_cb, true)
           else
             if matches[1] == 'mk' and matches[3] then
               n_realm = matches[3]
               create_group(msg, matches[3], 'realm')
             elseif matches[1] == 'add' then
               n_realm = msg.to.title
-              local cfg = 'data/'..gid..'/'..gid..'.lua'
+              local cfg = 'data/' .. gid .. '/' .. gid .. '.lua'
               _config.realm = {[gid] = cfg, rgid = gid, rname = n_realm}
               save_config()
             end
-            local bc_msg = '<b>'..n_realm..'</b> is now our new realm.\n'
-                ..'Administrators are welcome to join in by issuing:\n<code>!joinrealm</code>'
+            local bc_msg = '<b>' .. n_realm .. '</b> is now our new realm.\n'
+                 .. 'Administrators are welcome to join in by issuing:\n<code>!joinrealm</code>'
             send_broadcast(msg, bc_msg)
           end
         end
@@ -1159,7 +1154,7 @@ do
           if _config.realm[gid] then
             _config.realm = {}
             save_config()
-            send_broadcast(msg, 'The <b>'..r_name..'</b> realm has been deleted.')
+            send_broadcast(msg, 'The <b>' .. r_name .. '</b> realm has been deleted.')
           else
             reply_msg(msg.id, 'We have no realm at the moment.', ok_cb, true)
           end
@@ -1258,7 +1253,7 @@ do
             return "Whitelist cleared."
           elseif matches[2] == 'chat' then
             redis:sadd('whitelist', gid)
-            reply_msg(msg.id, 'Chat '..gid..' whitelisted', ok_cb, true)
+            reply_msg(msg.id, 'Chat ' .. gid .. ' whitelisted', ok_cb, true)
           end
         end
 
@@ -1268,7 +1263,7 @@ do
             get_message(msg.reply_id, action_by_reply, msg)
           elseif matches[2] == 'chat' then
             redis:srem('whitelist', gid)
-            reply_msg(msg.id, 'Chat '..gid..' removed from whitelist', ok_cb, true)
+            reply_msg(msg.id, 'Chat ' .. gid .. ' removed from whitelist', ok_cb, true)
           end
         end
 
@@ -1282,7 +1277,7 @@ do
           local gid = tonumber(matches[2])
           local data = load_data(_config.administration[gid])
           local g_type = data.group_type
-          send_large_msg(g_type..'#id'..gid, matches[3])
+          send_large_msg(g_type .. '#id' .. gid, matches[3])
         end
 
         -- Join realm
@@ -1302,7 +1297,6 @@ do
       local data = load_data(_config.administration[gid])
 
       if is_owner(msg, gid, uid) then
-
         if matches[1] == 'setprivate' then
           data.public = false
           save_data(data, chat_db)
@@ -1323,7 +1317,7 @@ do
               save_data(data, chat_db)
             end
               reply_msg(msg.id, 'Anti spam protection already enabled.\n'
-                  ..'Offender will be kicked.', ok_cb, true)
+                   .. 'Offender will be kicked.', ok_cb, true)
             end
           if matches[2] == 'ban' then
             if data.antispam ~= 'ban' then
@@ -1331,7 +1325,7 @@ do
               save_data(data, chat_db)
             end
               reply_msg(msg.id, 'Anti spam protection already enabled.\n'
-                  ..'Offender will be banned.', ok_cb, true)
+                   .. 'Offender will be banned.', ok_cb, true)
             end
           if matches[2] == 'disable' then
             if data.antispam == 'no' then
@@ -1382,7 +1376,7 @@ do
         -- Revoke group's invite link to make the group private
         if matches[1] == 'link revoke' then
           if data.link == '' then
-            reply_msg(msg.id, 'This group don\'t have invite link', ok_cb, true)
+            reply_msg(msg.id, "This group doesn't have invite link", ok_cb, true)
           else
             set_group_link({msg=msg, gid=gid}, chat_db, 'revoke')
             reply_msg(msg.id, 'Invite link has been revoked', ok_cb, true)
@@ -1415,7 +1409,7 @@ do
               save_data(data, chat_db)
             end
             reply_msg(msg.id, 'Stickers already prohibited.\n'
-                ..'Sender will be warned first, then kicked for second violation.', ok_cb, true)
+                 .. 'Sender will be warned first, then kicked for second violation.', ok_cb, true)
           end
           if matches[2] == 'kick' then
             if data.sticker ~= 'kick' then
@@ -1423,7 +1417,7 @@ do
               save_data(data, chat_db)
             end
             reply_msg(msg.id, 'Stickers already prohibited.\n'
-                ..'Sender will be kicked!', ok_cb, true)
+                 .. 'Sender will be kicked!', ok_cb, true)
           end
           if matches[2] == 'ok' then
             if data.sticker == 'ok' then
@@ -1431,11 +1425,11 @@ do
             else
               data.sticker = 'ok'
               save_data(data, chat_db)
-              for k,sticker_hash in pairs(redis:keys('mer_sticker:'..gid..':*')) do
+              for k,sticker_hash in pairs(redis:keys('mer_sticker:' .. gid .. ':*')) do
                 redis:del(sticker_hash)
               end
               reply_msg(msg.id, 'Sticker restriction has been disabled.\n'
-                  ..'Previous infringements record has been cleared.', ok_cb, true)
+                   .. 'Previous infringements record has been cleared.', ok_cb, true)
             end
           end
         end
@@ -1448,7 +1442,7 @@ do
               save_data(data, chat_db)
             end
             reply_msg(msg.id, 'This group does not allow Arabic script.\n'
-                ..'Users will be warned first, then kicked for second infringements.', ok_cb, true)
+                 .. 'Users will be warned first, then kicked for second infringements.', ok_cb, true)
           end
           if matches[2] == 'kick' then
             if data.lock.arabic ~= 'kick' then
@@ -1464,7 +1458,7 @@ do
               data.lock.arabic = 'ok'
               save_data(data, chat_db)
               redis:del('mer_arabic')
---              for k,arabic_hash in pairs(redis:keys('mer_arabic:'..gid..':*')) do
+--              for k,arabic_hash in pairs(redis:keys('mer_arabic:' .. gid .. ':*')) do
 --                redis:del(arabic_hash)
 --              end
               reply_msg(msg.id, 'Users will no longer be removed for posting Arabic script.', ok_cb, true)
@@ -1476,7 +1470,7 @@ do
         if matches[1] == 'setwelcome' and matches[2] then
           data.welcome.msg = matches[2]
           save_data(data, chat_db)
-          reply_msg(msg.id, 'Set group welcome message to:\n'..matches[2], ok_cb, true)
+          reply_msg(msg.id, 'Set group welcome message to:\n' .. matches[2], ok_cb, true)
         end
 
         -- Reset custom welcome message
@@ -1492,13 +1486,13 @@ do
             data.welcome.to = 'group'
             save_data(data, chat_db)
             reply_msg(msg.id, 'Welcome service already enabled.\n'
-                ..'Welcome message will shown in group.', ok_cb, true)
+                 .. 'Welcome message will shown in group.', ok_cb, true)
           end
           if matches[2] == 'pm' and data.welcome.to ~= 'private' then
             data.welcome.to = 'private'
             save_data(data, chat_db)
             reply_msg(msg.id, 'Welcome service already enabled.\n'
-                ..'Welcome message will send as private message to new member.', ok_cb, true)
+                 .. 'Welcome message will send as private message to new member.', ok_cb, true)
           end
           if matches[2] == 'disable' then
             if data.welcome.to == 'no' then
@@ -1515,14 +1509,14 @@ do
         if matches[1] == 'setabout' and matches[2] then
           data.description = matches[2]
           save_data(data, chat_db)
-          reply_msg(msg.id, 'Set group description to:\n'..matches[2], ok_cb, true)
+          reply_msg(msg.id, 'Set group description to:\n' .. matches[2], ok_cb, true)
         end
 
         -- Set group's rules
         if matches[1] == 'setrules' and matches[2] then
           data.rules = matches[2]
           save_data(data, chat_db)
-          reply_msg(msg.id, 'Set group rules to:\n'..matches[2], ok_cb, true)
+          reply_msg(msg.id, 'Set group rules to:\n' .. matches[2], ok_cb, true)
         end
 
         if matches[1] == 'group' or matches[1] == 'gp' then
@@ -1614,12 +1608,12 @@ do
           local list = redis:smembers(hash)
           local gbanlist = ''
           for k,v in pairs(list) do
-            gbanlist = gbanlist..k.." - "..v.."\n"
+            gbanlist = gbanlist .. k .. " - " .. v .. "\n"
           end
           if gbanlist == '' then
             gbanlist = 'There are currently no globally banned users.'
           else
-            gbanlist = 'Globally banned users list:\n\n'..gbanlist
+            gbanlist = 'Globally banned users list:\n\n' .. gbanlist
           end
           return gbanlist
         end
@@ -1660,24 +1654,39 @@ do
       if is_mod(msg, gid, uid) then
         -- Print group settings
         if matches[1] == 'group' and matches[2] == 'settings' then
-          local text = 'Settings for *'..msg.to.title..'*\n'
-                ..'*-* Arabic message = `'..data.lock.arabic..'`\n'
-                ..'*-* Lock group from bot = `'..data.lock.bot..'`\n'
-                ..'*-* Lock group name = `'..data.lock.name..'`\n'
-                ..'*-* Lock group photo = `'..data.lock.photo..'`\n'
-                ..'*-* Lock group member = `'..data.lock.member..'`\n'
-                ..'*-* Spam protection = `'..data.antispam..'`\n'
-                ..'*-* Sticker policy = `'..data.sticker..'`\n'
-                ..'*-* Welcome message = `'..data.welcome.to..'`\n'
-          send_api_msg(msg, get_receiver_api(msg), text, true, 'markdown')
+          local text = 'Settings for *' .. msg.to.title .. '*\n'
+                 .. '*-* Arabic message = `' .. data.lock.arabic .. '`\n'
+                 .. '*-* Lock group from bot = `' .. data.lock.bot .. '`\n'
+                 .. '*-* Lock group name = `' .. data.lock.name .. '`\n'
+                 .. '*-* Lock group photo = `' .. data.lock.photo .. '`\n'
+                 .. '*-* Lock group member = `' .. data.lock.member .. '`\n'
+                 .. '*-* Spam protection = `' .. data.antispam .. '`\n'
+                 .. '*-* Sticker policy = `' .. data.sticker .. '`\n'
+                 .. '*-* Welcome message = `' .. data.welcome.to .. '`\n'
+          bot_sendMessage(get_receiver_api(msg), text, false, msg.id, 'markdown')
         end
 
         -- Invite user by {id|username|name|reply}
         if matches[1] == 'invite' then
+          local noinvite = 'Invite feature has been disabled to prevent bot '
+              .. 'reported as spam.\nPlease use the invite link.'
+
+          if _config.no_invite and not is_sudo(uid) and matches[2] ~= 'enable' then
+            reply_msg(msg.id, noinvite, ok_cb, true)
+            return
+          end
           if msg.reply_id then
             get_message(msg.reply_id, action_by_reply, msg)
           elseif matches[2] == '@' then
             resolve_username(matches[3], resolve_username_cb, {msg=msg, matches=matches})
+          elseif matches[2] == 'enable' then
+            _config.no_invite = false
+            save_config()
+            reply_msg(msg.id, 'Invite feature has been enabled', ok_cb, true)
+          elseif matches[2] == 'disable' then
+            _config.no_invite = true
+            save_config()
+            reply_msg(msg.id, noinvite, ok_cb, true)
           elseif matches[3]:match('%d+$') then
             invite_user(msg, gid, matches[3])
           else
@@ -1725,16 +1734,16 @@ do
 
         -- List of group's banned users
         if matches[1] == 'banlist' then
-          local hash = 'banned:'..gid
+          local hash = 'banned:' .. gid
           local list = redis:smembers(hash)
           local banlist = ''
           for k,v in pairs(list) do
-            banlist = banlist..k.." - "..v.."\n"
+            banlist = banlist .. k .. " - " .. v .. "\n"
           end
           if banlist == '' then
             banlist = 'There are currently no banned users.'
           else
-            banlist = 'Banned users list:\n\n'..banlist
+            banlist = 'Banned users list:\n\n' .. banlist
           end
           return banlist
         end
@@ -1758,19 +1767,19 @@ do
       if matches[1] == 'link' or matches[1] == 'getlink' or matches[1] == 'link get' then
         local link = data.link
         local gtitle = msg.to.title
-        if data.public then
+        if data.public or is_owner(msg, gid, uid) then
           if link == '' then
-            send_api_msg(msg, get_receiver_api(msg), 'No link has been set for this group.\n'
-                ..'Try <code>!link set</code> to generate.', true, 'html')
+            bot_sendMessage(get_receiver_api(msg), 'No link has been set for this group.\n'
+                .. 'Try `!link set` to generate.', false, msg.id, 'markdown')
           elseif link == 'revoked' then
             reply_msg(msg.id, 'Invite link for this group has been revoked', ok_cb, true)
           else
             local about = data.description
-            local clickme = '<a href="'..link..'">Click me to join '..gtitle..'</a>'
+            local clickme = '<a href="' .. link .. '">Click me to join ' .. gtitle .. '</a>'
             if not about then
-              send_api_msg(msg, get_receiver_api(msg), '<b>'..gtitle..'</b>\n\n'..clickme, true, 'html')
+              bot_sendMessage(get_receiver_api(msg), '<b>' .. gtitle .. '</b>\n\n' .. clickme, false, msg.id, 'html')
             else
-              send_api_msg(msg, get_receiver_api(msg), '<b>'..gtitle..'</b>\n\n'..about..'\n\n'..clickme, true, 'html')
+              bot_sendMessage(get_receiver_api(msg), '<b>' .. gtitle .. '</b>\n\n' .. about .. '\n\n' .. clickme, false, msg.id, 'html')
             end
           end
         else
@@ -1784,17 +1793,17 @@ do
         if not about then
           reply_msg(msg.id, 'No description available', ok_cb, true)
         else
-          send_api_msg(msg, get_receiver_api(msg), '<b>'..msg.to.title..'</b>\n\n'..about, true, 'html')
+          bot_sendMessage(get_receiver_api(msg), '<b>' .. msg.to.title .. '</b>\n\n' .. about, false, msg.id, 'html')
         end
       end
 
       -- Print group's rules
       if matches[1] == 'rules' then
         if not data.rules then
-          reply_msg(msg.id, 'No rules have been set for '..msg.to.title..'.', ok_cb, true)
+          reply_msg(msg.id, 'No rules have been set for ' .. msg.to.title .. '.', ok_cb, true)
         else
           local rules = data.rules
-          local rules = msg.to.print_name..' rules:\n\n'..rules
+          local rules = msg.to.print_name .. ' rules:\n\n' .. rules
           reply_msg(msg.id, rules, ok_cb, true)
         end
       end
@@ -1806,9 +1815,9 @@ do
           local gpdata = load_data(v)
           if gpdata.public then
             if gpdata.link then
-              gplist = gplist..'• ['..gpdata.name..']('..gpdata.link..')\n'
+              gplist = gplist .. '• [' .. gpdata.name .. '](' .. gpdata.link .. ')\n'
             else
-              gplist = gplist..'• '..gpdata.name..'\n'
+              gplist = gplist .. '• ' .. gpdata.name .. '\n'
             end
           end
         end
@@ -1817,18 +1826,18 @@ do
         else
           gplist = '*Groups:*\n' .. gplist
         end
-        send_api_msg(msg, get_receiver_api(msg), gplist, true, 'markdown')
+        bot_sendMessage(get_receiver_api(msg), gplist, false, msg.id, 'markdown')
       end
 
       -- print merbot version
       if matches[1] == "version" then
-        reply_msg(msg.id, 'Merbot\n'..VERSION..'\nGitHub: '..bot_repo..'\n'
-            ..'License: GNU GPL v2', ok_cb, true)
+        reply_msg(msg.id, 'Merbot\n' .. VERSION .. '\nGitHub: ' .. bot_repo .. '\n'
+             .. 'License: GNU GPL v2', ok_cb, true)
       end
 
     else -- if in private message
 
-      local usr = '@'..msg.from.username or msg.from.first_name
+      local usr = '@' .. msg.from.username or msg.from.first_name
 
       if is_sudo(uid) then
         --TODO update_members_list an set_group_link not working in private message
@@ -1913,14 +1922,14 @@ do
         if matches[1] == 'whitelist' then
           if matches[2] == 'chat' then
             redis:sadd('whitelist', matches[3])
-            reply_msg(msg.id, 'Chat '..matches[3]..' whitelisted', ok_cb, true)
+            reply_msg(msg.id, 'Chat ' .. matches[3] .. ' whitelisted', ok_cb, true)
           end
         end
 
         if matches[1] == 'unwhitelist' then
           if matches[2] == 'chat' then
             redis:srem('whitelist', matches[3])
-            reply_msg(msg.id, 'Chat '..matches[3]..' removed from whitelist', ok_cb, true)
+            reply_msg(msg.id, 'Chat ' .. matches[3] .. ' removed from whitelist', ok_cb, true)
           end
         end
 
@@ -2001,7 +2010,7 @@ do
       '^!(group) (lock) (%a+)$', '^!(gp) (lock) (%a+)$',
       '^!(group) (settings)$', '^!(gp) (settings)$',
       '^!(group) (unlock) (%a+)$', '^!(gp) (unlock) (%a+)$',
-      '^!(invite)$', '^!(invite) (@)(%g+)$', '^!(invite)(%s)(%g+)$',
+      '^!(invite)$', '^!(invite) (enable)$', '^!(invite) (disable)$', '^!(invite) (@)(%g+)$', '^!(invite)(%s)(%g+)$',
       '^!(kick)$', '^!(kick) (@)(%g+)$', '^!(kick)(%s)(%d+)$', '^!(kick) (%d+) (%d+)$', '^!(kick) (@)(%g+) (%d+)$', '^!(kick)(%s)(%d+) (%d+)$',
       '^!(link)$', '^!(link get)$', '^!(getlink)$',
       '^!(link set)$', '^!(setlink)$', '^!(link set) (.*)$', '^!(setlink) (.*)$',

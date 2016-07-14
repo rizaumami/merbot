@@ -1,10 +1,10 @@
 do
 
   function get_last_id(msg)
-    local res,code  = https.request('http://xkcd.com/info.0.json')
+    local res, code  = https.request('http://xkcd.com/info.0.json')
 
     if code ~= 200 then
-      reply_msg(msg.id, 'HTTP ERROR', ok_cb, true)
+      send_message(msg, '<b>HTTP ERROR</b>', 'html')
     end
 
     local data = json:decode(res)
@@ -13,10 +13,10 @@ do
   end
 
   function get_xkcd(msg, id)
-    local res,code  = http.request('http://xkcd.com/'..id..'/info.0.json')
+    local res,code  = http.request('http://xkcd.com/' .. id .. '/info.0.json')
 
     if code ~= 200 then
-      reply_msg(msg.id, 'HTTP ERROR', ok_cb, true)
+      send_message(msg, '<b>HTTP ERROR</b>', 'html')
     end
 
     local data = json:decode(res)
@@ -29,31 +29,22 @@ do
     return link_image, data.num, data.title, data.alt
   end
 
-
   function get_xkcd_random(msg)
     local last = get_last_id(msg)
     local i = math.random(1, last)
     return get_xkcd(msg, i)
   end
 
-  function send_title(cb_extra, success, result)
-    if success then
-      local message = cb_extra[2]..'\n'..cb_extra[3]
-      send_msg(cb_extra[1], message, ok_cb, false)
-    end
-  end
-
   function run(msg, matches)
-    if matches[1] == '!xkcd' then
+    if matches[1] == 'xkcd' then
       url, num, title, alt = get_xkcd_random(msg)
     else
       url, num, title, alt = get_xkcd(msg, matches[1])
     end
 
-    local relevantxkcd = '<a href="' .. url .. '">xkcd #' .. num .. '</a>\n\n'
-        .. '<b>' .. title .. '</b>\n' .. alt .. '\n\n'
+    local relevantxkcd = '<a href="' .. url .. '">' .. title .. '</a>\n\n' .. alt .. '\n\n'
 
-    send_api_msg(msg, get_receiver_api(msg), relevantxkcd, false, 'html')
+    bot_sendMessage(get_receiver_api(msg), relevantxkcd, false, msg.id, 'html')
   end
 
   return {
@@ -66,9 +57,8 @@ do
       'Send an xkcd image and title.'
     },
     patterns = {
-      '^!xkcd$',
+      '^!(xkcd)$',
       '^!xkcd (%d+)',
-      'xkcd.com/(%d+)'
     },
     run = run
   }

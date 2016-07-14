@@ -1,9 +1,11 @@
 do
+
   local socket = require('socket')
   local cronned = load_from_file('data/isup.lua')
 
   local function save_cron(msg, url, delete)
     local origin = get_receiver(msg)
+
     if not cronned[origin] then
       cronned[origin] = {}
     end
@@ -16,8 +18,9 @@ do
         end
       end
     end
+
     serialize_to_file(cronned, 'data/isup.lua')
-    reply_msg(msg.id, 'Saved!', ok_cb, true)
+    send_message(msg, 'Saved!', 'html')
   end
 
   local function is_up_socket(ip, port)
@@ -25,6 +28,7 @@ do
     local c = socket.try(socket.tcp())
     c:settimeout(3)
     local conn = c:connect(ip, port)
+
     if not conn then
       return false
     else
@@ -43,7 +47,6 @@ do
     end
     -- Re-build URL
     local url = URL.build(parsed_url)
-
     local protocols = {
       ['https'] = https,
       ['http'] = http
@@ -55,6 +58,7 @@ do
     }
     local response = { protocols[parsed_url.scheme].request(options) }
     local code = tonumber(response[2])
+
     if code == nil or code >= 400 then
       return false
     end
@@ -82,7 +86,7 @@ do
       for k,url in pairs(urls) do
         print('Checking', url)
         if not isup(url) then
-          local text = url..' looks DOWN from here. 😱'
+          local text = url .. ' looks DOWN from here. 😱'
           send_msg(chan, text, ok_cb, false)
         end
       end
@@ -92,20 +96,18 @@ do
   local function run(msg, matches)
     if matches[1] == 'cron delete' then
       if not is_sudo(msg) then
-        reply_msg(msg.id, 'This command requires privileged user', ok_cb, true)
+        send_message(msg, 'This command requires privileged user', 'html')
       end
       return save_cron(msg, matches[2], true)
-
     elseif matches[1] == 'cron' then
       if not is_sudo(msg) then
-        reply_msg(msg.id, 'This command requires privileged user', ok_cb, true)
+        send_message(msg, 'This command requires privileged user', 'html')
       end
       return save_cron(msg, matches[2])
-
     elseif isup(matches[1]) then
-      reply_msg(msg.id, matches[1]..' looks UP from here. 😃', ok_cb, true)
+      send_message(msg, matches[1] .. ' looks <b>UP</b> from here. 😃', 'html')
     else
-      reply_msg(msg.id, matches[1]..' looks DOWN from here. 😱', ok_cb, true)
+      send_message(msg, matches[1] .. ' looks <b>DOWN</b> from here. 😃', 'html')
     end
   end
 

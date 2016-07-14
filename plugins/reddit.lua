@@ -1,9 +1,6 @@
 do
 
   local function run(msg, matches)
-
-    if not is_chat_msg(msg) and not is_admin(msg.from.peer_id, msg) then return nil end
-
     local thread_limit = 5
     local is_nsfw = false
 
@@ -17,47 +14,58 @@ do
 
     if matches[2] then
       if matches[2]:match('^r/') then
-        url = 'https://www.reddit.com/'..matches[2]..'/.json?limit='..thread_limit
+        url = 'https://www.reddit.com/' .. URL.escape(matches[2]) .. '/.json?limit=' .. thread_limit
       else
-        url = 'https://www.reddit.com/search.json?q='..matches[2]..'&limit='..thread_limit
+        url = 'https://www.reddit.com/search.json?q=' .. URL.escape(matches[2]) .. '&limit=' .. thread_limit
       end
     elseif msg.text == '!reddit' then
-      url = 'https://www.reddit.com/.json?limit='..thread_limit
+      url = 'https://www.reddit.com/.json?limit=' .. thread_limit
     end
 
     -- Do the request
     local res, code = https.request(url)
-    if code ~=200 then return nil  end
+
+    if code ~= 200 then
+      send_message(msg, "<b>There doesn't seem to be anything</b>...", 'html')
+    end
 
     local jdat = json:decode(res)
     local jdata_child = jdat.data.children
+
     if #jdata_child == 0 then
       return nil
     end
+
     local threadit = {}
+
     for k=1, #jdata_child do
       local redd = jdata_child[k].data
       local long_url = '\n'
+
       if not redd.is_self then
         local link = URL.parse(redd.url)
-        long_url = '\nLink: <a href="'..redd.url..'">'..link.scheme..'://'..link.host..'</a>\n'
+        long_url = '\nLink: <a href="' .. redd.url .. '">' .. link.scheme .. '://' .. link.host .. '</a>'
       end
+
       local title = unescape_html(redd.title)
+
       if redd.over_18 and not is_nsfw then
         threadit[k] = ''
       elseif redd.over_18 and is_nsfw then
-        threadit[k] = '<b>'..k..'. NSFW</b> '..'<a href="redd.it/'..redd.id..'">'..title..'</a>'..long_url
+        threadit[k] = '<b>' .. k .. '. NSFW</b> ' .. '<a href="redd.it/' .. redd.id .. '">' .. title .. '</a>' .. long_url
       else
-        threadit[k] = '<b>'..k..'. </b>'..'<a href="redd.it/'..redd.id..'">'..title..'</a>'..long_url
+        threadit[k] = '<b>' .. k .. '. </b>' .. '<a href="redd.it/' .. redd.id .. '">' .. title .. '</a>' .. long_url
       end
     end
-    local threadit = table.concat(threadit)
-    local subreddit = '<b>'..(matches[2] or 'redd.it')..'</b>\n'
-    local subreddit = subreddit..threadit
+
+    local threadit = table.concat(threadit, '\n')
+    local subreddit = '<b>' .. (matches[2] or 'redd.it') .. '</b>\n\n'
+    local subreddit = subreddit .. threadit
+
     if threadit == '' then
-      reply_msg(msg.id, 'You must be 18+ to view this community.', ok_cb, true)
+      send_message(msg, '<b>You must be 18+ to view this community.</b>', 'html')
     else
-      send_api_msg(msg, get_receiver_api(msg), subreddit, true, 'html')
+      bot_sendMessage(get_receiver_api(msg), subreddit, true, msg.id, 'html')
     end
   end
 

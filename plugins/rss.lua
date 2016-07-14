@@ -2,19 +2,21 @@ do
 
   local function get_base_redis(id, option, extra)
     local ex = ''
+
     if option ~= nil then
-      ex = ex..':'..option
+      ex = ex .. ':' .. option
       if extra ~= nil then
-        ex = ex..':'..extra
+        ex = ex .. ':' .. extra
       end
     end
-    return 'rss:'..id..ex
+    return 'rss:' .. id .. ex
   end
 
   local function prot_url(url)
     local url, h = url:gsub('http://', '')
     local url, hs = url:gsub('https://', '')
     local protocol = 'http'
+
     if hs == 1 then
       protocol = 'https'
     end
@@ -23,23 +25,27 @@ do
 
   local function get_rss(url, prot)
     local res, code = nil, 0
+
     if prot == 'http' then
       res, code = http.request(url)
     elseif prot == 'https' then
       res, code = https.request(url)
     end
     if code ~= 200 then
-      return nil, 'Error while doing the petition to '..url
+      return nil, 'Error while doing the petition to ' .. url
     end
+
     local parsed = feedparser.parse(res)
+
     if parsed == nil then
-      return nil, 'Error decoding the RSS.\nAre you sure that '..url..' is an RSS?'
+      return nil, 'Error decoding the RSS.\nAre you sure that ' .. url .. ' is an RSS?'
     end
     return parsed, nil
   end
 
   local function get_new_entries(last, nentries)
     local entries = {}
+
     for k,v in pairs(nentries) do
       if v.id == last then
         return entries
@@ -52,15 +58,19 @@ do
 
   local function print_subs(msg, id)
     local subscriber = msg.to.title
+
     if id:match('user') then
       subscriber = 'You'
     end
+
     local uhash = get_base_redis(id)
     local subs = redis:smembers(uhash)
-    local text = subscriber..' are subscribed to:\n---------\n'
+    local text = subscriber .. ' are subscribed to:\n---------\n'
+
     for k,v in pairs(subs) do
-      text = text..k..') '..v..'\n'
+      text = text .. k .. ') ' .. v .. '\n'
     end
+
     reply_msg(msg.id, text, ok_cb, true)
   end
 
@@ -72,7 +82,7 @@ do
     local uhash = get_base_redis(id)
 
     if redis:sismember(uhash, baseurl) then
-      reply_msg(msg.id, 'You are already subscribed to '..url, ok_cb, true)
+      reply_msg(msg.id, 'You are already subscribed to ' .. url, ok_cb, true)
     end
 
     local parsed, err = get_rss(url, protocol)
@@ -94,12 +104,12 @@ do
     redis:sadd(lhash, id)
     redis:sadd(uhash, baseurl)
 
-    reply_msg(msg.id, 'You had been subscribed to '..name, ok_cb, true)
+    reply_msg(msg.id, 'You had been subscribed to ' .. name, ok_cb, true)
   end
 
   local function unsubscribe(msg, id, n)
     if #n > 3 then
-      reply_msg(msg.id, 'I don\'t think that you have that many subscriptions.', ok_cb, true)
+      reply_msg(msg.id, "I don't think that you have that many subscriptions.", ok_cb, true)
     end
 
     n = tonumber(n)
@@ -125,7 +135,7 @@ do
       redis:del(lasthash)
     end
 
-    reply_msg(msg.id, 'You had been unsubscribed from '..sub, ok_cb, true)
+    reply_msg(msg.id, 'You had been unsubscribed from ' .. sub, ok_cb, true)
   end
 
   local function cron()
@@ -136,7 +146,7 @@ do
       local base = v:match('rss:(.+):subs')  -- Get the URL base
       local prot = redis:get(get_base_redis(base, 'protocol'))
       local last = redis:get(get_base_redis(base, 'last_entry'))
-      local url = prot..'://'..base
+      local url = prot .. '://' .. base
       local parsed, err = get_rss(url, prot)
 
       if err ~= nil then
@@ -150,7 +160,7 @@ do
       for k2, v2 in pairs(newentr) do
         local title = v2.title or 'No title'
         local link = v2.link or v2.id or 'No Link'
-        text = text..k2..'. '..title..'\n'..link..'\n'
+        text = text .. k2 .. '. ' .. title .. '\n' .. link .. '\n'
       end
       if text ~= '' then
         local newlast = newentr[1].id
@@ -186,7 +196,6 @@ do
     if matches[1] == 'subscribe' or matches[1] == 'sub' then
       subscribe(msg, id, matches[2])
     end
-
     if matches[1] == 'unsubscribe' or matches[1] == 'uns' then
       unsubscribe(msg, id, matches[2])
     end
