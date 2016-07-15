@@ -52,7 +52,7 @@ do
   end
 
   local function run(msg, matches)
-    get_kbbi(msg, matches[1])
+    get_kbbi(msg, URL.escape(matches[1]))
   end
 
 --------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ do
       'Menampilkan arti dari <code>[lema]</code>'
     },
     patterns = {
-      '^!kbbi (%g+)$'
+      '^!kbbi (.*)$'
     },
     run = run
   }

@@ -340,7 +340,7 @@ end
 function send_message(msg, text, markdown)
   if msg.from.api then
     if msg.reply_to_message then
-      msg.id = msg.reply_to_message
+      msg.id = msg.reply_to_message.message_id
     end
     bot_sendMessage(get_receiver_api(msg), text, true, msg.id, markdown)
   else

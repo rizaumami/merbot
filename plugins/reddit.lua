@@ -37,10 +37,10 @@ do
     end
 
     local threadit = {}
+    local long_url = ''
 
     for k=1, #jdata_child do
       local redd = jdata_child[k].data
-      local long_url = '\n'
 
       if not redd.is_self then
         local link = URL.parse(redd.url)
@@ -62,7 +62,7 @@ do
     local subreddit = '<b>' .. (matches[2] or 'redd.it') .. '</b>\n\n'
     local subreddit = subreddit .. threadit
 
-    if threadit == '' then
+    if not threadit:match('%w+') then
       send_message(msg, '<b>You must be 18+ to view this community.</b>', 'html')
     else
       bot_sendMessage(get_receiver_api(msg), subreddit, true, msg.id, 'html')

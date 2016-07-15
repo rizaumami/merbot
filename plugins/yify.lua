@@ -27,7 +27,7 @@ do
       local title = '<a href="' .. yify.large_cover_image .. '">' .. yify.title_long .. '</a>'
       local output = title .. '\n\n'
           .. '<code>' .. yify.year .. ' | ' .. yify.rating .. '/10 | ' .. yify.runtime .. '</code> min\n\n'
-          .. torrlist .. yify.synopsis:sub(1, 2000) .. '<a href="' .. yify.url .. '"> More on yts.ag ...</a>'
+          .. torrlist .. '\n\n' .. yify.synopsis:sub(1, 2000) .. '<a href="' .. yify.url .. '"> More on yts.ag ...</a>'
 
       bot_sendMessage(get_receiver_api(msg), output, false, msg.id, 'html')
     end

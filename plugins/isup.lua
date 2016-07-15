@@ -107,7 +107,7 @@ do
     elseif isup(matches[1]) then
       send_message(msg, matches[1] .. ' looks <b>UP</b> from here. 😃', 'html')
     else
-      send_message(msg, matches[1] .. ' looks <b>DOWN</b> from here. 😃', 'html')
+      send_message(msg, matches[1] .. ' looks <b>DOWN</b> from here. 😱', 'html')
     end
   end
 

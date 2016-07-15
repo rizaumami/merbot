@@ -110,7 +110,7 @@ do
     description = "Translate some text",
     usage = {
       '<code>!trans text</code>',
-      'Translate the <code>text</code> to English.',
+      'Translate the <code>text</code> into the default language (or english).',
       '',
       '<code>!trans target_lang text</code>',
       'Translate the <code>text</code> to <code>target_lang</code>.',
@@ -120,7 +120,7 @@ do
       '',
       '<b>Use !translate when reply!</b>',
       '<code>!translate</code>',
-      'By reply. Translate the replied text into default language (or english).',
+      'By reply. Translate the replied text into the default language (or english).',
       '',
       '<code>!translate target_lang</code>',
       'By reply. Translate the replied text into <code>target_lang</code>.',

@@ -5,19 +5,25 @@ do
 
   local whofile = '/tmp/whois.txt'
 
-  local function read_file(file)
-    local file = io.open(file, 'r')
+  local function whoinfo()
+    local file = io.open(whofile, 'r')
     local content = file:read "*a"
     file:close()
-    return content
+    return content:sub(1, 4000)
   end
 
   local function run(msg, matches)
-    local whoinfo = os.execute('whois ' .. matches[1] .. ' > ' .. whofile)
+    local result = os.execute('whois ' .. matches[1] .. ' > ' .. whofile)
 
-    if not whoinfo then
-      send_message(msg, '<b>sh: 1: whois: not found</b>.\n'
+    if not result then
+      if whoinfo():match('no match') then
+        send_message(msg, '<b>No match for</b> ' .. matches[1] .. '\n'
+            .. '* type the URL correctly\n'
+            .. '* exclude http(s) and www from the URL.', 'html')
+      elseif not os.execute('which whois') then
+        send_message(msg, '<b>sh: 1: whois: not found</b>.\n'
           .. 'Please install <code>whois</code> package on your system.', 'html')
+      end
       return
     end
 
@@ -30,13 +36,13 @@ do
         end
       end
       if matches[2] == 'pm' and is_chat_msg(msg) then
-        bot_sendMessage(msg.from.peer_id, read_file(whofile), true, nil, nil)
+        bot_sendMessage(msg.from.peer_id, whoinfo(), true, nil, nil)
       end
       if matches[2] == 'pmtxt' and is_chat_msg(msg) then
         bot_sendDocument(msg.from.peer_id, whofile, nil, true, nil)
       end
     else
-      send_message(msg, read_file(whofile), nil)
+      send_message(msg, whoinfo(), nil)
     end
   end
 

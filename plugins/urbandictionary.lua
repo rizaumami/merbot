@@ -11,7 +11,7 @@ do
 
     local jdat = json:decode(jstr)
     if jdat.result_type == 'no_results' then
-      send_message(msg, '<b>No result</b>', 'html')
+      send_message(msg, "There aren't any definitions for <i>" .. matches .. "</i> yet.", 'html')
       return
     end
 
@@ -63,9 +63,9 @@ do
       '^!(urbandictionary)$',
       '^!(ud)$',
       '^!(urban)$',
-      '^!urbandictionary (%g+)$',
-      '^!ud (%g+)$',
-      '^!urban (%g+)$'
+      '^!urbandictionary (.+)$',
+      '^!ud (.+)$',
+      '^!urban (.+)$'
     },
     run = run
   }

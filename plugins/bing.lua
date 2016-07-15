@@ -30,7 +30,7 @@ do
       for i = 1, #jresult do
         local result = jresult[i]
         reslist[i] = '<b>' .. i .. '</b>. '
-            .. '<a href="' .. result.Url .. '">' .. result.Title .. '</a>'
+            .. '<a href="' .. result.Url:gsub('[!]', '%%21') .. '">' .. result.Title .. '</a>'
       end
 
       local reslist = table.concat(reslist, '\n')

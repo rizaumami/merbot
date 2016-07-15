@@ -57,7 +57,7 @@ do
     description = 'Send an screenshot of a website.',
     usage = {
       '<code>!webshot [url]</code>',
-      'Take an screenshot of the web and send it back to you.'
+      'Take an screenshot of the <code>[url]</code> and send it back to you.'
     },
     patterns = {
       '^!webshot (https?://[%w-_%.%?%.:/%+=&]+)$',
