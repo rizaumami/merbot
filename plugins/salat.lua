@@ -58,13 +58,9 @@ do
       local c_method = tonumber(matches[1])
 
       if c_method == 0 or c_method > 7 then
-        local text = 'Calculation method is out of range.\n'
-                .. 'Consult !help salat.'
-        if msg.from.api then
-          bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
-        else
-          reply_msg(msg.id, text, ok_cb, true)
-        end
+        local text = '<b>Calculation method is out of range</b>\n'
+                .. 'Consult <code>!help salat</code>'
+        send_message(msg, text, 'html')
         return
       else
         method = c_method
@@ -77,11 +73,7 @@ do
     local res, code = http.request(url .. '/' .. method .. '?key=' .. _config.api_key.muslimsalat)
 
     if code ~= 200 then
-      if msg.from.api then
-        bot_sendMessage(get_receiver_api(msg), '<b>Error</b>: <code>' .. code .. '</code>', true, msg.id, 'html')
-      else
-         reply_msg(msg.id, 'Error: ' .. code, ok_cb, true)
-      end
+      send_message(msg, '<b>Error</b>: <code>' .. code .. '</code>', 'html')
       return
     end
 

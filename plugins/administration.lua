@@ -383,8 +383,20 @@ do
     save_config()
   end
 
+    -- Returns the name of the sender
+  local function get_username(msg)
+    if msg.from.username then
+      username = '@' .. msg.from.username
+    elseif msg.from.first_name then
+      username = msg.from.first_name
+    else
+      username = msg.from.peer_id
+    end
+    return username
+  end
+
   local function create_group_data(msg, chat_id, user_id)
-    local l_name = '@' .. msg.from.username or msg.from.first_name
+    local l_name = get_username(msg)
     if msg.action then
       t_name = _config.mkgroup.founder
     end
@@ -424,7 +436,7 @@ do
   local function action_by_reply(extra, success, result)
     local gid = tonumber(extra.to.peer_id)
     local uid = tonumber(result.from.peer_id)
-    local usr = '@' .. result.from.username or result.from.first_name
+    local usr = get_username(result)
     local cmd = extra.text
     if is_chat_msg(extra) then
       if cmd == '!kick' then
@@ -484,7 +496,7 @@ do
       local msg = extra.msg
       local uid = result.peer_id
       local cmd = extra.matches[1]
-      local usr = '@' .. result.username or result.first_name
+      local usr = get_username(result)
       if is_chat_msg(msg) then
         gid = msg.to.peer_id
       else
@@ -756,7 +768,7 @@ do
           local _nc, non_chars = msg.text:gsub('%A', '')
           -- If sums of non characters is bigger than characters
           if non_chars > chars then
-            local username = '@' .. msg.from.username or msg.from.first_name
+            local username = get_username(msg)
             trigger_anti_spam({msg=msg, stype='spamming', usr=username}, gid, uid)
           end
         end
@@ -959,7 +971,7 @@ do
       local post_count = 'user:' .. uid .. ':floodc'
       local msgs = tonumber(redis:get(post_count) or 0)
       if msgs > NUM_MSG_MAX then
-        local username = '@' .. msg.from.username or msg.from.first_name
+        local username = get_username(msg)
         trigger_anti_spam({msg=msg, stype='flooding', usr=username}, gid, uid)
       end
       redis:setex(post_count, TIME_CHECK, msgs+1)
@@ -1837,7 +1849,7 @@ do
 
     else -- if in private message
 
-      local usr = '@' .. msg.from.username or msg.from.first_name
+      local usr = get_username(msg)
 
       if is_sudo(uid) then
         --TODO update_members_list an set_group_link not working in private message

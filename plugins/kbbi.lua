@@ -29,11 +29,7 @@ do
     local res, code = http.request(webkbbi)
 
     if res == '' then
-      if msg.from.api then
-        bot_sendMessage(get_receiver_api(msg), 'Tidak ada arti kata "<b>' .. lema .. '</b>" di http://kbbi.web.id', true, msg.id, 'html')
-      else
-        reply_msg(msg.id, 'Tidak ada arti kata "' .. lema .. '" di http://kbbi.web.id', ok_cb, true)
-      end
+      send_message(msg, 'Tidak ada arti kata "<b>' .. lema .. '</b>" di http://kbbi.web.id', 'html')
       return
     end
 

@@ -14,11 +14,7 @@ do
     local jresult = data.list
 
     if next(jresult) == nil then
-      if msg.from.api then
-        bot_sendMessage(get_receiver_api(msg), 'No torrent results for: ' .. query, true, msg.id, 'html')
-      else
-        reply_msg(msg.id, 'No torrent results for: ' .. query, ok_cb, true)
-      end
+      send_message(msg, '<b>No torrent results for</b>: ' .. query, 'html')
     else
       local katcrlist = {}
       if #jresult < 5 then
