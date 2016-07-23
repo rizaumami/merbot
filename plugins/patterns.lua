@@ -4,7 +4,7 @@ do
     local patterns = msg.text:match('s/.*')
     local m1, m2 = patterns:match('^s/(.-)/(.-)/?$')
 
-    if not m2 then
+    if not m2 or m2:match('\n') then
       return
     end
 

@@ -412,21 +412,26 @@ do
           send_message(msg, '<b>Invalid Forum specified</b>', 'html')
         end
       else
-        local similarforumname = '<b>Gagal</b> menemukan forum <b>' ..  matches[2] .. '</b>.\n\n'
-              .. 'Berikut daftar forum dengan kata kunci <b>' ..  matches[2] .. '</b>:\n'
+        local similarforumname = {}
+        local header = '<b>Gagal</b> menemukan forum <b>' ..  matches[2] .. '</b>.\n\n'
+
         i = 0
         for k,v in pairs(kaskus_forums) do
           if v:lower():match(matches[2]:lower()) then
             i = i+1
-            similarforumname = similarforumname .. '<b>' .. i .. '</b>. <code>' .. k .. '</code> - ' .. v .. '\n'
+            similarforumname[i] = '<b>' .. i .. '</b>. <code>' .. k .. '</code> - ' .. v .. '\n'
             forum_id = k
           end
         end
 
-        if i == 1 then
+        if not next(similarforumname) then
+          bot_sendMessage(get_receiver_api(msg), header, true, msg.id, 'html')
+        elseif i == 1 then
           get_kaskus_thread(msg, forum_id)
         else
-          bot_sendMessage(get_receiver_api(msg), similarforumname, true, msg.id, 'html')
+          bot_sendMessage(get_receiver_api(msg), header
+              .. 'Berikut daftar forum dengan kata kunci <b>' ..  matches[2] .. '</b>:\n'
+              .. table.concat(similarforumname), true, msg.id, 'html')
         end
       end
     end
