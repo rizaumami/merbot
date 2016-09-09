@@ -54,7 +54,8 @@ do
       'Send random xkcd image and title.',
       '',
       '<code>!xkcd (id)</code>',
-      'Send an xkcd image and title.'
+      'Send an xkcd image and title.',
+      '<b>Example</b>: <code>!xkcd 149</code>',
     },
     patterns = {
       '^!(xkcd)$',

@@ -43,6 +43,7 @@ do
       '<code>!yify [search term]</code>',
       '<code>!yts [search term]</code>',
       'Search YTS YIFY movie torrents from yts.ag',
+      '<b>Example</b>: <code>!yts ex machina</code>',
     },
     patterns = {
       '^!yify (.+)$',

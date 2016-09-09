@@ -17,12 +17,13 @@ do
   return {
     description = 'Returns a cat!',
     usage = {
+      '<code>!cats</code>',
       '<code>!cat</code>',
       'Returns a cat!',
       '',
     },
     patterns = {
-      '^!(cat)$',
+      '^!(cats?)$',
     },
     run = run
   }

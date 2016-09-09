@@ -20,7 +20,7 @@ do
       '<code>!dogify (your/words/with/slashes)</code>',
       '<code>!doge (your/words/with/slashes)</code>',
       'Create a doge with the image and words.',
-      'No special characters!',
+      '<b>Example</b>: <code>!doge wow/merbot/soo/cool</code>',
     },
     patterns = {
       '^!dogify (.+)$',

@@ -87,9 +87,10 @@ do
   return {
     description = 'Returns mobile phone specification.',
     usage = {
-      '<code>!phone [phone_name]</code>',
-      '<code>!gsm [phone_name]</code>',
-      'Returns <code>phone_name</code> specification.',
+      '<code>!phone [phone]</code>',
+      '<code>!gsm [phone]</code>',
+      'Returns <code>phone</code> specification.',
+      '<b>Example</b>: <code>!gsm xiaomi mi4c</code>',
     },
     patterns = {
       '^!(phone) (.*)$',

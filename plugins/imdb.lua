@@ -51,10 +51,12 @@ do
       '<code>!imdb [movie]</code>',
       '<code>!omdb [movie]</code>',
       'Returns IMDb entry for <code>[movie]</code>',
+      '<b>Example</b>: <code>!imdb the matrix</code>',
       '',
       '<code>!imdb [movie] [year]</code>',
       '<code>!omdb [movie] [year]</code>',
       'Returns IMDb entry for <code>[movie]</code> that was released in <code>[year]</code>',
+      '<b>Example</b>: <code>!imdb the matrix 2003</code>',
     },
     patterns = {
       '^![io]mdb (.+)$',

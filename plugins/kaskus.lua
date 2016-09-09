@@ -452,9 +452,11 @@ do
     usage = {
       '<code>!kaskus [forum_id]</code>',
       'Menampilkan forum Kaskus berdasar nomor forum',
+      '<b>Example</b>: <code>!kaskus 65</code>',
       '',
       '<code>!kaskus [forum_name]</code>',
       'Menampilkan forum Kaskus berdasar nama forum',
+      '<b>Example</b>: <code>!kaskus linux</code>',
       '',
       '<code>!kaskus ht</code>',
       '<code>!kaskus hotthread</code>',

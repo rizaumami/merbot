@@ -55,18 +55,26 @@ do
   return {
     description = "Returns the NASA's Astronomy Picture of the Day.",
     usage = {
-      '<code>!apod [query]</code>',
-      'Returns the Astronomy Picture of the Day.',
-      'If the query is a date, in the format YYYY-MM-DD, the APOD of that day is returned.',
+      '<code>!apod</code>',
+      'Returns the Astronomy Picture of the Day (APOD).',
       '',
-      '<code>!apodtext [query]</code>',
-      'Returns the explanation of the APOD.'
+      '<code>!apod YYYY-MM-DD</code>',
+      'Returns the <code>YYYY-MM-DD</code> APOD.',
+      '<b>Example</b>: <code>!apod 2016-08-17</code>',
+      '',
+      '<code>!apodtext</code>',
+      'Returns the explanation of the APOD.',
+      '',
+      '<code>!apodtext YYYY-MM-DD</code>',
+      'Returns the explanation of <code>YYYY-MM-DD</code> APOD.',
+      '<b>Example</b>: <code>!apodtext 2016-08-17</code>',
+      '',
     },
     patterns = {
       '^!(apod)$',
       '^!(apodtext)$',
-      '^!(apod) (.*)$',
-      '^!(apodtext) (.*)$',
+      '^!(apod) (%g+)$',
+      '^!(apodtext) (%g+)$',
     },
     run = run
   }

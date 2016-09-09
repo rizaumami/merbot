@@ -105,16 +105,18 @@ do
     usage = {
       '<code>!salat [area]</code>',
       'Returns todays prayer times for that area',
+      '<b>Example</b>: <code>!salat bandung</code>',
       '',
       '<code>!salat [method] [area]</code>',
-      'Returns todays prayer times for that area calculated by [method]:',
+      'Returns todays prayer times for that area calculated by <code>[method]</code>:',
       '<b>1</b> = Egyptian General Authority of Survey',
       '<b>2</b> = University Of Islamic Sciences, Karachi (Shafi)',
       '<b>3</b> = University Of Islamic Sciences, Karachi (Hanafi)',
       '<b>4</b> = Islamic Circle of North America',
       '<b>5</b> = Muslim World League',
       '<b>6</b> = Umm Al-Qura',
-      '<b>7</b> = Fixed Isha'
+      '<b>7</b> = Fixed Isha',
+      '<b>Example</b>: <code>!salat 2 denpasar</code>',
     },
     patterns = {
       '^!salat (%a.*)$',

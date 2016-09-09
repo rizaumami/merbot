@@ -15,8 +15,11 @@ do
   return {
     description = 'Returns a location from Google Maps.',
     usage = {
+      '<code>!loc [query]</code>',
       '<code>!location [query]</code>',
-      'Returns Google Maps of [query]',
+      '<code>!gmaps [query]</code>',
+      'Returns Google Maps of <code>[query]</code>.',
+      '<b>Example</b>: <code>!loc raja ampat</code>',
     },
     patterns = {
       '^!gmaps (.*)$',

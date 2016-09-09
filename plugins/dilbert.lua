@@ -53,13 +53,14 @@ do
       '<code>!dilbert</code>',
       'Returns todays Dilbert comic',
       '',
-      '<code>!dilbert [date]</code>',
-      'Returns <code>[date]</code> Dilbert comic',
+      '<code>!dilbert YYYY-MM-DD</code>',
+      'Returns Dilbert comic published on <code>YYYY-MM-DD</code>',
+      '<b>Example</b>: <code>!dilbert 2016-08-17</code>',
       '',
     },
     patterns = {
       '^!(dilbert)$',
-      '^!(dilbert) (.*)$'
+      '^!(dilbert) (%g+)$'
     },
     run = run
   }

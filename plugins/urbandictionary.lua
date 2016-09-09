@@ -52,6 +52,7 @@ do
       '<code>!urban [query]</code>',
       '<code>!urbandictionary [query]</code>',
       'Returns a <code>[query]</code> definition from urbandictionary.com',
+      '<b>Example</b>: <code>!ud fam</code>',
       '',
       '<code>!ud</code>',
       '<code>!urban</code>',
