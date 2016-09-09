@@ -361,6 +361,14 @@ do
 
   local url = 'http://m.kaskus.co.id/'
 
+  local function escape_html(text)
+    local text = text:gsub('<', '&lt')
+    local text = text:gsub('>', '&gt')
+    local text = text:gsub('"', '&quot')
+    local text = text:gsub("'", '&apos')
+    return text
+  end
+
   local function get_hot_thread(msg)
     local hot, code = http.request(url .. 'forum')
     local hotblock = hot:match('<h2>Hot Threads</h2>.-</div>')
@@ -388,13 +396,13 @@ do
         if i < 10 then
           i = i+1
           local thitle = grabbedlink:gsub('^.-> ', '')
-          kasthread[i] = '<b>' .. i .. '</b>. <a href="' .. url .. 'thread/' .. grabbedlink:match('%d%g+') .. '>' .. thitle:gsub('<.->', '') .. '</a>'
+          kasthread[i] = '<b>' .. i .. '</b>. <a href="' .. url .. 'thread/' .. grabbedlink:match('%d%g+') .. '>' .. escape_html(thitle:gsub('<.->', '')) .. '</a>'
         end
       end
     end
 
     local kasthread = table.concat(kasthread, '\n')
-    local kasthread = kasthread:gsub(' <span', '')
+    local kasthread = kasthread:gsub(' &ltspan', '')
     local subforum = '<b>' .. kaskus_forums[tonumber(forum_id)] .. '</b>\n\n'
 
     bot_sendMessage(get_receiver_api(msg), subforum .. kasthread, true, msg.id, 'html')

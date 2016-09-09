@@ -4,6 +4,7 @@ do
     ['&#183;'] = '·',
     ['<sup>.-/sup>'] = '',
     ['<br/>'] = '\n',
+    ['\\/'] = '/',
     ['—'] = '--',
     [' <b>1'] = '\n<b>1',
     [' <b>2'] = '\n<b>2',
@@ -24,31 +25,37 @@ do
     return html
   end
 
-  local function get_kbbi(msg, lema)
-    local webkbbi = 'http://kbbi.web.id/' .. lema .. '/ajax_0'
-    local res, code = http.request(webkbbi)
+  local function run(msg, matches)
+    local webkbbi = 'http://kbbi.web.id/'
+    local lema = matches[1]
+
+    if #matches == 2 then
+      lema = matches[1] .. '+' .. matches[2]
+    end
+
+    local res, code = http.request(webkbbi .. lema .. '/ajax_0')
 
     if res == '' then
-      send_message(msg, 'Tidak ada arti kata "<b>' .. lema .. '</b>" di http://kbbi.web.id', 'html')
+      send_message(msg, 'Tidak ada arti kata "<b>' .. lema .. '</b>" di kbbi.web.id' , 'html')
       return
     end
 
-    local grabbedlema = res:match('{"x":1,"w":.-}')
-    local jlema = json:decode(grabbedlema)
-    local title = '<a href="http://kbbi.web.id/' .. lema .. '">' .. cleanup_tag(jlema.w) .. '</a>\n\n'
-
-    if jlema.d:match('<br/>') then
-      local description = jlema.d:match('^.-<br/>')
-      kbbi_desc = cleanup_tag(description)
+    if #matches == 2 then
+      kbbi_desc = res:match('<b>%-%- ' .. matches[2] .. '.-<br\\/>')
+      title = '<a href="' .. webkbbi .. lema .. '">' .. matches[1] .. '</a>\n\n'
     else
-      kbbi_desc = cleanup_tag(jlema.d)
+      local grabbedlema = res:match('{"x":1,"w":.-}')
+      local jlema = json:decode(grabbedlema)
+      title = '<a href="' .. webkbbi .. lema .. '">' .. jlema.w .. '</a>\n\n'
+
+      if jlema.d:match('<br/>') then
+        kbbi_desc = jlema.d:match('^.-<br/>')
+      else
+        kbbi_desc = jlema.d
+      end
     end
-
-    bot_sendMessage(get_receiver_api(msg), title .. kbbi_desc, true, msg.id, 'html')
-  end
-
-  local function run(msg, matches)
-    get_kbbi(msg, URL.escape(matches[1]))
+    print(cleanup_tag(title .. kbbi_desc))
+    bot_sendMessage(get_receiver_api(msg), cleanup_tag(title .. kbbi_desc), true, msg.id, 'html')
   end
 
 --------------------------------------------------------------------------------
@@ -60,7 +67,8 @@ do
       'Menampilkan arti dari <code>[lema]</code>'
     },
     patterns = {
-      '^!kbbi (.*)$'
+      '^!kbbi (%w+)$',
+      '^!kbbi (%w+) (%w+)$'
     },
     run = run
   }
