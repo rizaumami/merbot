@@ -6,6 +6,7 @@ Set the key by: !setapi bing [bing_api_key] or manually inserted into config.lua
 do
 
   local mime = require('mime')
+
   local function bingo(msg, burl, terms)
     local burl = burl:format(URL.escape("'" .. terms .. "'"))
     local limit = 5
@@ -47,11 +48,12 @@ do
   end
 
   local function run(msg, matches)
-    if not _config.api_key or not _config.api_key.bing then
-      local text = '<b>Missing</b> Bing API key in config.lua.\n\n'
-          .. 'Get it from https://datamarket.azure.com/dataset/bing/search \n\n'
-          .. 'Set the key using <code>setapi bing [api_key]</code>'
-      bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+    check_api_key(msg, 'bing')
+
+    if matches[1] == 'setapikey bing' and is_sudo(msg.from.peer_id) then
+      _config.api_key.bing = matches[2]
+      save_config()
+      send_message(msg, 'Bing api key has been saved.', 'html')
       return
     end
 
@@ -80,27 +82,34 @@ do
     description = 'Returns 5 (if group) or 8 (if private message) Bing results.\n'
         .. 'Safe search is enabled by default, use <code>!bnsfw</code> or <code>!bingnsfw</code> to disable it.',
     usage = {
-      '<code>!bing [terms]</code>',
-      '<code>!b [terms]</code>',
-      'Safe searches Bing',
-      '',
-      '<code>!bing</code>',
-      '<code>!b</code>',
-      'Safe searches Bing by reply. The search terms is the replied message text.',
-      '',
-      '<code>!bingnsfw [terms]</code>',
-      '<code>!bnsfw [terms]</code>',
-      'Searches Bing (include NSFW)',
-      '',
-      '<code>!bingnsfw</code>',
-      '<code>!bnsfw</code>',
-      'Searches Bing (include NSFW). The search terms is the replied message text.'
+      sudo = {
+        '<code>!setapikey bing [api_key]</code>',
+        'Set Bing API key.'
+      },
+      user = {
+        '<code>!bing [terms]</code>',
+        '<code>!b [terms]</code>',
+        'Safe searches Bing',
+        '',
+        '<code>!bing</code>',
+        '<code>!b</code>',
+        'Safe searches Bing by reply. The search terms is the replied message text.',
+        '',
+        '<code>!bingnsfw [terms]</code>',
+        '<code>!bnsfw [terms]</code>',
+        'Searches Bing (include NSFW)',
+        '',
+        '<code>!bingnsfw</code>',
+        '<code>!bnsfw</code>',
+        'Searches Bing (include NSFW). The search terms is the replied message text.'
+      },
     },
     patterns = {
       '^!(b)$', '^!(bing)$',
       '^!b(nsfw)$', '^!bing(nsfw)$',
       '^!(b) (.*)$', '^!(bing) (.*)$',
       '^!b(nsfw) (.*)$', '^!bing(nsfw) (.*)$',
+      '^!(setapikey bing) (.*)$',
     },
     run = run
   }

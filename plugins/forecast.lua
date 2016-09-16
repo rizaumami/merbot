@@ -58,22 +58,38 @@ do
   end
 
   local function run(msg, matches)
+    check_api_key(msg, 'forecast')
+
+    if matches[1] == 'setapikey forecast' and is_sudo(msg.from.peer_id) then
+      _config.api_key.forecast = matches[2]
+      save_config()
+      send_message(msg, 'Forecast api key has been saved.', 'html')
+      return
+    end
+
     return getforecast(msg, matches[1])
   end
 
   return {
     description = 'Returns forecast from forecast.io.',
     usage = {
-      '<code>!cast [area]</code>',
-      '<code>!forecast [area]</code>',
-      '<code>!weather [area]</code>',
-      'Forecast for that <code>[area]</code>.',
-      '<b>Example</b>: <code>!weather dago parung panjang</code>',
+      sudo = {
+        '<code>!setapikey forecast [api_key]</code>',
+        'Set forecast.io API key.'
+      },
+      user = {
+        '<code>!cast [area]</code>',
+        '<code>!forecast [area]</code>',
+        '<code>!weather [area]</code>',
+        'Forecast for that <code>[area]</code>.',
+        '<b>Example</b>: <code>!weather dago parung panjang</code>',
+      },
     },
     patterns = {
       '^!cast (.*)$',
       '^!forecast (.*)$',
-      '^!weather (.*)$'
+      '^!weather (.*)$',
+      '^!(setapikey forecast) (.*)$',
     },
     run = run
   }

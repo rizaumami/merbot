@@ -753,6 +753,17 @@ local function bot(method, parameters, file)
   end
 end
 
+function check_api_key(msg, service)
+  local text = '<b>MISSING</b> ' .. service .. ' api key in <code>config.lua</code>.\n\n'
+      .. '• <a href="' .. _config.api_key[service .. '_url'] .. '">GET YOUR KEY HERE</a>\n'
+      .. '• Set the key:\n<code> !setapikey ' .. service .. ' [api_key]</code>'
+
+  if not _config.api_key or not _config.api_key[service] or _config.api_key[service] == '' then
+    bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+    return
+  end
+end
+
 function bot_sendMessage(chat_id, text, disable_web_page_preview, reply_to_message_id, parse_mode)
   return bot('sendMessage', {
     chat_id = chat_id,

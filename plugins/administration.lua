@@ -268,13 +268,13 @@ do
     end
   end
 
-  local function demote(extra, chat_id, user_id)
+  local function demote(extra, chat_id, user_id, force)
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
     if not data.moderators[uid] then
       reply_msg(extra.msg.id, uid .. ' is not a moderator.', ok_cb, true)
-    elseif uid == extra.msg.from.peer_id then
+    elseif uid == extra.msg.from.peer_id and not force then
       reply_msg(extra.msg.id, "You can't demote yourself.", ok_cb, true)
     else
       data.moderators[uid] = nil
@@ -296,13 +296,13 @@ do
     end
   end
 
-  local function demote_owner(extra, chat_id, user_id)
+  local function demote_owner(extra, chat_id, user_id, force)
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
     local data = load_data(_config.administration[gid])
     if not data.owners[uid] then
       reply_msg(extra.msg.id, uid .. ' is not the group owner.', ok_cb, true)
-    elseif uid == extra.msg.from.peer_id then
+    elseif uid == extra.msg.from.peer_id and not force then
       reply_msg(extra.msg.id, "You can't demote yourself.", ok_cb, true)
     else
       data.owners[uid] = nil
@@ -323,11 +323,11 @@ do
     end
   end
 
-  local function demote_admin(extra, user_id)
+  local function demote_admin(extra, user_id, force)
     local uid = tonumber(user_id)
     if not _config.administrators[uid] then
       reply_msg(extra.msg.id, extra.usr .. ' is not an administrator.', ok_cb, true)
-    elseif uid == extra.msg.from.peer_id then
+    elseif uid == extra.msg.from.peer_id and not force then
       reply_msg(extra.msg.id, "You can't demote yourself.", ok_cb, true)
     else
       channel_del_admin(get_receiver(extra.msg), 'user#id' .. uid, ok_cb, true)
@@ -348,11 +348,11 @@ do
     end
   end
 
-  local function desudo(extra, user_id)
+  local function desudo(extra, user_id, force)
     local uid = tonumber(user_id)
     if not _config.sudo_users[uid] then
       reply_msg(extra.msg.id, extra.usr .. ' is not a sudoer.', ok_cb, true)
-    elseif uid == extra.msg.from.peer_id then
+    elseif uid == extra.msg.from.peer_id and not force then
       reply_msg(extra.msg.id, "You can't demote yourself.", ok_cb, true)
     else
       _config.sudo_users[uid] = nil
@@ -490,13 +490,17 @@ do
     end
   end
 
-  -- [global|un]ban|kick by username
+  -- [pro|de]mote|admin[prom|dem]|[global|un]ban|kick|[un]whitelist by username
   local function resolve_username_cb(extra, success, result)
     if result ~= false then
       local msg = extra.msg
       local uid = result.peer_id
       local cmd = extra.matches[1]
-      local usr = get_username(result)
+      if result.username then
+        usr = '@' .. result.username
+      else
+        usr = uid
+      end
       if is_chat_msg(msg) then
         gid = msg.to.peer_id
       else
@@ -927,6 +931,7 @@ do
           else
             chat_info('chat#id' .. gid, update_members_list, msg)
           end
+          demote({msg=msg, usr=get_username(msg)}, gid, uid, 'true')
           --return 'Bye ' .. new_member .. '!'
         end
       end

@@ -221,6 +221,15 @@ do
   end
 
   function run(msg, matches)
+    check_api_key(msg, 'globalquran')
+
+    if matches[1] == 'setapikey globalquran' and is_sudo(msg.from.peer_id) then
+      _config.api_key.globalquran = matches[2]
+      save_config()
+      send_message(msg, 'Global Quran api key has been saved.', 'html')
+      return
+    end
+
     if #matches == 1 then
       print('method #1')
       get_ayah(msg, nil, nil, matches[1], nil)
@@ -245,29 +254,36 @@ do
   return {
     description = "Returns Al Qur'an verse.",
     usage = {
-      '<code>!quran [verse number]</code>',
-      "Returns Qur'an verse by its number.",
-      '<b>Example</b>: <code>!quran 17</code>',
-      '',
-      '<code>!quran [verse number] [lang]</code>',
-      "Returns Qur'an verse and its translation.",
-      '<b>Example</b>: <code>!quran 17 id</code>',
-      '',
-      '<code>!quran [surah]:[ayah]</code>',
-      "Returns Qur'an verse by surah and ayah number.",
-      '<b>Example</b>: <code>!quran 17:8</code>',
-      '',
-      '<code>!quran [surah]:[ayah] [lang]</code>',
-      "Returns Qur'an verse and its translation by surah and ayah number.",
-      '<b>Example</b>: <code>!quran 17:8 id</code>',
-      '',
-      '<code>lang</code> is <a href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes">ISO 639-1 language code</a>.'
+      sudo = {
+        '<code>!setapikey globalquran [api_key]</code>',
+        'Set Global Quran API key.'
+      },
+      user = {
+        '<code>!quran [verse number]</code>',
+        "Returns Qur'an verse by its number.",
+        '<b>Example</b>: <code>!quran 17</code>',
+        '',
+        '<code>!quran [verse number] [lang]</code>',
+        "Returns Qur'an verse and its translation.",
+        '<b>Example</b>: <code>!quran 17 id</code>',
+        '',
+        '<code>!quran [surah]:[ayah]</code>',
+        "Returns Qur'an verse by surah and ayah number.",
+        '<b>Example</b>: <code>!quran 17:8</code>',
+        '',
+        '<code>!quran [surah]:[ayah] [lang]</code>',
+        "Returns Qur'an verse and its translation by surah and ayah number.",
+        '<b>Example</b>: <code>!quran 17:8 id</code>',
+        '',
+        '<code>lang</code> is <a href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes">ISO 639-1 language code</a>.'
+      },
     },
     patterns = {
       '^!quran ([%d]+)$',
       '^!quran ([%d]+) (%g.*)$',
       '^!quran ([%d]+)(:)([%d]+)$',
       '^!quran ([%d]+)(:)([%d]+) (%g.*)$',
+      '^!(setapikey globalquran) (.*)$'
     },
     run = run
   }

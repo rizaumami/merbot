@@ -33,7 +33,9 @@ do
     local phdata = {}
 
     if gsm == nil or gsm.status == 'error' or next(gsm.data) == nil then
-      reply_msg(msg.id, 'No phones found!', ok_cb, true)
+      send_message(msg, '<b>No phones found!</b>\n'
+          .. 'Request must be in the following format:\n'
+          .. '<code>!gsm brand type</code>', 'html')
       return
     end
     if not gsm.data.platform then

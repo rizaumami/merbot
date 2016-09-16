@@ -79,60 +79,6 @@ do
       end
     end
 
-    if matches[1] == 'api set' or matches[1] == 'apiset' or matches[1] == 'setapi' and matches[3] then
-      if not _config.api_key then
-        _config.api_key = {
-          -- https://datamarket.azure.com/dataset/bing/search
-          bing = '',
-          -- http://console.developers.google.com
-          google = '',
-          -- https://cse.google.com/cse
-          google_cse = '',
-          -- http://openweathermap.org/appid
-          owm = '',
-          -- http://last.fm/api
-          lastfm = '',
-          -- http://api.biblia.com
-          biblia = '',
-          -- http://thecatapi.com/docs.html
-          thecatapi = '',
-          -- http://api.nasa.gov
-          nasa_api = '',
-          -- http://tech.yandex.com/keys/get
-          yandex = '',
-          -- http://developer.simsimi.com/signUp
-          simsimi = '',
-          simsimi_trial = true,
-        }
-      end
-      if matches[2] == 'bing' then
-        _config.api_key.bing = matches[3]
-      elseif matches[2] == 'google' then
-        _config.api_key.google = matches[3]
-      elseif matches[2] == 'google_cse' then
-        _config.api_key.google_cse = matches[3]
-      elseif matches[2] == 'owm' then
-        _config.api_key.owm = matches[3]
-      elseif matches[2] == 'lastfm' then
-        _config.api_key.lastfm = matches[3]
-      elseif matches[2] == 'biblia' then
-        _config.api_key.biblia = matches[3]
-      elseif matches[2] == 'thecatapi' then
-        _config.api_key.thecatapi = matches[3]
-      elseif matches[2] == 'nasa_api' then
-        _config.api_key.nasa_api = matches[3]
-      elseif matches[2] == 'yandex' then
-        _config.api_key.yandex = matches[3]
-      elseif matches[2] == 'simsimi' then
-        _config.api_key.simsimi = matches[3]
-      elseif matches[2] == 'simsimi_trial' then
-        _config.api_key.simsimi_trial = matches[3]
-      end
-      save_config()
-
-      send_message(msg, matches[2] .. ' API key has been saved.', 'html')
-    end
-
     if matches[1] == 'setlang' then
       _config.lang = matches[2]
       save_config()
@@ -171,11 +117,6 @@ do
         '<code>!join [invite_link]</code>',
         'Join into a group by providing their [invite_link].',
         '',
-        '<code>!api set [service] [api_key]</code>',
-        '<code>!apiset [service] [api_key]</code>',
-        '<code>!setapi [service] [api_key]</code>',
-        'Set services (Bing, Google, etc) API key.',
-        '',
         '<code>!version</code>',
         'Shows bot version',
       },
@@ -189,7 +130,6 @@ do
       '^!(bot) (%g+) (.*)$',
       '^!(join)$',
       '^!(join) (.*)$',
-      '^!(api set) (%g+) (.*)$','!^(apiset) (%g+) (.*)$', '^!(setapi) (%g+) (.*)$',
       '^!(setlang) (%g+)$'
     },
     run = run

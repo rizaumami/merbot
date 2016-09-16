@@ -284,27 +284,20 @@ function create_config()
     administration = {},
     administrators = {},
     api_key = {
-      -- https://datamarket.azure.com/dataset/bing/search
+      bing_url = 'https://datamarket.azure.com/dataset/bing/search',
       bing = '',
-      -- http://console.developers.google.com
-      google = '',
-      -- https://cse.google.com/cse
-      google_cse = '',
-      -- http://openweathermap.org/appid
-      owm = '',
-      -- http://last.fm/api
-      lastfm = '',
-      -- http://api.biblia.com
-      biblia = '',
-      -- http://thecatapi.com/docs.html
-      thecatapi = '',
-      -- http://api.nasa.gov
+      forecast_url = 'https://developer.forecast.io/',
+      forecast = '',
+      globalquran_url = 'http://globalquran.com/contribute/signup.php',
+      globalquran = '',
+      muslimsalat_url = 'http://muslimsalat.com/panel/signup.php',
+      muslimsalat = '',
+      nasa_api_url = 'http://api.nasa.gov',
       nasa_api = '',
-      -- http://tech.yandex.com/keys/get
+      thecatapi_url = 'http://thecatapi.com/docs.html',
+      thecatapi = '',
+      yandex_url = 'http://tech.yandex.com/keys/get',
       yandex = '',
-      -- http://developer.simsimi.com/signUp
-      simsimi = '',
-      simsimi_trial = true,
     },
     autoleave = false,
     bot_api = {
@@ -339,7 +332,6 @@ function create_config()
       'stats',
       'sudo',
       'time',
-      'torrent',
       'urbandictionary',
       'webshot',
       'whois',

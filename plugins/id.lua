@@ -105,7 +105,7 @@ do
                 .. '<code>User name :</code>' .. user_name .. '\n'
                 .. '<code>ID        :' .. result.from.peer_id .. '</code>'
 
-    bot_sendMessage(get_receiver_api(extra), text, true, msg.id, 'html')
+    bot_sendMessage(get_receiver_api(extra), text, true, extra.id, 'html')
   end
 
   local function returnids(extra, success, result)

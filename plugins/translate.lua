@@ -25,13 +25,13 @@ do
   end
 
   local function run(msg, matches)
-    if not _config.api_key or not _config.api_key.yandex or _config.api_key.yandex == '' then
-      local text = '<b>Missing</b> Yandex Translate API key in config.lua.\n\n'
-           .. 'Get it from https://tech.yandex.com/translate/ \n\n'
-           .. 'Set the key using <code>setapi yandex [api_key]</code>'
+    check_api_key(msg, 'yandex')
 
-      bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
-      return nil
+    if matches[1] == 'setapikey yandex' and is_sudo(msg.from.peer_id) then
+      _config.api_key.yandex = matches[2]
+      save_config()
+      send_message(msg, 'Muslim salat api key has been saved.', 'html')
+      return
     end
 
     -- comment this line if you want this plugin to works in private message.
@@ -109,30 +109,36 @@ do
   return {
     description = "Translate some text",
     usage = {
-      '<code>!trans text</code>',
-      'Translate the <code>text</code> into the default language (or english).',
-      '<b>Example</b>: <code>!trans terjemah</code>',
-      '',
-      '<code>!trans target_lang text</code>',
-      'Translate the <code>text</code> to <code>target_lang</code>.',
-      '<b>Example</b>: <code>!trans en terjemah</code>',
-      '',
-      '<code>!trans source,target text</code>',
-      'Translate the <code>source</code> to <code>target</code>.',
-      '<b>Example</b>: <code>!trans id,en terjemah</code>',
-      '',
-      '<b>Use</b> <code>!translate</code> <b>when reply!</b>',
-      '',
-      '<code>!translate</code>',
-      'By reply. Translate the replied text into the default language (or english).',
-      '',
-      '<code>!translate target_lang</code>',
-      'By reply. Translate the replied text into <code>target_lang</code>.',
-      '',
-      '<code>!translate source,target</code>',
-      'By reply. Translate the replied text <code>source</code> to <code>target</code>.',
-      '',
-      'Languages are two letter <a href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes">ISO 639-1 language code</a>',
+      sudo = {
+        '<code>!setapikey yandex [api_key]</code>',
+        'Set Yandex Translate API key.'
+      },
+      user = {
+        '<code>!trans text</code>',
+        'Translate the <code>text</code> into the default language (or english).',
+        '<b>Example</b>: <code>!trans terjemah</code>',
+        '',
+        '<code>!trans target_lang text</code>',
+        'Translate the <code>text</code> to <code>target_lang</code>.',
+        '<b>Example</b>: <code>!trans en terjemah</code>',
+        '',
+        '<code>!trans source,target text</code>',
+        'Translate the <code>source</code> to <code>target</code>.',
+        '<b>Example</b>: <code>!trans id,en terjemah</code>',
+        '',
+        '<b>Use</b> <code>!translate</code> <b>when reply!</b>',
+        '',
+        '<code>!translate</code>',
+        'By reply. Translate the replied text into the default language (or english).',
+        '',
+        '<code>!translate target_lang</code>',
+        'By reply. Translate the replied text into <code>target_lang</code>.',
+        '',
+        '<code>!translate source,target</code>',
+        'By reply. Translate the replied text <code>source</code> to <code>target</code>.',
+        '',
+        'Languages are two letter <a href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes">ISO 639-1 language code</a>',
+      },
     },
     patterns = {
       "^!(trans) ([%w]+),([%a]+) (.+)",
@@ -141,6 +147,7 @@ do
       "^!(translate) ([%w]+),([%a]+)",
       "^!(translate) ([%w]+)",
       "^!(translate)",
+      '^!(setapikey yandex) (.*)$'
     },
     run = run
   }

@@ -49,6 +49,15 @@ do
   end
 
   function run(msg, matches)
+    check_api_key(msg, 'muslimsalat')
+
+    if matches[1] == 'setapikey muslimsalat' and is_sudo(msg.from.peer_id) then
+      _config.api_key.muslimsalat = matches[2]
+      save_config()
+      send_message(msg, 'Muslim salat api key has been saved.', 'html')
+      return
+    end
+
     local area = matches[1]
     local method = 5
     local notif = ''
@@ -103,24 +112,31 @@ do
   return {
     description = 'Returns todays prayer times.',
     usage = {
-      '<code>!salat [area]</code>',
-      'Returns todays prayer times for that area',
-      '<b>Example</b>: <code>!salat bandung</code>',
-      '',
-      '<code>!salat [method] [area]</code>',
-      'Returns todays prayer times for that area calculated by <code>[method]</code>:',
-      '<b>1</b> = Egyptian General Authority of Survey',
-      '<b>2</b> = University Of Islamic Sciences, Karachi (Shafi)',
-      '<b>3</b> = University Of Islamic Sciences, Karachi (Hanafi)',
-      '<b>4</b> = Islamic Circle of North America',
-      '<b>5</b> = Muslim World League',
-      '<b>6</b> = Umm Al-Qura',
-      '<b>7</b> = Fixed Isha',
-      '<b>Example</b>: <code>!salat 2 denpasar</code>',
+      sudo = {
+        '<code>!setapikey muslimsalat [api_key]</code>',
+        'Set Muslim Salat API key.'
+      },
+      user = {
+        '<code>!salat [area]</code>',
+        'Returns todays prayer times for that area',
+        '<b>Example</b>: <code>!salat bandung</code>',
+        '',
+        '<code>!salat [method] [area]</code>',
+        'Returns todays prayer times for that area calculated by <code>[method]</code>:',
+        '<b>1</b> = Egyptian General Authority of Survey',
+        '<b>2</b> = University Of Islamic Sciences, Karachi (Shafi)',
+        '<b>3</b> = University Of Islamic Sciences, Karachi (Hanafi)',
+        '<b>4</b> = Islamic Circle of North America',
+        '<b>5</b> = Muslim World League',
+        '<b>6</b> = Umm Al-Qura',
+        '<b>7</b> = Fixed Isha',
+        '<b>Example</b>: <code>!salat 2 denpasar</code>',
+      },
     },
     patterns = {
       '^!salat (%a.*)$',
       '^!salat (%d) (%a.*)$',
+      '^!(setapikey muslimsalat) (.*)$'
     },
     run = run
   }
