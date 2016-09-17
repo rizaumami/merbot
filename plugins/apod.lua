@@ -1,7 +1,7 @@
 do
 
   local function run(msg, matches)
-    check_api_key(msg, 'nasa_api')
+    check_api_key(msg, 'nasa_api', 'http://api.nasa.gov')
 
     if matches[1] == 'setapikey nasa_api' and is_sudo(msg.from.peer_id) then
       _config.api_key.nasa_api = matches[2]

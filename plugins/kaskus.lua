@@ -370,8 +370,8 @@ do
   end
 
   local function get_hot_thread(msg)
-    local hot, code = http.request(url .. 'forum')
-    local hotblock = hot:match('<h2>Hot Threads</h2>.-</div>')
+    local hot, code = http.request(url .. 'forum/hotthread/index/?ref=forumlanding&med=hot_thread')
+    local hotblock = hot:match('<h2>Hot Threads</h2>.-Kembali ke Atas')
     local hotthread = {}
 
     i = 0

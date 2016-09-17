@@ -753,7 +753,11 @@ local function bot(method, parameters, file)
   end
 end
 
-function check_api_key(msg, service)
+function check_api_key(msg, service, url)
+  if not _config.api_key[service .. '_url'] then
+    _config.api_key[service .. '_url'] = url
+    save_config()
+  end
   local text = '<b>MISSING</b> ' .. service .. ' api key in <code>config.lua</code>.\n\n'
       .. '• <a href="' .. _config.api_key[service .. '_url'] .. '">GET YOUR KEY HERE</a>\n'
       .. '• Set the key:\n<code> !setapikey ' .. service .. ' [api_key]</code>'

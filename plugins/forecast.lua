@@ -58,7 +58,7 @@ do
   end
 
   local function run(msg, matches)
-    check_api_key(msg, 'forecast')
+    check_api_key(msg, 'forecast', 'https://developer.forecast.io/')
 
     if matches[1] == 'setapikey forecast' and is_sudo(msg.from.peer_id) then
       _config.api_key.forecast = matches[2]

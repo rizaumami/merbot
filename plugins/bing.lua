@@ -48,7 +48,7 @@ do
   end
 
   local function run(msg, matches)
-    check_api_key(msg, 'bing')
+    check_api_key(msg, 'bing', 'https://datamarket.azure.com/dataset/bing/search')
 
     if matches[1] == 'setapikey bing' and is_sudo(msg.from.peer_id) then
       _config.api_key.bing = matches[2]

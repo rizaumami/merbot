@@ -25,7 +25,7 @@ do
   end
 
   local function run(msg, matches)
-    check_api_key(msg, 'yandex')
+    check_api_key(msg, 'yandex', 'http://tech.yandex.com/keys/get')
 
     if matches[1] == 'setapikey yandex' and is_sudo(msg.from.peer_id) then
       _config.api_key.yandex = matches[2]

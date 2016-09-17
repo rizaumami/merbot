@@ -221,7 +221,7 @@ do
   end
 
   function run(msg, matches)
-    check_api_key(msg, 'globalquran')
+    check_api_key(msg, 'globalquran', 'http://globalquran.com/contribute/signup.php')
 
     if matches[1] == 'setapikey globalquran' and is_sudo(msg.from.peer_id) then
       _config.api_key.globalquran = matches[2]

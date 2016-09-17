@@ -49,7 +49,7 @@ do
   end
 
   function run(msg, matches)
-    check_api_key(msg, 'muslimsalat')
+    check_api_key(msg, 'muslimsalat', 'http://muslimsalat.com/panel/signup.php')
 
     if matches[1] == 'setapikey muslimsalat' and is_sudo(msg.from.peer_id) then
       _config.api_key.muslimsalat = matches[2]
