@@ -1,7 +1,13 @@
 do
 
   function run(msg, matches)
-    local url = 'http://thecatapi.com/api/images/get?format=html&type=jpg&api_key=' .. _config.api_key.thecatapi
+    local filetype = '&type=jpg'
+
+    if matches[1] == 'gif' then
+      filetype = '&type=gif'
+    end
+
+    local url = 'http://thecatapi.com/api/images/get?format=html' .. filetype .. '&api_key=' .. _config.api_key.thecatapi
     local str, res = http.request(url)
 
     if res ~= 200 then
@@ -17,15 +23,20 @@ do
   return {
     description = 'Returns a cat!',
     usage = {
-      '<code>!cats</code>',
       '<code>!cat</code>',
-      'Returns a cat!',
+      '<code>!cats</code>',
+      'Returns a picture of cat!',
       '',
+      '<code>!cat gif</code>',
+      '<code>!cats gif</code>',
+      'Returns an animated picture of cat!',
     },
     patterns = {
-      '^!(cats?)$',
+      '^!cats?$',
+      '^!cats? (gif)$',
     },
-    run = run
+    run = run,
+    is_need_api_key = {'thecatapi', 'http://thecatapi.com/docs.html'}
   }
 
 end

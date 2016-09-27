@@ -37,61 +37,56 @@ do
     local lat = coords.lat
     local long = coords.lon
     local address = coords.formatted_address
-    local url = 'https://api.forecast.io/forecast/'
+    local url = 'https://api.darksky.net/forecast/'
     local units = '?units=si'
     local url = url .. _config.api_key.forecast .. '/' .. URL.escape(lat) .. ',' .. URL.escape(long) .. units
-
     local res, code = https.request(url)
+
     if code ~= 200 then
       return nil
     end
+
     local jcast = json:decode(res)
     local todate = os.date('%A, %F', jcast.currently.time)
 
     local forecast = '<b>Weather for: ' .. address .. '</b>\n' .. todate .. '\n\n'
-    local forecast = forecast .. '<b>Right now</b> ' .. wemoji(jcast.currently) .. '\n'
+        .. '<b>Right now</b> ' .. wemoji(jcast.currently) .. '\n'
         .. jcast.currently.summary .. ' - Feels like ' .. round(jcast.currently.apparentTemperature) .. '°C\n\n'
-    local forecast = forecast .. '<b>Next 24 hours</b> ' .. wemoji(jcast.hourly) .. '\n' .. jcast.hourly.summary .. '\n\n'
-    local forecast = forecast .. '<b>Next 7 days</b> ' .. wemoji(jcast.daily) .. '\n' .. jcast.daily.summary
+        .. '<b>Next 24 hours</b> ' .. wemoji(jcast.hourly) .. '\n' .. jcast.hourly.summary .. '\n\n'
+        .. '<b>Next 7 days</b> ' .. wemoji(jcast.daily) .. '\n' .. jcast.daily.summary .. '\n\n'
+        .. '<a href="https://darksky.net/poweredby/">Powered by Dark Sky</a>'
 
     bot_sendMessage(get_receiver_api(msg), forecast, true, msg.id, 'html')
   end
 
   local function run(msg, matches)
-    check_api_key(msg, 'forecast', 'https://developer.forecast.io/')
-
     if matches[1] == 'setapikey forecast' and is_sudo(msg.from.peer_id) then
       _config.api_key.forecast = matches[2]
       save_config()
-      send_message(msg, 'Forecast api key has been saved.', 'html')
+      send_message(msg, 'Dark Sky API key has been saved.', 'html')
       return
+    else
+      return getforecast(msg, matches[1])
     end
-
-    return getforecast(msg, matches[1])
   end
 
   return {
     description = 'Returns forecast from forecast.io.',
     usage = {
-      sudo = {
-        '<code>!setapikey forecast [api_key]</code>',
-        'Set forecast.io API key.'
-      },
-      user = {
-        '<code>!cast [area]</code>',
-        '<code>!forecast [area]</code>',
-        '<code>!weather [area]</code>',
-        'Forecast for that <code>[area]</code>.',
-        '<b>Example</b>: <code>!weather dago parung panjang</code>',
-      },
+      '<code>!cast [area]</code>',
+      '<code>!forecast [area]</code>',
+      '<code>!weather [area]</code>',
+      'Forecast for that <code>[area]</code>.',
+      '<b>Example</b>: <code>!weather dago parung panjang</code>',
     },
     patterns = {
       '^!cast (.*)$',
       '^!forecast (.*)$',
       '^!weather (.*)$',
-      '^!(setapikey forecast) (.*)$',
+      '^!(setapikey forecast) (.*)$'
     },
-    run = run
+    run = run,
+    is_need_api_key = {'forecast', 'https://darksky.net/dev/'}
   }
 
 end

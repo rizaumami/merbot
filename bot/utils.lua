@@ -260,7 +260,7 @@ function api_getme(bot_api_key)
   }
   local body = table.concat(response or {"no response"})
   local jbody = json:decode(body)
-
+  
   if jbody.ok then
     botid = jbody.result
   else
@@ -667,6 +667,17 @@ function markdown_escape(text)
   return text
 end
 
+function group_into_three(number)
+  while true do
+    number, k = string.gsub(number, "^(-?%d+)(%d%d%d)", '%1.%2')
+
+    if (k==0) then
+      break
+    end
+  end
+  return number
+end
+
 function pairsByKeys(t, f)
   local a = {}
   for n in pairs(t) do
@@ -750,21 +761,6 @@ local function bot(method, parameters, file)
   local jdata = json:decode(data)
   if not jdata.ok then
     vardump(jdata)
-  end
-end
-
-function check_api_key(msg, service, url)
-  if not _config.api_key[service .. '_url'] then
-    _config.api_key[service .. '_url'] = url
-    save_config()
-  end
-  local text = '<b>MISSING</b> ' .. service .. ' api key in <code>config.lua</code>.\n\n'
-      .. '• <a href="' .. _config.api_key[service .. '_url'] .. '">GET YOUR KEY HERE</a>\n'
-      .. '• Set the key:\n<code> !setapikey ' .. service .. ' [api_key]</code>'
-
-  if not _config.api_key or not _config.api_key[service] or _config.api_key[service] == '' then
-    bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
-    return
   end
 end
 

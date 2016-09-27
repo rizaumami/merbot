@@ -404,13 +404,23 @@ function load_plugins()
       print('Loading plugin', v)
 
       local ok, err =  pcall(function()
-        local t = loadfile('plugins/' .. v .. '.lua')()
-        plugins[v] = t
+        plug = loadfile('plugins/' .. v .. '.lua')()
+        plugins[v] = plug
       end)
 
       if not ok then
         print('\27[31mError loading plugin ' .. v .. '\27[39m')
         print('\27[31m' .. err .. '\27[39m')
+      else
+        if plug.is_need_api_key then
+          local keyname = _config.api_key[plug.is_need_api_key[1]]
+          if not keyname or keyname == '' then
+            table.remove(_config.enabled_plugins, k)
+            save_config()
+        		print('\27[33mMissing ' .. v .. ' api key\27[39m')
+        		print('\27[33m' .. v .. '.lua will not be enabled.\27[39m')
+        	end
+        end
       end
     end
   end
