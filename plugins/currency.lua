@@ -43,19 +43,10 @@ do
         return
       end
 
-      result = string.format('%.2f', str)
+      result = string.format('%.2f', str):gsub('%.', ',')
     end
 
-    while true do
-      result, k = string.gsub(result, "^(-?%d+)(%d%d%d)", '%1 %2')
-
-      if (k==0) then
-        break
-      end
-    end
-
-    local header = amount .. ' ' .. from .. ' = ' .. result .. ' ' .. to .. '\n\n'
-    local headerapi = '<b>' .. amount .. ' ' .. from .. ' = ' .. result .. ' ' .. to .. '</b>\n\n'
+    local headerapi = '<b>' .. amount .. ' ' .. from .. ' = ' .. group_into_three(result) .. ' ' .. to .. '</b>\n\n'
     local source = 'Source: Google Finance\n<code>' .. os.date('%F %T %Z') .. '</code>'
 
     send_message(msg, headerapi .. source, 'html')

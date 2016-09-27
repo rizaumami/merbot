@@ -931,7 +931,9 @@ do
           else
             chat_info('chat#id' .. gid, update_members_list, msg)
           end
-          demote({msg=msg, usr=get_username(msg)}, gid, uid, 'true')
+          if is_mod(msg, gid, uid) then
+            demote({msg=msg, usr=get_username(msg)}, gid, uid, 'true')
+          end
           --return 'Bye ' .. new_member .. '!'
         end
       end
