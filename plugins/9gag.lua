@@ -31,7 +31,7 @@ do
       }
 
     if msg.from.api then
-      bot_sendPhoto(get_receiver_api(msg), gag_file, nil, true, msg.id)
+      api.sendPhoto(get_receiver_api(msg), gag_file, nil, false, msg.id)
     else
       reply_photo(msg.id, gag_file, ok_cb, true)
     end

@@ -5,7 +5,7 @@ do
 
     if coords then
       if msg.from.api then
-        bot_sendLocation(get_receiver_api(msg), coords.lat, coords.lon, true, msg.id)
+        api.sendLocation(get_receiver_api(msg), coords.lat, coords.lon, false, msg.id)
       else
         send_location(get_receiver(msg), coords.lat, coords.lon, ok_cb, true)
       end

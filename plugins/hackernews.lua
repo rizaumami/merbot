@@ -4,7 +4,7 @@ do
     local jstr, res = https.request('https://hacker-news.firebaseio.com/v0/topstories.json')
 
     if res ~= 200 then
-      bot_sendMessage(get_receiver_api(msg), 'Connection error.', true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), 'Connection error.', 'html', true, false, msg.id)
       return
     end
 
@@ -43,7 +43,7 @@ do
 
     local hackernews = table.concat(hackernew)
 
-    bot_sendMessage(get_receiver_api(msg), header .. hackernews, true, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), header .. hackernews, 'html', true, false, msg.id)
   end
 
   return {

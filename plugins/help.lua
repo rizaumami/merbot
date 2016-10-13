@@ -111,7 +111,7 @@ do
            .. '<b>-</b> <code>!help [plugin number]</code> for more info.\n'
            .. '<b>-</b> <code>!help all</code> to show all info.'
 
-    bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), text, 'html', true, false, msg.id)
   end
 
 --  -- !help all command
@@ -168,7 +168,7 @@ do
         return
       end
 
-      bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), text, 'html', true, false, msg.id)
     end
   end
 

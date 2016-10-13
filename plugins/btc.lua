@@ -21,7 +21,7 @@ do
         .. '• Buy: ' .. group_into_three(ask) .. '\n'
         .. '• Sell: ' .. group_into_three(bid)
 
-    bot_sendMessage(get_receiver_api(msg), index, true, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), index, 'html', true, false, msg.id)
   end
 
   --------------------------------------------------------------------------------

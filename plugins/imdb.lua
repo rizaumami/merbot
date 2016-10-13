@@ -42,7 +42,7 @@ do
         .. '<b>Rating</b>: ' .. jomdb.imdbRating .. '\n'
         .. '<b>Votes</b>: ' .. jomdb.imdbVotes .. '\n\n'
 
-    bot_sendMessage(get_receiver_api(msg), omdb, false, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), omdb, 'html', false, false, msg.id)
   end
 
   return {

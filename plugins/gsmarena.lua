@@ -81,7 +81,7 @@ do
         .. '<b>Battery</b>: ' .. gsm.data.battery._empty_:gsub('battery', '') .. '\n'
         .. '<a href="' .. phone .. '">More on gsmarena.com ...</a>'
 
-    bot_sendMessage(get_receiver_api(msg), output:gsub('<br>', ''), false, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), output:gsub('<br>', ''), 'html', false, false, msg.id)
   end
 
 --------------------------------------------------------------------------------

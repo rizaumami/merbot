@@ -717,7 +717,7 @@ do
         bc_rcvr = '-100' .. gid
       end
       --send_large_msg(g_type .. '#id' .. gid, bc_msg)
-      bot_sendMessage(bc_rcvr, bc_msg, false, nil, nil)
+      api.sendMessage(bc_rcvr, bc_msg, 'html', true, false)
     end
   end
 
@@ -884,7 +884,7 @@ do
             elseif data.welcome.to == 'private' then
               receiver_api = 'user#id' .. userid
             end
-            bot_sendMessage(get_receiver_api(msg), welcomes .. group_about .. group_rules .. '\n', false, msg.id, 'html')
+            api.sendMessage(get_receiver_api(msg), welcomes .. group_about .. group_rules .. '\n', 'html', true, false, msg.id)
           end
           -- Update group's members table
           if msg.to.peer_type == 'channel' then
@@ -1682,7 +1682,7 @@ do
                  .. '*-* Spam protection = `' .. data.antispam .. '`\n'
                  .. '*-* Sticker policy = `' .. data.sticker .. '`\n'
                  .. '*-* Welcome message = `' .. data.welcome.to .. '`\n'
-          bot_sendMessage(get_receiver_api(msg), text, false, msg.id, 'markdown')
+          api.sendMessage(get_receiver_api(msg), text, 'markdown', true, false, msg.id)
         end
 
         -- Invite user by {id|username|name|reply}
@@ -1788,17 +1788,17 @@ do
         local gtitle = msg.to.title
         if data.public or is_owner(msg, gid, uid) then
           if link == '' then
-            bot_sendMessage(get_receiver_api(msg), 'No link has been set for this group.\n'
-                .. 'Try `!link set` to generate.', false, msg.id, 'markdown')
+            api.sendMessage(get_receiver_api(msg), 'No link has been set for this group.\n'
+                .. 'Try `!link set` to generate.', 'markdown', true, false, msg.id)
           elseif link == 'revoked' then
             reply_msg(msg.id, 'Invite link for this group has been revoked', ok_cb, true)
           else
             local about = data.description
             local clickme = '<a href="' .. link .. '">Click me to join ' .. gtitle .. '</a>'
             if not about then
-              bot_sendMessage(get_receiver_api(msg), '<b>' .. gtitle .. '</b>\n\n' .. clickme, false, msg.id, 'html')
+              api.sendMessage(get_receiver_api(msg), '<b>' .. gtitle .. '</b>\n\n' .. clickme, 'html', false, false, msg.id)
             else
-              bot_sendMessage(get_receiver_api(msg), '<b>' .. gtitle .. '</b>\n\n' .. about .. '\n\n' .. clickme, false, msg.id, 'html')
+              api.sendMessage(get_receiver_api(msg), '<b>' .. gtitle .. '</b>\n\n' .. about .. '\n\n' .. clickme, 'html', true, false, msg.id)
             end
           end
         else
@@ -1812,7 +1812,7 @@ do
         if not about then
           reply_msg(msg.id, 'No description available', ok_cb, true)
         else
-          bot_sendMessage(get_receiver_api(msg), '<b>' .. msg.to.title .. '</b>\n\n' .. about, false, msg.id, 'html')
+          api.sendMessage(get_receiver_api(msg), '<b>' .. msg.to.title .. '</b>\n\n' .. about, 'html', true, false, msg.id)
         end
       end
 
@@ -1845,7 +1845,7 @@ do
         else
           gplist = '*Groups:*\n' .. gplist
         end
-        bot_sendMessage(get_receiver_api(msg), gplist, false, msg.id, 'markdown')
+        api.sendMessage(get_receiver_api(msg), gplist, 'markdown', true, false, msg.id)
       end
 
       -- print merbot version

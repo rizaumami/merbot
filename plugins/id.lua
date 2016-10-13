@@ -18,9 +18,9 @@ do
     local cmd = extra.cmd
 
     if cmd == 'pm' then
-      bot_sendMessage(msg.from.peer_id, list, true, nil, 'html')
+      api.sendMessage(msg.from.peer_id, list, 'html', true, false)
     elseif msg.text == '!id chat' then
-      bot_sendMessage(get_receiver_api(msg), list, true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), list, 'html', true, false, msg.id)
     end
   end
 
@@ -39,10 +39,10 @@ do
           .. '<code>User name :</code>' .. user_name .. '\n'
           .. '<code>ID        :' .. result.peer_id .. '</code>'
 
-      bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), text, 'html', true, false, msg.id)
     else
-      bot_sendMessage(get_receiver_api(msg), '<b>Failed</b> to resolve <code>'
-          .. extra.usr .. '</code> IDs.\nCheck if <code>' .. extra.usr .. '</code> is correct.', true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), '<b>Failed</b> to resolve <code>'
+          .. extra.usr .. '</code> IDs.\nCheck if <code>' .. extra.usr .. '</code> is correct.', 'html', true, false, msg.id)
     end
   end
 
@@ -71,7 +71,7 @@ do
       end
     end
     if next(founds) == nil then -- Empty table
-      bot_sendMessage(get_receiver_api(msg), uname .. ' <b>not found on this chat</b>', true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), uname .. ' <b>not found on this chat</b>', 'html', true, false, msg.id)
     else
       local text = ''
 
@@ -88,7 +88,7 @@ do
               .. '<code>ID        :' .. user.peer_id .. '</code>\n\n'
       end
 
-      bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), text, 'html', true, false, msg.id)
     end
   end
 
@@ -105,7 +105,7 @@ do
                 .. '<code>User name :</code>' .. user_name .. '\n'
                 .. '<code>ID        :' .. result.from.peer_id .. '</code>'
 
-    bot_sendMessage(get_receiver_api(extra), text, true, extra.id, 'html')
+    api.sendMessage(get_receiver_api(extra), text, 'html', true, false, msg.id)
   end
 
   local function returnids(extra, success, result)
@@ -206,9 +206,9 @@ do
           .. '<code>ID        :' .. uid .. '</code>'
 
       if not is_chat_msg(msg) then
-        bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'html')
+        api.sendMessage(get_receiver_api(msg), text, 'html', true, false, msg.id)
       else
-        bot_sendMessage(get_receiver_api(msg), text .. '\n\nYou are in group <b>' .. msg.to.title .. '</b> [<code>' .. tostring(gid):gsub('-', '')  .. '</code>]', true, msg.id, 'html')
+        api.sendMessage(get_receiver_api(msg), text .. '\n\nYou are in group <b>' .. msg.to.title .. '</b> [<code>' .. tostring(gid):gsub('-', '')  .. '</code>]', 'html', true, false, msg.id)
       end
     end
 

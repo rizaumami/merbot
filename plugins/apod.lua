@@ -48,7 +48,7 @@ do
       apod = apod .. '\n\n<i>Copyright: ' .. jstr.copyright .. '</i>'
     end
 
-    bot_sendMessage(get_receiver_api(msg), apod, false, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), apod, 'html', false, false, msg.id)
   end
 
   return {

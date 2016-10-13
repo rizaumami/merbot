@@ -17,7 +17,7 @@ do
 
     local str = str:match('<img src="(.-)">')
 
-    bot_sendMessage(get_receiver_api(msg), '<a href="' .. str .. '">Cat!</a>', false, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), '<a href="' .. str .. '">Cat!</a>', 'html', false, false, msg.id)
   end
 
   return {

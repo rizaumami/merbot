@@ -55,7 +55,7 @@ do
     for k,user in pairs(users_info) do
       text = text .. '*' .. k .. '*. `' .. user.id .. '` - ' .. markdown_escape(user.name) .. ' = *' .. user.msgs .. '*\n'
     end
-    bot_sendMessage(get_receiver_api(msg), text, true, msg.id, 'markdown')
+    api.sendMessage(get_receiver_api(msg), text, 'markdown', true, false, msg.id)
   end
 
 --------------------------------------------------------------------------------

@@ -44,7 +44,7 @@ do
 
     local relevantxkcd = '<a href="' .. url .. '">' .. title .. '</a>\n\n' .. alt .. '\n\n'
 
-    bot_sendMessage(get_receiver_api(msg), relevantxkcd, false, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), relevantxkcd, 'html', false, false, msg.id)
   end
 
   return {

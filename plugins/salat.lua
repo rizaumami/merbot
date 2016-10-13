@@ -106,7 +106,7 @@ do
         .. 'Maghrib : ' .. totwentyfour(salat.items[1].maghrib) .. '\n'
         .. 'Isha    : ' .. totwentyfour(salat.items[1].isha) .. '</code>' .. notif
 
-    bot_sendMessage(get_receiver_api(msg), is_salat_time, true, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), is_salat_time, 'html', true, false, msg.id)
   end
 
   return {

@@ -30,16 +30,16 @@ do
     if matches[2] then
       if matches[2] == 'txt' then
         if msg.from.api then
-          bot_sendDocument(get_receiver_api(msg), whofile, nil, true, msg.id)
+          api.sendDocument(get_receiver_api(msg), whofile, nil, false, msg.id)
         else
           reply_file(msg.id, whofile, ok_cb, true)
         end
       end
       if matches[2] == 'pm' and is_chat_msg(msg) then
-        bot_sendMessage(msg.from.peer_id, whoinfo(), true, nil, nil)
+        api.sendMessage(msg.from.peer_id, whoinfo(), nil, true, false)
       end
       if matches[2] == 'pmtxt' and is_chat_msg(msg) then
-        bot_sendDocument(msg.from.peer_id, whofile, nil, true, nil)
+        api.sendDocument(msg.from.peer_id, whofile, nil, false)
       end
     else
       send_message(msg, whoinfo(), nil)

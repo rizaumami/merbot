@@ -36,7 +36,7 @@ do
       local header = '<b>$</b> <code>' .. input .. '</code>\n'
       local stdout = io.popen(input):read('*all')
 
-      bot_sendMessage(get_receiver_api(msg), header .. '<code>' .. stdout .. '</code>', true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), header .. '<code>' .. stdout .. '</code>', 'html', true, msg.id)
     end
 
     if matches[1] == 'bot' then

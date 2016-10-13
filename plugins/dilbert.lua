@@ -36,7 +36,7 @@ do
     local strip_date = str:match('<meta property="article:publish_date" content="(.-)"/>')
 
     if msg.from.api then
-      bot_sendPhoto(get_receiver_api(msg), strip_file, strip_date .. '. ' .. strip_title, true, msg.id)
+      api.sendPhoto(get_receiver_api(msg), strip_file, strip_date .. '. ' .. strip_title, false, msg.id)
     else
       local cmd = 'send_photo %s %s %s'
       local command = cmd:format(get_receiver(msg), strip_file, strip_date .. '. ' .. strip_title)

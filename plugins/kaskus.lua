@@ -383,7 +383,7 @@ do
     local hotthread = table.concat(hotthread, '\n')
     local header = '<b>Kaskus Hot Thread</b>\n\n'
 
-    bot_sendMessage(get_receiver_api(msg), header .. hotthread, true, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), header .. hotthread, 'html', true, false, msg.id)
   end
 
   local function get_kaskus_thread(msg, forum_id)
@@ -405,7 +405,7 @@ do
     local kasthread = kasthread:gsub(' &ltspan', '')
     local subforum = '<b>' .. kaskus_forums[tonumber(forum_id)] .. '</b>\n\n'
 
-    bot_sendMessage(get_receiver_api(msg), subforum .. kasthread, true, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), subforum .. kasthread, 'html', true, false, msg.id)
   end
 
   local function run(msg, matches)
@@ -433,13 +433,13 @@ do
         end
 
         if not next(similarforumname) then
-          bot_sendMessage(get_receiver_api(msg), header, true, msg.id, 'html')
+          api.sendMessage(get_receiver_api(msg), header, 'html', true, false, msg.id)
         elseif i == 1 then
           get_kaskus_thread(msg, forum_id)
         else
-          bot_sendMessage(get_receiver_api(msg), header
+          api.sendMessage(get_receiver_api(msg), header
               .. 'Berikut daftar forum dengan kata kunci <b>' ..  matches[2] .. '</b>:\n'
-              .. table.concat(similarforumname), true, msg.id, 'html')
+              .. table.concat(similarforumname), 'html', true, false, msg.id)
         end
       end
     end

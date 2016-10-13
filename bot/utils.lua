@@ -4,8 +4,8 @@ https = require "ssl.https"
 ltn12 = require "ltn12"
 serpent = require "serpent"
 feedparser = require "feedparser"
-multipart = require 'multipart-post'
 
+api = (loadfile "./bot/api-methods.lua")()
 json = (loadfile "./libs/JSON.lua")()
 mimetype = (loadfile "./libs/mimetype.lua")()
 redis = (loadfile "./libs/redis.lua")()
@@ -260,7 +260,7 @@ function api_getme(bot_api_key)
   }
   local body = table.concat(response or {"no response"})
   local jbody = json:decode(body)
-  
+
   if jbody.ok then
     botid = jbody.result
   else
@@ -337,12 +337,12 @@ function string:starts(text)
 end
 
 -- which bot messages sent by
-function send_message(msg, text, markdown)
+function send_message(msg, text, parse_mode)
   if msg.from.api then
     if msg.reply_to_message then
       msg.id = msg.reply_to_message.message_id
     end
-    bot_sendMessage(get_receiver_api(msg), text, true, msg.id, markdown)
+    api.sendMessage(get_receiver_api(msg), text, parse_mode, true, false, msg.id)
   else
     if msg.reply_id then
       msg.id = msg.reply_id
@@ -717,88 +717,4 @@ function get_coords(msg, input)
     lon = jdat.results[1].geometry.location.lng,
     formatted_address = jdat.results[1].formatted_address
   }
-end
-
--- Text formatting is server side. And (until now) only for API bots.
--- So, here is a simple workaround; send message through Telegram official API.
--- You need to provide your API bots TOKEN in config.lua.
-local function bot(method, parameters, file)
-  local parameters = parameters or {}
-  for k,v in pairs(parameters) do
-    parameters[k] = tostring(v)
-  end
-  if file and next(file) ~= nil then
-    local file_type, file_name = next(file)
-    local file_file = io.open(file_name, 'r')
-    local file_data = {
-      filename = file_name,
-      data = file_file:read('*a')
-    }
-    file_file:close()
-    parameters[file_type] = file_data
-  end
-  if next(parameters) == nil then
-    parameters = {''}
-  end
-
-  if parameters.reply_to_message_id and #parameters.reply_to_message_id > 30 then
-    parameters.reply_to_message_id = nil
-  end
-
-  local response = {}
-  local body, boundary = multipart.encode(parameters)
-  local success = https.request{
-    url = 'https://api.telegram.org/bot' .. _config.bot_api.key .. '/' .. method,
-    method = 'POST',
-    headers = {
-      ["Content-Type"] =  "multipart/form-data; boundary=" .. boundary,
-      ["Content-Length"] = #body,
-    },
-    source = ltn12.source.string(body),
-    sink = ltn12.sink.table(response)
-  }
-  local data = table.concat(response)
-  local jdata = json:decode(data)
-  if not jdata.ok then
-    vardump(jdata)
-  end
-end
-
-function bot_sendMessage(chat_id, text, disable_web_page_preview, reply_to_message_id, parse_mode)
-  return bot('sendMessage', {
-    chat_id = chat_id,
-    text = text,
-    disable_web_page_preview = disable_web_page_preview,
-    reply_to_message_id = reply_to_message_id,
-    parse_mode = parse_mode or nil
-  } )
-end
-
-function bot_sendPhoto(chat_id, photo, caption, disable_notification, reply_to_message_id)
-  return bot('sendPhoto', {
-    chat_id = chat_id,
-    caption = caption,
-    disable_notification = disable_notification,
-    reply_to_message_id = reply_to_message_id,
-  }, {photo = photo} )
-end
-
-function bot_sendLocation(chat_id, latitude, longitude, disable_notification, reply_to_message_id)
-  return bot('sendLocation', {
-    chat_id = chat_id,
-    latitude = latitude,
-    longitude = longitude,
-    disable_notification = disable_notification,
-    reply_to_message_id = reply_to_message_id,
-  })
-end
-
-function bot_sendDocument(chat_id, document, caption, disable_notification, reply_to_message_id)
-  return bot('sendDocument', {
-    chat_id = chat_id,
-    document = document,
-    caption = caption,
-    disable_notification = disable_notification,
-    reply_to_message_id = reply_to_message_id,
-  }, {document = document})
 end

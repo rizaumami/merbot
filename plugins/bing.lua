@@ -37,7 +37,7 @@ do
       local reslist = table.concat(reslist, '\n')
       local header = '<b>Bing results for</b> <i>' .. terms .. '</i> <b>:</b>\n'
 
-      bot_sendMessage(get_receiver_api(msg), header .. reslist, true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), header .. reslist, 'html', true, false, msg.id)
     end
   end
 

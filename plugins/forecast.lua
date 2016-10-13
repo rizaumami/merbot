@@ -56,7 +56,7 @@ do
         .. '<b>Next 7 days</b> ' .. wemoji(jcast.daily) .. '\n' .. jcast.daily.summary .. '\n\n'
         .. '<a href="https://darksky.net/poweredby/">Powered by Dark Sky</a>'
 
-    bot_sendMessage(get_receiver_api(msg), forecast, true, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), forecast, 'html', true, false, msg.id)
   end
 
   local function run(msg, matches)

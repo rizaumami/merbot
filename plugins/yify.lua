@@ -29,7 +29,7 @@ do
           .. '<code>' .. yify.year .. ' | ' .. yify.rating .. '/10 | ' .. yify.runtime .. '</code> min\n\n'
           .. torrlist .. '\n\n' .. yify.synopsis:sub(1, 2000) .. '<a href="' .. yify.url .. '"> More on yts.ag ...</a>'
 
-      bot_sendMessage(get_receiver_api(msg), output, false, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), output, 'html', true, false, msg.id)
     end
   end
 

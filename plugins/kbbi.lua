@@ -55,7 +55,7 @@ do
       end
     end
     print(cleanup_tag(title .. kbbi_desc))
-    bot_sendMessage(get_receiver_api(msg), cleanup_tag(title .. kbbi_desc), true, msg.id, 'html')
+    api.sendMessage(get_receiver_api(msg), cleanup_tag(title .. kbbi_desc), 'html', true, false, msg.id)
   end
 
 --------------------------------------------------------------------------------

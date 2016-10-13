@@ -46,7 +46,7 @@ do
       local webshotimg = download_to_file(imgurl, nil)
 
       if msg.from.api then
-        bot_sendPhoto(get_receiver_api(msg), webshotimg, nil, true, msg.id)
+        api.sendPhoto(get_receiver_api(msg), webshotimg, nil, false, msg.id)
       else
         reply_photo(msg.id, webshotimg, ok_cb, true)
       end

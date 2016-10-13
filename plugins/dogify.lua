@@ -8,7 +8,7 @@ do
     local urlm = 'https?://[%%%w-_%.%?%.:/%+=&]+'
 
     if string.match(url, urlm) == url then
-      bot_sendMessage(get_receiver_api(msg), '[doge](' .. url .. ')', false, msg.id, 'markdown')
+      api.sendMessage(get_receiver_api(msg), '[doge](' .. url .. ')', 'markdown', false, false, msg.id)
     else
       print("Can't build a good URL with parameter " .. matches[1])
     end

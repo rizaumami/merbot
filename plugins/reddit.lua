@@ -65,7 +65,7 @@ do
     if not threadit:match('%w+') then
       send_message(msg, '<b>You must be 18+ to view this community.</b>', 'html')
     else
-      bot_sendMessage(get_receiver_api(msg), subreddit, true, msg.id, 'html')
+      api.sendMessage(get_receiver_api(msg), subreddit, 'html', true, false, msg.id)
     end
   end
 
