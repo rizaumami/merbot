@@ -1,17 +1,8 @@
 do
 
   local function run(msg, matches)
-    check_api_key(msg, 'nasa_api', 'http://api.nasa.gov')
-
-    if matches[1] == 'setapikey nasa_api' and is_sudo(msg.from.peer_id) then
-      _config.api_key.nasa_api = matches[2]
-      save_config()
-      send_message(msg, 'NASA api key has been saved.', 'html')
-      return
-    end
-
     local apodate = '<b>' .. os.date("%F") .. '</b>\n\n'
-    local url = 'https://api.nasa.gov/planetary/apod?api_key=' .. _config.api_key.nasa_api
+    local url = 'https://api.nasa.gov/planetary/apod?api_key=' .. _config.key.apod
 
     if matches[2] then
       if matches[2]:match('%d%d%d%d%-%d%d%-%d%d$') then
@@ -82,7 +73,8 @@ do
       '^!(apodtext) (%g+)$',
       '^!(setapikey nasa_api) (.*)$'
     },
-    run = run
+    run = run,
+    need_api_key = 'http://api.nasa.gov'
   }
 
 end

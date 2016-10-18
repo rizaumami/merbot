@@ -7,7 +7,7 @@ do
       filetype = '&type=gif'
     end
 
-    local url = 'http://thecatapi.com/api/images/get?format=html' .. filetype .. '&api_key=' .. _config.api_key.thecatapi
+    local url = 'http://thecatapi.com/api/images/get?format=html' .. filetype .. '&api_key=' .. _config.key.cats
     local str, res = http.request(url)
 
     if res ~= 200 then
@@ -36,7 +36,7 @@ do
       '^!cats? (gif)$',
     },
     run = run,
-    is_need_api_key = {'thecatapi', 'http://thecatapi.com/docs.html'}
+    need_api_key = 'http://thecatapi.com/docs.html'
   }
 
 end

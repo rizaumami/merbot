@@ -9,7 +9,7 @@ do
       lang = _config.lang or 'en'
     end
 
-    local url = 'https://translate.yandex.net/api/v1.5/tr.json/translate?key=' .. _config.api_key.yandex .. '&lang=' .. lang .. '&text=' .. URL.escape(text)
+    local url = 'https://translate.yandex.net/api/v1.5/tr.json/translate?key=' .. _config.key.translate .. '&lang=' .. lang .. '&text=' .. URL.escape(text)
     local str, res= https.request(url)
     local jstr = json:decode(str)
 
@@ -25,15 +25,6 @@ do
   end
 
   local function run(msg, matches)
-    check_api_key(msg, 'yandex', 'http://tech.yandex.com/keys/get')
-
-    if matches[1] == 'setapikey yandex' and is_sudo(msg.from.peer_id) then
-      _config.api_key.yandex = matches[2]
-      save_config()
-      send_message(msg, 'Muslim salat api key has been saved.', 'html')
-      return
-    end
-
     -- comment this line if you want this plugin to works in private message.
     --if not is_chat_msg(msg) and not is_admin(msg.from.peer_id) then return nil end
 
@@ -149,7 +140,8 @@ do
       "^!(translate)",
       '^!(setapikey yandex) (.*)$'
     },
-    run = run
+    run = run,
+    need_api_key = 'http://tech.yandex.com/keys/get'
   }
 
 end

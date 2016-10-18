@@ -1,6 +1,7 @@
 --[[
 
 Partially taken from https://github.com/cosmonawt/lua-telegram-bot
+Be carefull, no parameters check.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,17 +19,24 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 ]]
 
--- Import Libraries
 local encode = require 'multipart-post'
+local C = {}
 
-local api = {}
+local function result(response)
+  if (response.success == 1) then
+    return json:decode(response.body)
+  else
+    return nil, "Request Error"
+  end
+end
 
-function makeRequest(method, request_body)
+local function makeRequest(method, request_body)
+  local token = api.token or _config.api.token
   local response = {}
   local body, boundary = encode.encode(request_body)
 
   local success, code, headers, status = https.request{
-    url = 'https://api.telegram.org/bot71641016:AAEeV8KUoFJrROUYZVy0HOGe1FBb1kRHT4U/' .. method,
+    url = 'https://api.telegram.org/bot' .. token .. '/' .. method,
     method = 'POST',
     headers = {
       ['Content-Type'] =  'multipart/form-data; boundary=' .. boundary,
@@ -45,19 +53,19 @@ function makeRequest(method, request_body)
     status = status or '0',
     body = table.concat(response or {'no response'}),
   }
+
   return r
 end
 
-function api.getMe()
-  makeRequest('getMe', {''})
+local function getMe()
+  local response = makeRequest('getMe', {''})
+  return result(response)
 end
 
-function api.sendMessage(chat_id, text, parse_mode, disable_web_page_preview, disable_notification, reply_to_message_id, reply_markup)
-  local allowed_parse_mode = {['markdown'] = true, ['html'] = true}
+C.getMe = getMe
 
-  if (not allowed_parse_mode[parse_mode:lower()]) then parse_mode = '' end
-
-  makeRequest('sendMessage', {
+local function sendMessage(chat_id, text, parse_mode, disable_web_page_preview, disable_notification, reply_to_message_id, reply_markup)
+  local response = makeRequest('sendMessage', {
     chat_id = chat_id,
     text = tostring(text),
     parse_mode = parse_mode:lower(),
@@ -66,18 +74,24 @@ function api.sendMessage(chat_id, text, parse_mode, disable_web_page_preview, di
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup or ''
   })
+	result(response)
 end
 
-function api.forwardMessage(chat_id, from_chat_id, disable_notification, message_id)
-  makeRequest('forwardMessage', {
+C.sendMessage = sendMessage
+
+local function forwardMessage(chat_id, from_chat_id, disable_notification, message_id)
+  local response = makeRequest('forwardMessage', {
     chat_id = chat_id,
     from_chat_id = from_chat_id,
     disable_notification = tostring(disable_notification),
     message_id = tonumber(message_id),
   })
+	result(response)
 end
 
-function api.sendPhoto(chat_id, photo, caption, disable_notification, reply_to_message_id, reply_markup)
+C.forwardMessage = forwardMessage
+
+local function sendPhoto(chat_id, photo, caption, disable_notification, reply_to_message_id, reply_markup)
   local file_id = ''
   local photo_data = {}
 
@@ -102,9 +116,12 @@ function api.sendPhoto(chat_id, photo, caption, disable_notification, reply_to_m
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup
   })
+	result(response)
 end
 
-function api.sendAudio(chat_id, audio, duration, performer, title, disable_notification, reply_to_message_id, reply_markup)
+C.sendPhoto = sendPhoto
+
+local function sendAudio(chat_id, audio, duration, performer, title, disable_notification, reply_to_message_id, reply_markup)
   local file_id = ''
   local audio_data = {}
 
@@ -121,7 +138,7 @@ function api.sendAudio(chat_id, audio, duration, performer, title, disable_notif
     audio_file:close()
   end
 
-  makeRequest('sendAudio', {
+  local response = makeRequest('sendAudio', {
     chat_id = chat_id,
     audio = file_id or audio_data,
     duration = duration,
@@ -131,9 +148,12 @@ function api.sendAudio(chat_id, audio, duration, performer, title, disable_notif
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup
   })
+	result(response)
 end
 
-function api.sendDocument(chat_id, document, caption, disable_notification, reply_to_message_id, reply_markup)
+C.sendAudio = sendAudio
+
+local function sendDocument(chat_id, document, caption, disable_notification, reply_to_message_id, reply_markup)
   local file_id = ''
   local document_data = {}
 
@@ -149,7 +169,7 @@ function api.sendDocument(chat_id, document, caption, disable_notification, repl
     document_file:close()
   end
 
-  makeRequest('sendDocument', {
+  local response = makeRequest('sendDocument', {
     chat_id = chat_id,
     document = file_id or document_data,
     caption = caption,
@@ -157,9 +177,12 @@ function api.sendDocument(chat_id, document, caption, disable_notification, repl
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup
   })
+	result(response)
 end
 
-function api.sendSticker(chat_id, sticker, disable_notification, reply_to_message_id, reply_markup)
+C.sendDocument = sendDocument
+
+local function sendSticker(chat_id, sticker, disable_notification, reply_to_message_id, reply_markup)
   local file_id = ''
   local sticker_data = {}
 
@@ -176,16 +199,19 @@ function api.sendSticker(chat_id, sticker, disable_notification, reply_to_messag
     sticker_file:close()
   end
 
-  makeRequest('sendSticker', {
+  local response = makeRequest('sendSticker', {
     chat_id = chat_id,
     sticker = file_id or sticker_data,
     disable_notification = tostring(disable_notification),
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup
   })
+	result(response)
 end
 
-function api.sendVideo(chat_id, video, duration, caption, disable_notification, reply_to_message_id, reply_markup)
+C.sendSticker = sendSticker
+
+local function sendVideo(chat_id, video, duration, caption, disable_notification, reply_to_message_id, reply_markup)
   local file_id = ''
   local video_data = {}
 
@@ -202,7 +228,7 @@ function api.sendVideo(chat_id, video, duration, caption, disable_notification, 
     video_file:close()
   end
 
-  makeRequest('sendVideo', {
+  local response = makeRequest('sendVideo', {
     chat_id = chat_id,
     video = file_id or video_data,
     duration = duration,
@@ -211,9 +237,12 @@ function api.sendVideo(chat_id, video, duration, caption, disable_notification, 
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup
   })
+	result(response)
 end
 
-function api.sendVoice(chat_id, voice, duration, disable_notification, reply_to_message_id, reply_markup)
+C.sendVideo = sendVideo
+
+local function sendVoice(chat_id, voice, duration, disable_notification, reply_to_message_id, reply_markup)
   local file_id = ''
   local voice_data = {}
 
@@ -230,7 +259,7 @@ function api.sendVoice(chat_id, voice, duration, disable_notification, reply_to_
     voice_file:close()
   end
 
-  makeRequest('sendVoice', {
+  local response = makeRequest('sendVoice', {
     chat_id = chat_id,
     voice = file_id or voice_data,
     duration = duration,
@@ -238,9 +267,12 @@ function api.sendVoice(chat_id, voice, duration, disable_notification, reply_to_
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup
   })
+	result(response)
 end
 
-function api.sendLocation(chat_id, latitude, longitude, disable_notification, reply_to_message_id, reply_markup)
+C.sendVoice = sendVoice
+
+local function sendLocation(chat_id, latitude, longitude, disable_notification, reply_to_message_id, reply_markup)
   chat_id = chat_id
   latitude = tonumber(latitude)
   longitude = tonumber(longitude)
@@ -251,13 +283,21 @@ function api.sendLocation(chat_id, latitude, longitude, disable_notification, re
   local response = makeRequest('sendLocation',request_body)
 end
 
-function api.sendChatAction(chat_id, action)
+C.sendLocation = sendLocation
+
+local function sendChatAction(chat_id, action)
   -- action = typing|upload_photo|record_video|upload_video|record_audio|upload_audio|upload_document|find_location
-  makeRequest('sendChatAction', {chat_id = chat_id, action = action})
+  local response = makeRequest('sendChatAction', {
+    chat_id = chat_id,
+    action = action
+  })
+	result(response)
 end
 
-function api.sendVenue(chat_id, latitude, longitude, title, adress, foursquare_id, disable_notification, reply_to_message_id, reply_markup)
-  makeRequest('sendVenue', {
+C.sendChatAction = sendChatAction
+
+local function sendVenue(chat_id, latitude, longitude, title, adress, foursquare_id, disable_notification, reply_to_message_id, reply_markup)
+  local response = makeRequest('sendVenue', {
     chat_id = chat_id,
     latitude = tonumber(latitude),
     longitude = tonumber(longitude),
@@ -268,10 +308,13 @@ function api.sendVenue(chat_id, latitude, longitude, title, adress, foursquare_i
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup
   })
+	result(response)
 end
 
-function api.sendContact(chat_id, phone_number, first_name, last_name, disable_notification, reply_to_message_id, reply_markup)
-  makeRequest('sendContact', {
+C.sendVenue = sendVenue
+
+local function sendContact(chat_id, phone_number, first_name, last_name, disable_notification, reply_to_message_id, reply_markup)
+  local response = makeRequest('sendContact', {
     chat_id = chat_id,
     phone_number = tostring(phone_number),
     first_name = tostring(first_name),
@@ -280,24 +323,116 @@ function api.sendContact(chat_id, phone_number, first_name, last_name, disable_n
     reply_to_message_id = tonumber(reply_to_message_id),
     reply_markup = reply_markup
   })
+	result(response)
 end
 
-function api.kickChatMember(chat_id, user_id)
-  makeRequest('kickChatMember', {
+C.sendContact = sendContact
+
+local function kickChatMember(chat_id, user_id)
+  local response = makeRequest('kickChatMember', {
     chat_id = chat_id,
     user_id = tonumber(user_id)
   })
+	result(response)
 end
 
-function api.unbanChatMember(chat_id, user_id)
-  makeRequest('unbanChatMember', {
+C.kickChatMember = kickChatMember
+
+local function unbanChatMember(chat_id, user_id)
+  local response = makeRequest('unbanChatMember', {
     chat_id = chat_id,
     user_id = tonumber(user_id)
   })
+	result(response)
 end
 
-function api.leaveChat(chat_id)
-  makeRequest('leaveChat', {chat_id})
+local function leaveChat(chat_id)
+  local response = makeRequest('leaveChat', {chat_id})
+  return result(response)
 end
 
-return api
+C.leaveChat = leaveChat
+
+local function process_msg(msg)
+  if not is_chat_msg(msg) and msg.from.peer_id == _config.bot_api.uid then
+    local loadapimsg = loadstring(msg.text)
+    local apimsg = loadapimsg().message
+    local target = tostring(apimsg.chat.id):gsub('-', '')
+
+    if apimsg.chat.type == 'supergroup' or apimsg.chat.type == 'channel' then
+      target = tostring(apimsg.chat.id):gsub('-100', '')
+    end
+
+    if not _config.administration[tonumber(target)] or apimsg.chat.type == 'supergroup' then
+      msg.from.api = true
+      msg.from.first_name = apimsg.from.first_name
+      msg.from.peer_id = apimsg.from.id
+      msg.from.username = apimsg.from.username
+      msg.to.peer_id = apimsg.chat.id
+      msg.to.peer_type = apimsg.chat.type
+      msg.id = apimsg.message_id
+      msg.text = apimsg.text
+
+      if apimsg.chat.type == 'group' or apimsg.chat.type == 'supergroup' or apimsg.chat.type == 'channel' then
+        msg.to.title = apimsg.chat.title
+        msg.to.username = apimsg.chat.username
+      end
+
+      if apimsg.chat.type == 'private' then
+        msg.to.first_name = apimsg.chat.first_name
+        msg.to.username = apimsg.chat.username
+      end
+
+      if apimsg.reply_to_message then
+        msg.reply_to_message = apimsg.reply_to_message
+      end
+
+      if apimsg.new_chat_title then
+        msg.action = { title = apimsg.new_chat_title, type = 'chat_rename' }
+      end
+
+      if apimsg.new_chat_participant then
+        msg.action.type = 'chat_add_user'
+        msg.action.user.first_name = apimsg.new_chat_participant.first_name
+        msg.action.user.peer_id = apimsg.new_chat_participant.id
+        msg.action.user.username = apimsg.new_chat_participant.username
+      end
+
+      if apimsg.left_chat_participant then
+        msg.action.type = 'chat_del_user'
+        msg.action.user.first_name = apimsg.new_chat_participant.first_name
+        msg.action.user.peer_id = apimsg.new_chat_participant.id
+        msg.action.user.username = apimsg.new_chat_participant.username
+      end
+
+      if apimsg.new_chat_photo then
+        msg.action.type = 'chat_change_photo'
+      end
+
+      if apimsg.delete_chat_photo then
+        msg.action.type = 'chat_delete_photo'
+      end
+
+      -- if apimsg.group_chat_created then
+      --   msg.action = { title = apimsg.group_chat_created, type = 'chat_created' }
+      -- end
+      -- if apimsg.supergroup_chat_created    then
+      --   msg.action = { title = apimsg.supergroup_chat_created   , type = '' }
+      -- end
+      -- if apimsg.channel_chat_created then
+      --   msg.action = { title = apimsg.channel_chat_created, type = '' }
+      -- end
+      -- if apimsg.migrate_to_chat_id then
+      --   msg.action = { title = apimsg.migrate_to_chat_id, type = '' }
+      -- end
+      -- if apimsg.migrate_from_chat_id then
+      --   msg.action = { title = apimsg.migrate_from_chat_id, type = 'migrated_from' }
+      -- end
+    end
+  end
+  return msg
+end
+
+C.process_msg = process_msg
+
+return C

@@ -182,16 +182,16 @@ do
     end
 
     if verse then
-      gq_ayah = gq .. verse .. '/quran-simple?key=' .. _config.api_key.globalquran
+      gq_ayah = gq .. verse .. '/quran-simple?key=' .. _config.key.quran
       if lang then
-        gq_lang = gq .. verse .. '/' .. translation .. '?key=' .. _config.api_key.globalquran
+        gq_lang = gq .. verse .. '/' .. translation .. '?key=' .. _config.key.quran
       end
     end
 
     if surah and ayah then
-      gq_ayah = gq .. surah .. ':' .. ayah .. '/quran-simple?key=' .. _config.api_key.globalquran
+      gq_ayah = gq .. surah .. ':' .. ayah .. '/quran-simple?key=' .. _config.key.quran
       if lang then
-        gq_lang = gq .. surah .. ':' .. ayah .. '/' .. translation .. '?key=' .. _config.api_key.globalquran
+        gq_lang = gq .. surah .. ':' .. ayah .. '/' .. translation .. '?key=' .. _config.key.quran
       end
     end
 
@@ -221,15 +221,6 @@ do
   end
 
   function run(msg, matches)
-    check_api_key(msg, 'globalquran', 'http://globalquran.com/contribute/signup.php')
-
-    if matches[1] == 'setapikey globalquran' and is_sudo(msg.from.peer_id) then
-      _config.api_key.globalquran = matches[2]
-      save_config()
-      send_message(msg, 'Global Quran api key has been saved.', 'html')
-      return
-    end
-
     if #matches == 1 then
       print('method #1')
       get_ayah(msg, nil, nil, matches[1], nil)
@@ -285,7 +276,8 @@ do
       '^!quran ([%d]+)(:)([%d]+) (%g.*)$',
       '^!(setapikey globalquran) (.*)$'
     },
-    run = run
+    run = run,
+    need_api_key = 'http://globalquran.com/contribute/signup.php'
   }
 
 end

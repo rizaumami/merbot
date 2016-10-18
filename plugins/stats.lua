@@ -53,9 +53,9 @@ do
     local text = ''
 
     for k,user in pairs(users_info) do
-      text = text .. '*' .. k .. '*. `' .. user.id .. '` - ' .. markdown_escape(user.name) .. ' = *' .. user.msgs .. '*\n'
+      text = text .. '<b>' .. k .. '</b>. <code>' .. user.id .. '</code> - ' .. user.name .. ' = <b>' .. user.msgs .. '</b>\n'
     end
-    api.sendMessage(get_receiver_api(msg), text, 'markdown', true, false, msg.id)
+    api.sendMessage(get_receiver_api(msg), text, 'html', true, false, msg.id)
   end
 
 --------------------------------------------------------------------------------

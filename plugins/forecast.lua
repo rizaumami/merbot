@@ -39,7 +39,7 @@ do
     local address = coords.formatted_address
     local url = 'https://api.darksky.net/forecast/'
     local units = '?units=si'
-    local url = url .. _config.api_key.forecast .. '/' .. URL.escape(lat) .. ',' .. URL.escape(long) .. units
+    local url = url .. _config.key.forecast .. '/' .. URL.escape(lat) .. ',' .. URL.escape(long) .. units
     local res, code = https.request(url)
 
     if code ~= 200 then
@@ -60,14 +60,7 @@ do
   end
 
   local function run(msg, matches)
-    if matches[1] == 'setapikey forecast' and is_sudo(msg.from.peer_id) then
-      _config.api_key.forecast = matches[2]
-      save_config()
-      send_message(msg, 'Dark Sky API key has been saved.', 'html')
-      return
-    else
-      return getforecast(msg, matches[1])
-    end
+    return getforecast(msg, matches[1])
   end
 
   return {
@@ -86,7 +79,7 @@ do
       '^!(setapikey forecast) (.*)$'
     },
     run = run,
-    is_need_api_key = {'forecast', 'https://darksky.net/dev/'}
+    need_api_key = 'https://darksky.net/dev/'
   }
 
 end

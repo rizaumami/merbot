@@ -63,7 +63,7 @@ do
   local function get_ownerlist(msg, chat_id)
     local gid = tonumber(chat_id)
     local group = msg.to.title or gid
-    local data = load_data(_config.administration[gid])
+    local data = load_data(_config.chats.managed[gid])
     if is_administrate(msg, gid) then
       if next(data.owners) == nil then
         reply_msg(msg.id, 'There are currently no listed owners.', ok_cb, true)
@@ -80,7 +80,7 @@ do
   local function del_ownerlist(msg, gid)
     local group = gid or msg.to.title
     if is_administrate(msg, gid) then
-      local data = load_data(_config.administration[gid])
+      local data = load_data(_config.chats.managed[gid])
       if next(data.owners) == nil then
         reply_msg(msg.id, 'There are currently no listed owners.', ok_cb, true)
       else
@@ -94,7 +94,7 @@ do
   local function get_modlist(msg, gid)
     local gid = tonumber(gid)
     if is_administrate(msg, gid) then
-      local data = load_data(_config.administration[gid])
+      local data = load_data(_config.chats.managed[gid])
       if next(data.moderators) == nil then
         reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
       else
@@ -109,7 +109,7 @@ do
 
   local function del_modlist(msg, gid)
     if is_administrate(msg, gid) then
-      local data = load_data(_config.administration[gid])
+      local data = load_data(_config.chats.managed[gid])
       if next(data.moderators) == nil then
         reply_msg(msg.id, 'There are currently no listed moderators.', ok_cb, true)
       else
@@ -129,7 +129,7 @@ do
       member_list = result.members
     end
     local gid = tonumber(chat_id)
-    local data = load_data(_config.administration[gid])
+    local data = load_data(_config.chats.managed[gid])
     for k,v in pairsByKeys(member_list) do
       data.members[v.peer_id] = v.username or ''
     end
@@ -157,7 +157,7 @@ do
   end
 
   local function invite_user(msg, gid, uid)
-    local data = load_data(_config.administration[gid])
+    local data = load_data(_config.chats.managed[gid])
     local g_type = data.group_type
     if is_globally_banned(uid) then
       reply_msg(msg.id, 'Invitation canceled.\nID ' .. uid .. ' is globally banned.', ok_cb, true)
@@ -175,7 +175,7 @@ do
   local function ban_user(extra, gid, uid)
     local msg = extra.msg
     local usr = extra.usr
-    local data = load_data(_config.administration[gid])
+    local data = load_data(_config.chats.managed[gid])
     if is_privileged(msg, gid, uid) then
       reply_msg(msg.id, usr .. ' is too privileged to be banned.', ok_cb, true)
     else
@@ -211,7 +211,7 @@ do
   local function unban_user(extra, gid, uid)
     if is_banned(gid, uid) then
       local hash = 'banned:' .. gid
-      local data = load_data(_config.administration[gid])
+      local data = load_data(_config.chats.managed[gid])
       redis:srem(hash, uid)
       data.banned[uid] = nil
       save_data(data, 'data/' .. gid .. '/' .. gid .. '.lua')
@@ -258,7 +258,7 @@ do
   local function promote(extra, chat_id, user_id)
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
-    local data = load_data(_config.administration[gid])
+    local data = load_data(_config.chats.managed[gid])
     if data.moderators ~= nil and data.moderators[uid] then
       reply_msg(extra.msg.id, uid .. ' is already a moderator.', ok_cb, true)
     else
@@ -271,7 +271,7 @@ do
   local function demote(extra, chat_id, user_id, force)
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
-    local data = load_data(_config.administration[gid])
+    local data = load_data(_config.chats.managed[gid])
     if not data.moderators[uid] then
       reply_msg(extra.msg.id, uid .. ' is not a moderator.', ok_cb, true)
     elseif uid == extra.msg.from.peer_id and not force then
@@ -286,7 +286,7 @@ do
   local function promote_owner(extra, chat_id, user_id)
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
-    local data = load_data(_config.administration[gid])
+    local data = load_data(_config.chats.managed[gid])
     if data.owners[uid] then
       reply_msg(extra.msg.id, uid .. ' is already the group owner.', ok_cb, true)
     else
@@ -299,7 +299,7 @@ do
   local function demote_owner(extra, chat_id, user_id, force)
     local gid = tonumber(chat_id)
     local uid = tonumber(user_id)
-    local data = load_data(_config.administration[gid])
+    local data = load_data(_config.chats.managed[gid])
     if not data.owners[uid] then
       reply_msg(extra.msg.id, uid .. ' is not the group owner.', ok_cb, true)
     elseif uid == extra.msg.from.peer_id and not force then
@@ -362,8 +362,8 @@ do
   end
 
   local function get_redis_ban_records()
-    for gid,cfg in pairs(_config.administration) do
-      local data = load_data(_config.administration[gid])
+    for gid,cfg in pairs(_config.chats.managed) do
+      local data = load_data(_config.chats.managed[gid])
       local banlist = redis:smembers('banned:' .. gid)
       if not data.banned then
         data.banned = {}
@@ -564,7 +564,7 @@ do
 
   -- trigger anti spam and anti flood
   local function trigger_anti_spam(extra, chat_id, user_id)
-    local data = load_data(_config.administration[chat_id])
+    local data = load_data(_config.chats.managed[chat_id])
     if data.antispam == 'kick' then
       kick_user(extra.msg, chat_id, user_id)
       reply_msg(extra.msg.id, extra.usr .. ' is ' .. extra.stype)
@@ -644,11 +644,11 @@ do
     local gid = tonumber(chat_id)
     local group = msg.to.title or gid
     local cfg = 'data/' .. gid .. '/' .. gid .. '.lua'
-    if _config.administration[gid] then
+    if _config.chats.managed[gid] then
       reply_msg(msg.id, 'I am already administrating ' .. group, ok_cb, true)
     else
       os.execute('mkdir -p data/' .. gid)
-      _config.administration[gid] = cfg
+      _config.chats.managed[gid] = cfg
       save_config()
       create_group_data(msg, gid, user_id)
       set_group_link({msg=msg, gid=gid}, cfg, true)
@@ -667,7 +667,7 @@ do
     local gid = tonumber(chat_id)
     local group = msg.to.title or gid
     if is_administrate(msg, gid) then
-      _config.administration[gid] = nil
+      _config.chats.managed[gid] = nil
       save_config()
       os.execute('rm -r data/' .. gid)
       reply_msg(msg.id, 'I am no longer administrating ' .. group, ok_cb, true)
@@ -708,7 +708,7 @@ do
 
   -- Global broadcasting
   local function send_broadcast(msg, bc_msg)
-    local data = _config.administration
+    local data = _config.chats.managed
     for gid,v in pairs(data) do
       local g_type = load_data(data[gid]).group_type
       if g_type == 'chat' then
@@ -732,17 +732,17 @@ do
     if msg.text then
       -- If sender is sudo then re-enable the channel
       if msg.text == '!channel enable' and is_sudo(uid) then
-        _config.disabled_channels[receiver] = false
+        _config.chats.disabled[receiver] = false
         save_config()
       end
-      if _config.disabled_channels[receiver] == true then
+      if _config.chats.disabled[receiver] == true then
         msg.text = ''
       end
 
       -- Anti arabic
-      if msg.text:match('([\216-\219][\128-\191])') and _config.administration[gid] then
+      if msg.text:match('([\216-\219][\128-\191])') and _config.chats.managed[gid] then
         if uid > 0 and not is_mod(msg, gid, uid) then
-          local data = load_data(_config.administration[gid])
+          local data = load_data(_config.chats.managed[gid])
           local arabic_hash = 'mer_arabic:' .. gid
           local is_arabic_offender = redis:sismember(arabic_hash, uid)
           if data.lock.arabic == 'warn' then
@@ -817,8 +817,8 @@ do
     end
 
     if msg.action then
-      if _config.administration[gid] then
-        local data = load_data(_config.administration[gid])
+      if _config.chats.managed[gid] then
+        local data = load_data(_config.chats.managed[gid])
         -- If user enter the group, either by invited or by clicking invite link
         if msg.action.type == 'chat_add_user' or msg.action.type == 'chat_add_user_link' then
           if msg.action.link_issuer then
@@ -940,7 +940,7 @@ do
 
       -- Autoleave. Don't let users add bot to their group without permission
       if msg.action.type == 'chat_add_user' and not is_sudo(uid) then
-        if _config.autoleave == true and not _config.administration[gid] then
+        if _config.autoleave == true and not _config.chats.managed[gid] then
           if msg.to.peer_type == 'channel' then
             channel_leave(receiver, ok_cb, false)
           else
@@ -984,8 +984,8 @@ do
       redis:setex(post_count, TIME_CHECK, msgs+1)
     end
 
-    if msg.media and _config.administration[gid] then
-      local data = load_data(_config.administration[gid])
+    if msg.media and _config.chats.managed[gid] then
+      local data = load_data(_config.chats.managed[gid])
       if not msg.text then
         msg.text = '[' .. msg.media.type .. ']'
       end
@@ -1034,15 +1034,15 @@ do
         -- Enabled or disable bot in a group
         if matches[1] == 'channel' then
           if matches[2] == 'enable' then
-            if _config.disabled_channels[receiver] == nil then
+            if _config.chats.disabled[receiver] == nil then
               reply_msg(msg.id, 'Channel is not disabled', ok_cb, true)
             end
-            _config.disabled_channels[receiver] = false
+            _config.chats.disabled[receiver] = false
             save_config()
             reply_msg(msg.id, 'Channel re-enabled', ok_cb, true)
           end
           if matches[2] == 'disable' then
-            _config.disabled_channels[receiver] = true
+            _config.chats.disabled[receiver] = true
             save_config()
             reply_msg(msg.id, 'Channel disabled.', ok_cb, true)
           end
@@ -1294,7 +1294,7 @@ do
         -- Broadcasting
         if matches[1] == 'bc' then
           local gid = tonumber(matches[2])
-          local data = load_data(_config.administration[gid])
+          local data = load_data(_config.chats.managed[gid])
           local g_type = data.group_type
           send_large_msg(g_type .. '#id' .. gid, matches[3])
         end
@@ -1311,9 +1311,9 @@ do
 
       end
 
-      if not _config.administration[gid] then return end
+      if not _config.chats.managed[gid] then return end
 
-      local data = load_data(_config.administration[gid])
+      local data = load_data(_config.chats.managed[gid])
 
       if is_owner(msg, gid, uid) then
         if matches[1] == 'setprivate' then
@@ -1830,7 +1830,7 @@ do
       -- List of groups managed by this bot (listed in data/config.lua)
       if matches[1] == 'grouplist' or matches[1] == 'groups' or matches[1] == 'glist' then
         local gplist = ''
-        for k,v in pairs(_config.administration) do
+        for k,v in pairs(_config.chats.managed) do
           local gpdata = load_data(v)
           if gpdata.public then
             if gpdata.link then

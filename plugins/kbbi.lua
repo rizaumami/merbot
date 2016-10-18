@@ -50,11 +50,12 @@ do
 
       if jlema.d:match('<br/>') then
         kbbi_desc = jlema.d:match('^.-<br/>')
+        kbbi_desc = kbbi_desc:gsub('<br/>', '')
       else
         kbbi_desc = jlema.d
       end
     end
-    print(cleanup_tag(title .. kbbi_desc))
+
     api.sendMessage(get_receiver_api(msg), cleanup_tag(title .. kbbi_desc), 'html', true, false, msg.id)
   end
 

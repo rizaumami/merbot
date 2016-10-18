@@ -5,7 +5,6 @@ ltn12 = require "ltn12"
 serpent = require "serpent"
 feedparser = require "feedparser"
 
-api = (loadfile "./bot/api-methods.lua")()
 json = (loadfile "./libs/JSON.lua")()
 mimetype = (loadfile "./libs/mimetype.lua")()
 redis = (loadfile "./libs/redis.lua")()
@@ -157,10 +156,6 @@ function download_to_file(url, file_name)
   return file_path
 end
 
-function vardump(value)
-  print(serpent.block(value, {comment=false}))
-end
-
 -- http://stackoverflow.com/a/11130774/3163199
 function scandir(directory)
   local i, t, popen = 0, {}, io.popen
@@ -212,7 +207,7 @@ end
 -- User is a group owner
 function is_owner(msg, chat_id, user_id)
   local var = false
-  local data = load_data(_config.administration[chat_id])
+  local data = load_data(_config.chats.managed[chat_id])
   if data.owners == nil then
     var = false
   elseif data.owners[user_id] then
@@ -230,7 +225,7 @@ end
 -- User is a group moderator
 function is_mod(msg, chat_id, user_id)
   local var = false
-  local data = load_data(_config.administration[chat_id])
+  local data = load_data(_config.chats.managed[chat_id])
   if data.moderators == nil then
     var = false
   elseif data.moderators[user_id] then
@@ -248,76 +243,6 @@ function is_mod(msg, chat_id, user_id)
     var = true
   end
   return var
-end
-
--- Returns bot api properties (as getMe method)
-function api_getme(bot_api_key)
-  local response = {}
-  local getme  = https.request{
-    url = 'https://api.telegram.org/bot' .. bot_api_key .. '/getMe',
-    method = "POST",
-    sink = ltn12.sink.table(response),
-  }
-  local body = table.concat(response or {"no response"})
-  local jbody = json:decode(body)
-
-  if jbody.ok then
-    botid = jbody.result
-  else
-    print('Error: ' .. jbody.error_code .. ', ' .. jbody.description)
-    botid = {id = '', username = ''}
-  end
-
-  return botid
-end
-
--- Returns the name of the sender
-function get_name(msg)
-  local name = msg.from.first_name
-  if name == nil then
-    name = msg.from.peer_id
-  end
-  return name
-end
-
--- Returns at table of lua files inside plugins
-function plugins_names()
-  local files = {}
-  for k, v in pairs(scandir('plugins')) do
-    -- Ends with .lua
-    if (v:match(".lua$")) then
-      table.insert(files, v)
-    end
-  end
-  return files
-end
-
--- Function name explains what it does.
-function file_exists(name)
-  local f = io.open(name,'r')
-  if f ~= nil then
-    io.close(f)
-    return true
-  else
-    return false
-  end
-end
-
--- Save into file the data serialized for lua.
--- Set uglify true to minify the file.
-function serialize_to_file(data, file, uglify)
-  file = io.open(file, 'w+')
-  local serialized
-  if not uglify then
-    serialized = serpent.block(data, {
-      comment = false,
-      name = '_'
-    })
-  else
-    serialized = serpent.dump(data)
-  end
-  file:write(serialized)
-  file:close()
 end
 
 -- Returns true if the string is empty
@@ -631,7 +556,7 @@ function load_from_file(file, default_data)
   if f == nil then
     -- Create a new empty table
     default_data = default_data or {}
-    serialize_to_file(default_data, file)
+    save_data(default_data, file)
     print ('Created file', file)
   else
     print ('Data loaded from file', file)
@@ -641,7 +566,7 @@ function load_from_file(file, default_data)
 end
 
 -- See http://stackoverflow.com/a/14899740
-function unescape_html(str)
+function html_unescape(str)
   local map = {
     ["lt"]  = "<",
     ["gt"]  = ">",
@@ -658,13 +583,21 @@ function unescape_html(str)
   return new
 end
 
-function markdown_escape(text)
-  text = text:gsub('_', '\\_')
-  text = text:gsub('%[', '\\[')
-  text = text:gsub('%]', '\\]')
-  text = text:gsub('%*', '\\*')
-  text = text:gsub('`', '\\`')
-  return text
+function html_escape(str)
+  local map = {
+    ["<"] = "&lt",
+    [">"] = "&gt",
+    ["&"]  = "&amp",
+    ['"']  = "&quot",
+    ["'>"] = "&apos",
+  }
+  new = str:gsub('(&(#?x?)([%d%a]+);)', function(orig, n, s)
+    var = map[s] or n == "#" and string.char(s)
+    var = var or n == "#x" and string.char(tonumber(s,16))
+    var = var or orig
+    return var
+  end)
+  return new
 end
 
 function group_into_three(number)

@@ -19,7 +19,7 @@ do
       end
     end
 
-    serialize_to_file(cronned, 'data/isup.lua')
+    save_data(cronned, 'data/isup.lua')
     send_message(msg, 'Saved!', 'html')
   end
 

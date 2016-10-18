@@ -1,49 +1,55 @@
 do
+  local topstories_url = 'https://hacker-news.firebaseio.com/v0/topstories.json'
+  local res_url = 'https://hacker-news.firebaseio.com/v0/item/%s.json'
+  local art_url = 'https://news.ycombinator.com/item?id=%s'
+
+  local function get_hackernews_results(count)
+    local results = {}
+    local jstr, code = https.request(topstories_url)
+
+    if code ~= 200 then return end
+
+    local data = json:decode(jstr)
+
+    for i = 1, count do
+      local ijstr, icode = https.request(res_url:format(data[i]))
+      if icode ~= 200 then return end
+      local idata = json:decode(ijstr)
+      local result
+      if idata.url then
+        result = string.format(
+          '\n<b>' .. i .. '</b>. <code>[</code><a href="%s">%s</a><code>]</code> <a href="%s">%s</a>',
+          html_escape(art_url:format(idata.id)),
+          idata.id,
+          html_escape(idata.url),
+          html_escape(idata.title)
+        )
+      else
+        result = string.format(
+          '\n<b>' .. i .. '</b>. <code>[</code><a href="%s">%s</a><code>]</code> %s',
+          html_escape(art_url:format(idata.id)),
+          idata.id,
+          html_escape(idata.title)
+        )
+      end
+      table.insert(results, result)
+    end
+
+    return results
+  end
 
   local function run(msg, matches)
-    local jstr, res = https.request('https://hacker-news.firebaseio.com/v0/topstories.json')
+    -- Four results in a group, eight in private.
+    local res_count = msg.to.peer_id == msg.from.peer_id and 8 or 5
+    local output = '<b>Top Stories from Hacker News:</b>'
 
-    if res ~= 200 then
-      api.sendMessage(get_receiver_api(msg), 'Connection error.', 'html', true, false, msg.id)
-      return
-    end
-
-    local jdat = json:decode(jstr)
-    local res_count = 8
-    local header = '<b>Hacker News</b>\n\n'
-    local hackernew = {}
+    local hackernews = get_hackernews_results(res_count)
 
     for i = 1, res_count do
-      local res_url = 'https://hacker-news.firebaseio.com/v0/item/' .. jdat[i] .. '.json'
-      local jstr, res = https.request(res_url)
-
-      if res ~= 200 then
-        send_message(msg, '<b>Connection error</b>', 'html')
-        return
-      end
-
-      local res_jdat = json:decode(jstr)
-      local title = res_jdat.title:gsub('%[.+%]', ''):gsub('%(.+%)', ''):gsub('&amp;', '&')
-
-      if title:len() > 48 then
-        title = title:sub(1, 45) .. '...'
-      end
-
-      local url = res_jdat.url
-
-      if not url then
-        send_message(msg, '<b>Connection error</b>', 'html')
-        return
-      end
-
-      local title = unescape_html(title)
-
-      hackernew[i] = '<b>' .. i .. '</b>. <a href="' .. url .. '">' .. title .. '</a>\n'
+        output = output .. hackernews[i]
     end
 
-    local hackernews = table.concat(hackernew)
-
-    api.sendMessage(get_receiver_api(msg), header .. hackernews, 'html', true, false, msg.id)
+    api.sendMessage(get_receiver_api(msg), output, 'html', true, false, msg.id)
   end
 
   return {

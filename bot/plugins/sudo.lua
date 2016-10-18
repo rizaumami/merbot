@@ -30,28 +30,6 @@ do
     if not is_sudo(msg.from.peer_id) then
       return
     end
-
-    if matches[1] == 'bin' then
-      local input = matches[2]:gsub('—', '--')
-      local header = '<b>$</b> <code>' .. input .. '</code>\n'
-      local stdout = io.popen(input):read('*all')
-
-      api.sendMessage(get_receiver_api(msg), header .. '<code>' .. stdout .. '</code>', 'html', true, msg.id)
-    end
-
-    if matches[1] == 'bot' then
-      if matches[2] == 'token' then
-        if not _config.bot_api then
-          _config.bot_api = {key = '', uid = '', uname = '', master = ''}
-        end
-        local botid = api_getme(matches[3])
-        _config.bot_api.key = matches[3]
-        _config.bot_api.uid = botid.id
-        _config.bot_api.uname = botid.username
-        save_config()
-        send_message(msg, '<b>Bot API key has been saved</b>', 'html')
-      end
-    end
     if matches[1] == "block" then
       block_user("user#id" .. matches[2], ok_cb, false)
 
@@ -78,13 +56,6 @@ do
         join = import_channel_link(hash, ok_cb, false)
       end
     end
-
-    if matches[1] == 'setlang' then
-      _config.lang = matches[2]
-      save_config()
-
-      send_message(msg, 'Set bot language to ' .. matches[2], 'html')
-    end
   end
 
   --------------------------------------------------------------------------------
@@ -93,9 +64,6 @@ do
     description = 'Various sudo commands.',
     usage = {
       sudo = {
-        '<code>!bin [command]</code>',
-        'Run a system command.',
-        '',
         '<code>!block [user_id]</code>',
         'Block user_id to PM.',
         '',
@@ -107,9 +75,6 @@ do
         '',
         '<code>!bot status</code>',
         'Print bot status.',
-        '',
-        '<code>!bot token [bot_api_key]</code>',
-        'Input bot API key.',
         '',
         '<code>!join</code>',
         'Join a group by replying a message containing invite link.',
@@ -127,7 +92,6 @@ do
       '^!(unblock) (.*)$',
       '^!(block) (%d+)$',
       '^!(unblock) (%d+)$',
-      '^!(bot) (%g+) (.*)$',
       '^!(join)$',
       '^!(join) (.*)$',
       '^!(setlang) (%g+)$'

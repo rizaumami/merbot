@@ -49,15 +49,6 @@ do
   end
 
   function run(msg, matches)
-    check_api_key(msg, 'muslimsalat', 'http://muslimsalat.com/panel/signup.php')
-
-    if matches[1] == 'setapikey muslimsalat' and is_sudo(msg.from.peer_id) then
-      _config.api_key.muslimsalat = matches[2]
-      save_config()
-      send_message(msg, 'Muslim salat api key has been saved.', 'html')
-      return
-    end
-
     local area = matches[1]
     local method = 5
     local notif = ''
@@ -79,7 +70,7 @@ do
       end
     end
 
-    local res, code = http.request(url .. '/' .. method .. '?key=' .. _config.api_key.muslimsalat)
+    local res, code = http.request(url .. '/' .. method .. '?key=' .. _config.key.salat)
 
     if code ~= 200 then
       send_message(msg, '<b>Error</b>: <code>' .. code .. '</code>', 'html')
@@ -138,7 +129,8 @@ do
       '^!salat (%d) (%a.*)$',
       '^!(setapikey muslimsalat) (.*)$'
     },
-    run = run
+    run = run,
+    need_api_key = 'http://muslimsalat.com/panel/signup.php'
   }
 
 end

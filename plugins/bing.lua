@@ -1,8 +1,3 @@
---[[
-Get Bing search API from from https://datamarket.azure.com/dataset/bing/search
-Set the key by: !setapi bing [bing_api_key] or manually inserted into config.lua
---]]
-
 do
 
   local mime = require('mime')
@@ -18,7 +13,7 @@ do
     local resbody = {}
     local bang, bing, bung = https.request{
         url = burl .. '&$top=' .. limit,
-        headers = { ["Authorization"] = "Basic " .. mime.b64(":" .. _config.api_key.bing) },
+        headers = { ["Authorization"] = "Basic " .. mime.b64(":" .. _config.key.bing) },
         sink = ltn12.sink.table(resbody),
     }
     local dat = json:decode(table.concat(resbody))
@@ -48,15 +43,6 @@ do
   end
 
   local function run(msg, matches)
-    check_api_key(msg, 'bing', 'https://datamarket.azure.com/dataset/bing/search')
-
-    if matches[1] == 'setapikey bing' and is_sudo(msg.from.peer_id) then
-      _config.api_key.bing = matches[2]
-      save_config()
-      send_message(msg, 'Bing api key has been saved.', 'html')
-      return
-    end
-
     local burl = "https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Query=%s&$format=json"
 
     if matches[1]:match('nsfw') then
@@ -111,7 +97,8 @@ do
       '^!b(nsfw) (.*)$', '^!bing(nsfw) (.*)$',
       '^!(setapikey bing) (.*)$',
     },
-    run = run
+    run = run,
+    need_api_key = 'https://datamarket.azure.com/dataset/bing/search'
   }
 
 end

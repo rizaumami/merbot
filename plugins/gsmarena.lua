@@ -1,8 +1,3 @@
---[[
-Get Bing search API from from https://datamarket.azure.com/dataset/bing/search
-Set the key by: !setapi bing [bing_api_key] or manually inserted into config.lua
---]]
-
 do
 
   local mime = require('mime')
@@ -12,7 +7,7 @@ do
     local resbody = {}
     local bang, bing, bung = https.request{
         url = burl,
-        headers = { ["Authorization"] = "Basic " .. mime.b64(":" .. _config.api_key.bing) },
+        headers = { ["Authorization"] = "Basic " .. mime.b64(":" .. _config.key.bing) },
         sink = ltn12.sink.table(resbody),
     }
     local dat = json:decode(table.concat(resbody))
@@ -99,7 +94,8 @@ do
       '^!(gsmarena) (.*)$',
       '^!(gsm) (.*)$'
     },
-    run = run
+    run = run,
+    need_api_key = 'https://datamarket.azure.com/dataset/bing/search'
   }
 
 end

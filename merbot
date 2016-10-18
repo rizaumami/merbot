@@ -11,6 +11,10 @@ update() {
   install_rocks
 }
 
+printerror() {
+  printf '\e[1;31m%s\n\e[0;39;49m' "$@"
+}
+
 # Will install luarocks on THIS_DIR/.luarocks
 install_luarocks() {
   git clone https://github.com/keplerproject/luarocks.git
@@ -23,14 +27,14 @@ install_luarocks() {
 
   RET=$?
   if [ $RET -ne 0 ]; then
-    printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
+    printerror 'Error. Exiting.'
     exit $RET
   fi
 
   make build && make install
   RET=$?
   if [ $RET -ne 0 ]; then
-    printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
+    printerror 'Error. Exiting.'
     exit $RET
   fi
 
@@ -42,14 +46,14 @@ install_rocks() {
   ./.luarocks/bin/luarocks install lbase64 20120807-3
   RET=$?
   if [ $RET -ne 0 ]; then
-    printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
+    printerror 'Error. Exiting.'
   exit $RET
   fi
   for i in luasec luasocket oauth redis-lua lua-cjson fakeredis xml feedparser serpent multipart-post; do
     ./.luarocks/bin/luarocks install "$i"
     RET=$?
     if [ $RET -ne 0 ]; then
-      printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
+      printerror 'Error. Exiting.'
       exit $RET
     fi
   done
@@ -121,6 +125,7 @@ default = {
 }
 
 install() {
+  mkdir -p data
   git pull
   git submodule update --init --recursive
   patch -i 'patches/merbot.patch' -p 0 --batch --forward
@@ -134,7 +139,7 @@ install() {
 
   RET=$?
   if [ $RET -ne 0 ]; then
-    printf '\e[1;31m%s\n\e[0;39;49m' 'Error. Exiting.'
+    printerror 'Error. Exiting.'
     exit $RET
   fi
   cd ..
@@ -152,12 +157,11 @@ elif [[ "$1" = "upstart" ]]; then
   merbotapi_upstart
 else
   if [[ ! -f ./tg/telegram.h ]]; then
-    printf '\e[1;31m%s\n\e[0;39;49m' '  tg not found' "  Run $0 install"
+    printerror '  tg not found' "  Run $0 install"
     exit 1
   fi
-
   if [[ ! -f ./tg/bin/telegram-cli ]]; then
-    printf '\e[1;31m%s\n\e[0;39;49m' '  tg binary not found' "  Run $0 install"
+    printerror '  tg binary not found' "  Run $0 install"
     exit 1
   fi
   tgcli_config
